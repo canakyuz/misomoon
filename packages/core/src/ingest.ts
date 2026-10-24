@@ -23,7 +23,7 @@ export interface EdgeContext {
 	botScore?: number | null
 }
 
-export type Rejection = 'bot' | 'invalid' | 'self'
+export type Rejection = 'bot' | 'invalid'
 
 const clip = (s: unknown, n: number) => (typeof s === 'string' && s ? s.slice(0, n) : null)
 const finite = (v: unknown, min: number, max: number): number | null =>

@@ -53,7 +53,7 @@ export async function acceptBeacon(env: Env, req: Request): Promise<EventRow | n
 	// tracker carries no code for them.
 	if (row.name === 'pageview') {
 		const features = siteFeatures(site.features)
-		const q = features.includes('search') ? (payload.q ?? searchTermFromUrl(payload.u, searchParams(site.search_params))) : undefined
+		const q = features.includes('search') ? searchTermFromUrl(payload.u, searchParams(site.search_params)) : undefined
 		row.detail = q ? eventDetail({ ...payload, q }, false) : null
 		const keys = features.includes('payments') ? checkoutKeys(payload.u) : []
 		if (keys.length) row.refs = [...new Set([...(row.refs ?? []), ...keys])].slice(0, 4)

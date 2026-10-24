@@ -46,7 +46,7 @@ export interface TrackerPayload {
 	 * each engagement beacon to that row.
 	 */
 	y?: number | string
-	/** site search term read from the page URL (pageview only) */
+	/** site search term, which ingest reads from the page URL (pageview only); a beacon's own is ignored */
 	q?: string
 	/**
 	 * What happened on the page since the last engagement beacon (engagement only). Every

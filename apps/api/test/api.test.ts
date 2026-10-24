@@ -466,6 +466,15 @@ describe('page interactions', () => {
 		expect([scroll.visits, scroll.average]).toEqual([1, 80])
 	})
 
+	it('reads a site search term from the page URL only, not from a field the beacon sets', async () => {
+		const env = fakeEnv()
+		await site(env, { domain: 'shop.com' })
+		await send(env, { n: 'pageview', u: 'https://shop.com/search?q=Tents', y: 0.1 })
+		await send(env, { n: 'pageview', u: 'https://shop.com/pricing', q: 'free money', y: 0.2 })
+		const r = await (await report(env, 'report=search')).json()
+		expect(r.terms).toEqual([{ term: 'tents', searches: 1, visitors: 1 }])
+	})
+
 	it('answers 400 for an unknown report or a list of pages', async () => {
 		const env = fakeEnv()
 		await site(env, { domain: 'shop.com' })

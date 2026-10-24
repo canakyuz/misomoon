@@ -83,7 +83,8 @@ describe('writing the same event twice (F3)', () => {
 		const id = 'A1B2C3D4-0000-4000-8000-00000000000F'
 		expect(build(page({ id })).event_id).toBe(id.toLowerCase())
 		for (const bad of ['', 'x', 'a1b2c3d4-0000-4000-8000-00000000000f; DROP', 7]) {
-			expect(build(page({ id: bad } as unknown as Partial<TrackerPayload>)).event_id).not.toBe(bad)
+			// a fresh id instead
+			expect(build(page({ id: bad } as unknown as Partial<TrackerPayload>)).event_id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
 		}
 	})
 
