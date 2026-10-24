@@ -639,13 +639,18 @@ const USAGE_DAYS = 400
 const CLEANUP_HOUR = 3
 
 /**
- * Hourly: expires old salts, records each shard's size (placement weighs by free space)
+ * Hourly: expires old salts, sign-ins and reset links, records each shard's size (placement weighs by free space)
  * and drains shards past their soft limit. With `cleanup`, once a day, it first deletes
  * what retention no longer keeps. Retention counts in days, so a daily run is enough.
  */
 async function maintenance(env: Env, cleanup: boolean) {
 	await env.CONTROL.prepare('DELETE FROM salts WHERE day < ?').bind(Math.floor(Date.now() / 86400000) - 2).run()
 	await env.CONTROL.prepare('DELETE FROM usage_refs WHERE at < ?').bind(Date.now() - 2 * 86400000).run()
+	// expired sign-ins and reset links, on a server where nobody signs in to clear them (startSession)
+	await env.CONTROL.batch([
+		env.CONTROL.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(Date.now()),
+		env.CONTROL.prepare('DELETE FROM password_resets WHERE expires_at < ?').bind(Date.now()),
+	])
 	await expireAttribution(env)
 	// with plans on, the monthly event emails of the last 3 months are kept (plan_notices)
 	if (cleanup && plansEnforced(env)) await env.CONTROL.prepare('DELETE FROM plan_notices WHERE month < ?').bind(utcMonth(Date.now()) - 2).run()

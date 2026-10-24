@@ -22,8 +22,9 @@ run `wrangler secret put <NAME>` in `apps/api`. Locally, put secrets in
 The consumer retries a batch 5 times, then moves it to the dead-letter queue
 `misomoon-events-dlq`. The cron trigger (`*/5 * * * *`) checks traffic-spike alerts and
 moves data off retiring shards every 5 minutes. At minute 15 of every hour, it also
-sends email reports, checks traffic-drop alerts, applies retention, and deletes old salts
-and usage rows older than 400 days.
+sends email reports, checks traffic-drop alerts, and deletes old salts, expired sign-ins,
+and expired password reset links. Once a day, at 03:15 UTC, it applies retention and
+deletes usage rows older than 400 days.
 
 ## Variables
 

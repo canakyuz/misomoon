@@ -715,6 +715,19 @@ describe('privacy settings', () => {
 		expect(env.SHARD_0.rows('SELECT session_id FROM sessions ORDER BY session_id').map((r) => r.session_id)).toEqual(['blog-com-31', 'shop-com-29'])
 	})
 
+	it('forgets expired sign-in sessions and password reset links every hour', async () => {
+		const env = fakeEnv()
+		const past = Date.now() - 1000
+		env.CONTROL.db.prepare('INSERT INTO sessions (hash, user_id, expires_at, created_at) VALUES (?, ?, ?, 0)').run('expired', 'u1', past)
+		env.CONTROL.db.prepare('INSERT INTO password_resets (hash, user_id, expires_at) VALUES (?, ?, ?), (?, ?, ?)').run('used-up', 'u1', past, 'fresh', 'u1', Date.now() + 3_600_000)
+		const ctx = fakeCtx()
+		await worker.scheduled({} as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+		expect(env.CONTROL.rows("SELECT hash FROM sessions WHERE hash = 'expired'")).toEqual([])
+		expect(env.CONTROL.rows('SELECT hash FROM password_resets')).toEqual([{ hash: 'fresh' }])
+		expect((await call(env, 'GET', '/api/v1/me', undefined, ADMIN)).res.status).toBe(200)
+	})
+
 	it('deletes old data once a day, at 03:15 UTC, and not in the other hourly runs', async () => {
 		vi.useFakeTimers({ toFake: ['Date'] })
 		const now = Date.UTC(2026, 9, 22, 4, 15)
