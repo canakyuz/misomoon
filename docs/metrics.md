@@ -203,8 +203,9 @@ apps send `android-app://` and their package name instead, and the known ones be
 site's host: `com.twitter.android` is `x.com`, and likewise the Facebook, Instagram,
 Threads, LinkedIn, Reddit, Pinterest, TikTok, Discord, Bluesky, YouTube, Gmail, Google,
 Outlook and ChatGPT apps. An unknown app keeps its package name. The page's own host (without `www.`) counts as no referrer. Another subdomain of your site is a
-referrer. misomoon also stores the referrer URL without its query string, but no report
-breaks it down.
+referrer. misomoon also stores the referrer URL without its query string, with a part of its path
+that looks like an email as `:email` and a part of 20 or more mixed letters and digits as
+`:token`, as in `page`. No report breaks it down.
 
 `source` is the first of these with a value: a known referrer host's name (table below),
 the tidied `utm_source`, the ad network of a click ID, the referrer host, or `Direct`.

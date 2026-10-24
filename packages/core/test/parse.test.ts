@@ -149,6 +149,19 @@ describe('buildEvent with untrusted input', () => {
 		const row = buildEvent({ s: 'demo', n: 'pageview', u: 'https://misomoon.com/', t: 5, l: ['en'], r: {}, v: 'x' } as never, { ua, ip: '203.0.113.9' })
 		expect(row).toMatchObject({ title: null, language: null, referrer: null })
 	})
+
+	it('masks an email or a token in the referrer path, as in the page path', () => {
+		const ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Safari/537.36'
+		const from = (r: string) => (buildEvent({ s: 'demo', n: 'pageview', u: 'https://misomoon.com/', r }, { ua, ip: '203.0.113.9' }) as { referrer: string }).referrer
+		expect(from('https://news.example/unsubscribe/jane.doe%40mail.com')).toBe('https://news.example/unsubscribe/:email')
+		expect(from('https://app.example/reset/a1b2c3d4e5f6g7h8i9j0k1l2/')).toBe('https://app.example/reset/:token/')
+	})
+
+	it('stores an Android app referrer as its address, without the query', () => {
+		const ua = 'Mozilla/5.0 (Linux; Android 15) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/141.0.0.0 Mobile Safari/537.36'
+		const row = buildEvent({ s: 'demo', n: 'pageview', u: 'https://misomoon.com/', r: 'android-app://com.google.android.gm/inbox?x=1' }, { ua, ip: '203.0.113.9' })
+		expect(row).toMatchObject({ referrer: 'android-app://com.google.android.gm/inbox', referrer_host: 'mail.google.com' })
+	})
 })
 
 describe('classify: specific hosts win over brand patterns (F2)', () => {

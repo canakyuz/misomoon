@@ -207,7 +207,8 @@ function list<T>(v: unknown, cap: number, each: (e: unknown[]) => T | null): T[]
 
 /** A script URL without its query or hash, which can carry tokens. */
 function errorSource(v: unknown): string {
-	return typeof v === 'string' ? v.replace(/[?#][^:]*/, '').slice(0, 300) : ''
+	// everything from ? or # up to the line and column the URL ends with
+	return typeof v === 'string' ? v.replace(/[?#].*?(?=(:\d+:\d+)?$)/, '').slice(0, 300) : ''
 }
 
 /**
@@ -260,10 +261,19 @@ function stripQuery(r: string | undefined): string | null {
 	if (!r) return null
 	try {
 		const u = new URL(r)
-		return `${u.origin}${u.pathname}`
+		// an android-app:// URL has no origin ("null")
+		return `${u.origin === 'null' ? `${u.protocol}//${u.host}` : u.origin}${maskPath(u.pathname)}`
 	} catch {
 		return null
 	}
+}
+
+/** An unsubscribe or reset link can hold an email or a secret in the path: each such segment becomes :email or :token. */
+function maskPath(path: string): string {
+	return path
+		.split('/')
+		.map((s) => (/^[^@]+(@|%40)[^@]+\.\w+$/i.test(s) ? ':email' : /^(?=\w*\d)(?=\w*[A-Za-z])\w{20,}$/.test(s) ? ':token' : s))
+		.join('/')
 }
 
 export function normalizePath(p: string): string {
@@ -271,11 +281,7 @@ export function normalizePath(p: string): string {
 	try {
 		path = decodeURI(path)
 	} catch {}
-	// an unsubscribe or reset link can hold an email or a secret in the path
-	path = path
-		.split('/')
-		.map((s) => (/^[^@]+(@|%40)[^@]+\.\w+$/i.test(s) ? ':email' : /^(?=\w*\d)(?=\w*[A-Za-z])\w{20,}$/.test(s) ? ':token' : s))
-		.join('/')
+	path = maskPath(path)
 	if (path.length > 1 && path.endsWith('/')) path = path.slice(0, -1)
 	return path.slice(0, 500)
 }

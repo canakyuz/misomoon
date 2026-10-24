@@ -232,6 +232,17 @@ describe('eventDetail', () => {
 		expect(x).toEqual([['Failed https://api.shop.com/v1/me for (id) with key (token)', 'https://shop.com/app.js:3:7', 1]])
 	})
 
+	it("drops a script URL's whole query, a URL with colons in it too, and keeps the line and column", () => {
+		const x = engagement({
+			x: [
+				['A', 'https://shop.com/app.js?next=https://a.example/?token=SECRET:1:2', 1],
+				['B', 'https://shop.com/app.js#t=1:3:4', 1],
+				['C', 'https://shop.com/app.js?v=2', 1],
+			],
+		}).x
+		expect(x.map((e: unknown[]) => e[1])).toEqual(['https://shop.com/app.js:1:2', 'https://shop.com/app.js:3:4', 'https://shop.com/app.js'])
+	})
+
 	it('drops what it cannot trust and clamps numbers', () => {
 		const d = engagement({
 			c: [['#ok', 'Buy', 2.4, -1, 9e9], ['div{color:red}', 'x', 1, 0, 0], ['#zero', 'none', 0, 0, 0], 'junk'],
