@@ -20,7 +20,6 @@ if (!defined('ABSPATH')) {
 	exit;
 }
 
-define('MISOMOON_VERSION', '0.1.0');
 define('MISOMOON_OPTION', 'misomoon_settings');
 
 require_once __DIR__ . '/includes/options.php';

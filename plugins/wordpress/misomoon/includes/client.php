@@ -11,7 +11,8 @@ if (!defined('ABSPATH')) {
 /**
  * The visitor's address, in the order the Node SDK reads it: Cloudflare, True-Client-IP,
  * X-Real-IP, the first X-Forwarded-For, then the connection. Filter `misomoon_visitor_ip`
- * to trust only the headers your host sets.
+ * to trust only the headers your host sets; a filtered value that is not an address is
+ * ignored.
  */
 function misomoon_visitor_ip() {
 	$candidates = array();
@@ -34,7 +35,8 @@ function misomoon_visitor_ip() {
 			break;
 		}
 	}
-	return (string) apply_filters('misomoon_visitor_ip', $ip);
+	$filtered = trim((string) apply_filters('misomoon_visitor_ip', $ip));
+	return filter_var($filtered, FILTER_VALIDATE_IP) ? $filtered : $ip;
 }
 
 /**
@@ -97,7 +99,8 @@ function misomoon_new_ref() {
 /**
  * Hands out a ref from a visitor's visit: an engagement with no time and the ref, which
  * misomoon stores with the visit the address and user agent have open. Returns the ref,
- * or '' when there is no address or user agent to find the visit by.
+ * or '' when there is no address or user agent to find the visit by, or misomoon didn't
+ * take the beacon.
  */
 function misomoon_hand_out_ref($url, $ip, $user_agent) {
 	if (!filter_var($ip, FILTER_VALIDATE_IP) || $user_agent === '' || !misomoon_configured()) {
@@ -111,8 +114,7 @@ function misomoon_hand_out_ref($url, $ip, $user_agent) {
 		'e' => 0,
 		'k' => $ref,
 	));
-	misomoon_send_event($body, misomoon_visitor_headers($ip, $user_agent));
-	return $ref;
+	return misomoon_send_event($body, misomoon_visitor_headers($ip, $user_agent)) ? $ref : '';
 }
 
 /** `sha256=<hex HMAC-SHA256 of the body>`, as verifyCustom in core/src/payments.ts checks. */
@@ -123,7 +125,7 @@ function misomoon_signature($secret, $body) {
 /**
  * Sends a payment or refund to the custom webhook (docs/revenue.md). Fields use the
  * webhook's names: id, amount, currency, type, refund_of, ref, customer, subscription,
- * billing, ts. A network error, 429 or 5xx is tried again from WP-Cron, up to 4 times;
+ * billing, ts. A network error, 429 or 5xx is tried again from WP-Cron, up to 3 more times;
  * the id makes a resend count once.
  */
 function misomoon_send_payment($payment, $attempt = 1) {

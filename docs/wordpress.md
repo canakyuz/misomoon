@@ -59,13 +59,17 @@ misomoon with the visitor's address, user agent, and language.
   It serves no other site's tracker.
 - An event over 16 KB isn't forwarded, the same limit misomoon applies.
 - Visitor locations survive only when the site is behind Cloudflare, which tells
-  WordPress the country, and the city when **Add visitor location headers** is on.
+  WordPress the country, and the city when Cloudflare's **Add visitor location headers**
+  managed transform is on.
   Elsewhere misomoon counts the visitors and leaves their location unknown.
 - The visitor's address comes from `CF-Connecting-IP`, `True-Client-IP`, `X-Real-IP`,
   the first `X-Forwarded-For`, then the connection. To trust only the header your host
   sets, filter `misomoon_visitor_ip`.
 - A security plugin that turns off the REST API for visitors who aren't logged in also
   turns off the proxy. The tracker then fails to load, and nothing is counted.
+- With plain permalinks (**Settings** > **Permalinks** > **Plain**), the REST API lives in
+  the query string, so the click and scroll overlay that the dashboard opens on your page
+  can't load through the proxy. Pick any other permalink structure to use the overlay.
 
 ## Count WooCommerce orders
 
@@ -126,8 +130,8 @@ add_filter('misomoon_script_attributes', function ($attrs) {
 
 ## Remove the plugin
 
-Deactivating the plugin stops the tracker. Deleting it removes its settings and any
-queued retries. The `_misomoon_ref` and `_misomoon_sent` meta stay on your orders.
+Deactivating the plugin stops the tracker, and an order retry that comes due meanwhile is
+dropped. Deleting it removes its settings and any queued retries. The `_misomoon_ref` and `_misomoon_sent` meta stay on your orders.
 
 ## Test the plugin
 

@@ -15,7 +15,7 @@ Cookieless analytics from your own misomoon, with WooCommerce revenue credited t
 misomoon is open-source analytics that runs in your own Cloudflare account. This plugin connects a WordPress site to it.
 
 * Adds the misomoon tracker to every page. It sets no cookies and stores nothing on the visitor's device.
-* Leaves out your own visits while you are logged in as an editor, author or administrator.
+* Leaves out your own visits while you are logged in as someone who can edit posts.
 * Can serve the tracker and its events from your own domain, through the REST API, so ad blockers that drop analytics hosts let it through.
 * Sends WooCommerce orders and refunds to misomoon. Each paid order counts toward the source, country and device of the visit that placed it.
 

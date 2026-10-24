@@ -35,6 +35,8 @@ const fake = createServer((req, res) => {
 			rec.signed = got.length === want.length && timingSafeEqual(Buffer.from(got), Buffer.from(want))
 			return res.writeHead(rec.signed ? 200 : 401).end()
 		}
+		// a beacon misomoon refuses, for the ref hand-out
+		if (url.pathname === '/api/event' && req.headers['user-agent'] === 'refuse-me') return res.writeHead(503).end()
 		if (url.pathname === '/m.js' || url.pathname === '/overlay.js') {
 			res.writeHead(200, { 'content-type': 'application/javascript' })
 			return res.end(`/* ${url.pathname}${url.search} */`)
@@ -126,12 +128,17 @@ try {
 		assert.equal(log.slice(before).filter((r) => r.path === '/api/event').length, 0)
 	})
 
-	await check('editors get no tracker; the settings page keeps the secret hidden and rejects a bad site id', async () => {
+	await check('admins and editors get no tracker; the settings page keeps the secret hidden and rejects a bad site id', async () => {
 		const r = await (await fetch(WP + '/wp-json/mmtest/v1/admin')).json()
 		assert.deepEqual(
-			{ guest: r.guest, admin: r.admin, tag: r.page_has_tag, secret: r.secret_printed, site: r.sanitized.site, kept: r.sanitized.secret, errors: r.errors },
-			{ guest: true, admin: false, tag: true, secret: false, site: 'shop-com', kept: SECRET, errors: ['site'] },
+			{ guest: r.guest, admin: r.admin, editor: r.editor, tag: r.page_has_tag, secret: r.secret_printed, site: r.sanitized.site, kept: r.sanitized.secret, errors: r.errors },
+			{ guest: true, admin: false, editor: false, tag: true, secret: false, site: 'shop-com', kept: SECRET, errors: ['site'] },
 		)
+	})
+
+	await check('a misomoon_visitor_ip filter that returns no address falls back to the connection; a ref misomoon refused is not kept', async () => {
+		const r = await (await fetch(WP + '/wp-json/mmtest/v1/client')).json()
+		assert.deepEqual(r, { ip: '192.0.2.10', refused_ref: '' })
 	})
 
 	await check('a WooCommerce order gets a ref from the visit of the buyer and is sent once, signed; its refund follows', async () => {
@@ -152,6 +159,12 @@ try {
 				{ id: `wc_refund_${r.refund}`, type: 'refund', refund_of: `wc_${r.order}`, amount: 10, currency: 'EUR' },
 			],
 		)
+	})
+
+	// last: it deletes the settings
+	await check('deleting the plugin removes its settings and the payment retries queued with their arguments', async () => {
+		const r = await (await fetch(WP + '/wp-json/mmtest/v1/uninstall', { method: 'POST' })).json()
+		assert.deepEqual(r, { queued: true, left: 0, settings: null })
 	})
 } catch (e) {
 	failed++
