@@ -47,7 +47,14 @@ describe('deploy: shard regions', () => {
 })
 
 describe('deploy: the self-hosted bundle', () => {
-	const cloud = parseJsonc(readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8')).vars as Record<string, string>
+	const config = parseJsonc(readFileSync(new URL('../wrangler.jsonc', import.meta.url), 'utf8'))
+	const cloud = config.vars as Record<string, string>
+
+	// the cron's reports and plan emails have no request to take an origin from
+	it("links misomoon Cloud's emails to its dashboard, and leaves that address out of the bundle", () => {
+		expect(cloud.PUBLIC_URL).toBe(`https://${config.routes[0].pattern}`)
+		expect('PUBLIC_URL' in selfHostedVars(cloud)).toBe(false)
+	})
 
 	it('turns plans on for misomoon Cloud only', () => {
 		expect(cloud.PLANS).toBe('on')

@@ -45,6 +45,9 @@
 		"DEMO_SITE": "demo",
 		"SAMPLE_SITE": "acme",
 		"SIGNUPS": "open",
+		// Links in emails the cron and the queue send, which have no request to take an origin from.
+		// The deploy bundle leaves it out: a self-hosted server sets its own.
+		"PUBLIC_URL": "https://app.misomoon.com",
 		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). The deploy bundle
 		// (scripts/bundle.ts) leaves PLANS out, so a self-hosted server has no plan limits.
 		"PLANS": "on"
