@@ -190,7 +190,7 @@ function signer(secret: string): (body: string) => Promise<string | null> {
 /** Why the custom webhook would refuse this payment (`custom` in core/src/payments.ts), or null. */
 function paymentProblem(p: ServerPayment): string | null {
 	if (typeof p.id !== 'string' || !p.id || p.id.length > 200) return 'id is required, up to 200 characters'
-	if (typeof p.amount !== 'number' || !Number.isFinite(p.amount) || p.amount <= 0) return `amount ${String(p.amount)} must be a positive number in major units (49.9 for 49.90)`
+	if (typeof p.amount !== 'number' || !Number.isFinite(p.amount) || p.amount <= 0 || p.amount > 1e9) return `amount ${String(p.amount)} must be a positive number in major units (49.9 for 49.90), up to 1000000000`
 	if (typeof p.currency !== 'string' || !CURRENCY.test(p.currency)) return `currency "${String(p.currency)}" is not an ISO 4217 code`
 	if (p.type !== undefined && p.type !== 'payment' && p.type !== 'refund') return `type "${String(p.type)}" must be "payment" or "refund"`
 	if (p.type === 'refund' && !p.refundOf) return 'a refund needs refundOf: the id of the payment it returns'

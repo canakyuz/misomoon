@@ -198,6 +198,7 @@ describe('review fixes', () => {
 		[{ id: '', amount: 1, currency: 'EUR' }, /id/],
 		[{ id: 'o1', amount: -5, currency: 'EUR' }, /amount/],
 		[{ id: 'o1', amount: Number.NaN, currency: 'EUR' }, /amount/],
+		[{ id: 'o1', amount: 2e9, currency: 'EUR' }, /amount 2000000000 .*up to 1000000000/],
 		[{ id: 'o1', amount: 1, currency: 'euro' }, /currency/],
 		[{ id: 'r1', type: 'refund' as const, amount: 1, currency: 'EUR' }, /refundOf/],
 	])('refuses %j without a request, saying why', async (p, why) => {

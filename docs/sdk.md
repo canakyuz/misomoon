@@ -27,8 +27,9 @@ call. `track()` alone adds about 0.6 KB gzipped to a browser bundle, `init()` wi
 nothing. The tracker features themselves load with `m.js` from your misomoon server,
 which adds only the features ticked in the site settings.
 
-Like the script tag, the SDK sets no cookies and stores nothing on the device. The
-server derives the visitor id from the address, the user agent, and a salt that changes
+Like the script tag, the SDK sets no cookies and stores nothing on the device. The only
+exception is the `misomoon_ignore` key that `ignore()` sets to
+[leave a browser out of the counts](tracking.md#exclude-yourself). The server derives the visitor id from the address, the user agent, and a salt that changes
 daily, as [Architecture](ARCHITECTURE.md#ingest) explains. An app therefore needs no
 AsyncStorage and no consent prompt for an identifier.
 
@@ -158,8 +159,9 @@ track('Purchase', { revenue: { amount: 49.9, currency: 'EUR' } })
 The functions do nothing during server rendering, so you can import them anywhere.
 Calls made before `m.js` loads wait in a queue, and `m.js` sends them after the first
 pageview, so the visit keeps its referrer.
-A `callback` passed to `track()` runs after the event is sent, or after one second when
-an ad blocker stops `m.js` from loading, so a navigation that waits for it still happens.
+A `callback` passed to `track()` runs once: after the event is sent, or after one second
+if that comes first, so a navigation that waits for it still happens when an ad blocker
+stops `m.js` from loading.
 
 `init()` takes the [script tag attributes](configuration.md#tracker-attributes) as
 options:
@@ -353,8 +355,8 @@ app.post('/api/signup', async (req, res) => {
 ```
 
 `visitorFromRequest` reads the address your platform reports: `CF-Connecting-IP`,
-`True-Client-IP`, `Fly-Client-IP`, `X-Real-IP`, the first `X-Forwarded-For`, then the
-socket. It also reads Cloudflare's and Vercel's location headers when they're there. It
+`True-Client-IP`, `Fly-Client-IP`, `X-Real-IP`, the first `X-Forwarded-For`, Express's
+`req.ip`, then the socket. It also reads Cloudflare's and Vercel's location headers when they're there. It
 returns `null` when the request has no address or no user agent. Without them the event
 would count your server as the visitor, so `track()` refuses an event that has none.
 
@@ -407,7 +409,9 @@ reach misomoon.
 
 For a provider misomoon has no webhook for, send each payment with `payment()`. It posts
 to the site's custom webhook ([Send payments from your own server](revenue.md#send-payments-from-your-own-server)),
-signed with the secret from **Settings** > **Revenue**:
+signed with the secret from **Settings** > **Revenue**. On a runtime without Web Crypto,
+such as Node 18, it sends the secret as a bearer token instead, which the webhook also
+accepts, so give `host` an `https://` address:
 
 ```ts
 const misomoon = createMisomoon({
@@ -423,7 +427,7 @@ await misomoon.payment({ id: refund.id, type: 'refund', refundOf: order.id, amou
 | Field | Meaning |
 | --- | --- |
 | `id` | Your payment id, unique per site. Required. A resend with the same id counts once. |
-| `amount` | Positive, in major units: `49.9` for 49.90. Required. |
+| `amount` | Positive, in major units: `49.9` for 49.90, up to 1,000,000,000. Required. |
 | `currency` | ISO 4217 code. Required. |
 | `type` | `'payment'` (the default) or `'refund'`. |
 | `refundOf` | For a refund, the `id` of the payment it returns. |
@@ -457,7 +461,7 @@ Every client refuses an event with a mistake the server would drop, with a conso
 warning: an event name longer than 120 characters or with `;` or `|` in it, a negative
 revenue amount, or a currency that isn't an ISO 4217 code. `track()` in the browser then
 still runs its `callback`. `payment()` refuses a payment without an id, an amount above
-0, or a currency code, and a refund without `refundOf`, before it sends a request.
+0 and up to 1,000,000,000, or a currency code, and a refund without `refundOf`, before it sends a request.
 The name `engagement` belongs to engaged time, so the server drops a custom event with
 that name without a warning.
 

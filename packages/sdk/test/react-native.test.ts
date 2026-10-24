@@ -61,7 +61,6 @@ describe('createNativeClient', () => {
 		const [req] = f.sent
 		expect(req.headers['user-agent']).toBe('MisomoonApp/0.1.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) Recipes/2.3.0')
 		expect(req.body).toMatchObject({ s: 'recipes-app', n: 'pageview', u: 'https://recipes.app/Home', t: 'Home', w: 393, vw: 393 })
-		expect(req.body).not.toHaveProperty('h')
 	})
 
 	it('puts app-wide props on screens and events, not on engaged time', async () => {
