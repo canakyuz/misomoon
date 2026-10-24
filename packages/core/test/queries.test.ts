@@ -132,22 +132,6 @@ describe('shard and session edge cases', () => {
 		expect(aFirst.rows).toEqual(bFirst.rows)
 		expect(aFirst.rows[0].time_on_page).toBe(12)
 	})
-
-	it('keeps a long visit under an entry page filter', async () => {
-		const db = shardDb()
-		const ua = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
-		const edge = { ua, ip: '203.0.113.9', country: 'DE' }
-		// one visit: lands on / three hours ago, keeps reading every 20 minutes
-		const hits = Array.from({ length: 10 }, (_, i) => ({
-			ts: NOW - 3 * 3600_000 + i * 20 * 60_000,
-			payload: { s: 'demo', n: 'pageview', u: i === 0 ? 'https://misomoon.com/' : `https://misomoon.com/docs/${i}` },
-			edge,
-		}))
-		await ingest(db, hits as never)
-		const lastHalfHour = { from: NOW - 30 * 60_000, to: NOW }
-		const agg = await aggregate([{ run: runner(db), window: lastHalfHour }], { ...scope, filters: [{ dim: 'entry_page', op: '==', values: ['/'] }] })
-		expect(agg.visitors).toBe(1)
-	})
 })
 
 describe('queue retries', () => {
@@ -202,6 +186,22 @@ describe('filter edge cases', () => {
 		const t = [{ run: runner(db), window: { from: W, to: W + HOUR } }]
 		const agg = await aggregate(t, { ...xs, filters: [{ dim: 'entry_page', op: '==', values: ['/'] }] })
 		expect(agg.pageviews).toBe(2)
+	})
+
+	it('an entry page filter keeps a visit that started before 00:00 UTC', async () => {
+		const db = shardDb()
+		const midnight = Date.UTC(2026, 9, 23)
+		// lands on / at 23:40 and reads on past midnight, when the visitor id changes
+		for (let k = 0; k < 4; k++) {
+			const h = hit(midnight - 20 * MINUTE + k * 20 * MINUTE, { path: k === 0 ? '/' : `/p${k}` })
+			const row = { ...(buildEvent(h.payload, h.edge, h.ts) as EventRow), visitor_id: k === 0 ? 'old' : 'new', ...(k === 0 ? {} : { prev_visitor_id: 'old' }) }
+			const [open] = await runner(db)([openSessionsStmt('x', ['old', 'new'], row.ts)])
+			for (const st of assignSessions([row], open as unknown as OpenSession[]).stmts) db.prepare(st.sql).run(...(st.params as never[]))
+		}
+		expect(db.prepare('SELECT COUNT(*) AS n FROM sessions').get()).toEqual({ n: 1 })
+		const t = [{ run: runner(db), window: { from: midnight, to: midnight + DAY } }]
+		const agg = await aggregate(t, { ...xs, filters: [{ dim: 'entry_page', op: '==', values: ['/'] }] })
+		expect(agg.pageviews).toBe(3)
 	})
 
 	it('an event filter sees events more than 30 minutes after the window (F15)', async () => {

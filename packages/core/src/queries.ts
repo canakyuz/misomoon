@@ -109,10 +109,12 @@ export function eventWhere(scope: Scope, w: Window, params: unknown[], alias = '
 		const { scope: ds } = dimInfo(f.dim)
 		if (ds === 'entry') {
 			const negate = f.op.startsWith('!')
-			// any session active in the window, however long ago it started
-			params.push(scope.siteId, w.from, w.to)
+			// any session active in the window that started on the UTC day before it or later:
+			// a lower bound keeps the index from reading every visit the site ever had, and
+			// only a visit active for more than a whole day starts earlier
+			params.push(scope.siteId, w.from, utcMidnight(w.from) - DAY, w.to)
 			conds.push(
-				`${alias}.session_id ${negate ? 'NOT IN' : 'IN'} (SELECT s2.session_id FROM sessions s2 WHERE s2.site_id = ? AND s2.last_at >= ? AND s2.started_at < ? AND ${predicate(flip(f), 's2', params)})`,
+				`${alias}.session_id ${negate ? 'NOT IN' : 'IN'} (SELECT s2.session_id FROM sessions s2 WHERE s2.site_id = ? AND s2.last_at >= ? AND s2.started_at >= ? AND s2.started_at < ? AND ${predicate(flip(f), 's2', params)})`,
 			)
 		} else {
 			conds.push(predicate(f, alias, params))

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import { DAY, HOUR, OPEN_SESSIONS_CHUNK, openSessionsStmt, SAMPLE, sampleTraffic } from '../src'
+import { DAY, eventWhere, HOUR, OPEN_SESSIONS_CHUNK, openSessionsStmt, SAMPLE, sampleTraffic } from '../src'
 import { ingest, shardDb } from './helpers'
 
 // D1 bills every index entry a write touches as one more written row, at 1,000 times the
@@ -23,6 +23,16 @@ describe('shard indexes', () => {
 		const indexes = db.prepare("SELECT name FROM sqlite_schema WHERE type = 'index' AND tbl_name IN ('events', 'sessions') AND sql IS NOT NULL ORDER BY name").all() as { name: string }[]
 		const found = Object.fromEntries(indexes.map(({ name }) => [name, (db.prepare(`PRAGMA index_info(${name})`).all() as { name: string }[]).map((c) => c.name)]))
 		expect(found).toEqual(INTENDED)
+	})
+})
+
+describe('entry and exit page filters', () => {
+	it('read only the visits that can reach the window, not every visit of the site', () => {
+		const db = shardDb()
+		const p: unknown[] = []
+		const where = eventWhere({ siteId: 'acme', filters: [{ dim: 'entry_page', op: '==', values: ['/'] }], tz: 0 }, { from: Date.UTC(2026, 9, 22), to: Date.UTC(2026, 9, 23) }, p)
+		const plan = (db.prepare(`EXPLAIN QUERY PLAN SELECT COUNT(*) FROM events e WHERE ${where}`).all(...(p as never[])) as { detail: string }[]).map((r) => r.detail)
+		expect(plan).toContain('SEARCH s2 USING INDEX sessions_site_started (site_id=? AND started_at>? AND started_at<?)')
 	})
 })
 
