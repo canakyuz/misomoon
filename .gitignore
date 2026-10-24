@@ -1,0 +1,10 @@
+node_modules
+dist
+build
+.svelte-kit
+.wrangler
+.dev.vars
+*.log
+.DS_Store
+coverage
+/deploy

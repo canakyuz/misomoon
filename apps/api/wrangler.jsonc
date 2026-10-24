@@ -1,0 +1,58 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "misomoon-api",
+	"main": "src/index.ts",
+	"workers_dev": false,
+	"routes": [{ "pattern": "app.misomoon.com", "custom_domain": true }],
+	"compatibility_date": "2026-10-22",
+	"compatibility_flags": ["nodejs_compat"],
+	// Invocation logs and traces would keep request metadata for every beacon (user agent,
+	// full URL, city, network); the code logs its own events, never an IP address.
+	"observability": { "enabled": true, "logs": { "invocation_logs": false }, "traces": { "enabled": false } },
+	"rules": [{ "type": "Text", "globs": ["**/*.min.js"], "fallthrough": true }],
+	// The dashboard is a static SPA served from this Worker. The Worker runs first for
+	// every path so a customer's proxy hostname serves only the tracker, never the app.
+	"assets": {
+		"directory": "../dashboard/dist",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"d1_databases": [
+		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "6bea2f02-201b-4bc6-a05d-cc133cfab5e7", "migrations_dir": "migrations/control" },
+		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy` (scripts/deploy.ts).
+		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "3de426b3-9499-4d42-95e2-72c19ea5619d", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "a2699c88-401a-42dd-9976-b12bd832d5c4", "migrations_dir": "migrations/shard" }
+	],
+	"queues": {
+		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
+		"consumers": [{ "queue": "misomoon-events", "max_batch_size": 100, "max_batch_timeout": 5, "max_retries": 5, "dead_letter_queue": "misomoon-events-dlq" }]
+	},
+	// Stats API calls, and sign-in attempts: 100 per key or IP per minute across all isolates.
+	"ratelimits": [
+		{ "name": "STATS_LIMIT", "namespace_id": "1002", "simple": { "limit": 100, "period": 60 } }
+	],
+	// Browser Run prints the PDF attached to weekly and monthly reports. Without it, reports
+	// go out without the PDF. Local dev can't print (quick actions run remotely only).
+	"browser": { "binding": "BROWSER" },
+	"triggers": { "crons": ["*/5 * * * *"] },
+	"vars": {
+		"SHARD_SOFT_LIMIT_MB": "8000",
+		"RETENTION_DAYS": "1825",
+		// 25 months, the CNIL's limit for audience measurement without consent. With PLANS on, a
+		// site that sets no retention keeps the smaller of this and its plan's retention.
+		"RETENTION_DEFAULT_DAYS": "761",
+		"DEMO_SITE": "demo",
+		"SAMPLE_SITE": "acme",
+		"SIGNUPS": "open",
+		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). The deploy bundle
+		// (scripts/bundle.ts) leaves PLANS out, so a self-hosted server has no plan limits.
+		"PLANS": "on"
+	}
+	// Secrets: AWS_SES_ACCESS_KEY_ID and AWS_SES_SECRET_ACCESS_KEY for Amazon SES (wrangler secret put …, or .dev.vars locally).
+	// Managed proxy (optional, docs/PROXY.md): secret CF_API_TOKEN, vars CF_ZONE_ID and
+	// PROXY_CNAME_TARGET, plus a route for customer hostnames: { "pattern": "*/*", "zone_name": … }.
+	// Billing through Polar (docs/billing.md): secrets POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET,
+	// vars POLAR_PRODUCT_STARTER, POLAR_PRODUCT_GROWTH, POLAR_PRODUCT_SCALE and POLAR_SERVER. The
+	// deploy bundle leaves out every POLAR_* var.
+}

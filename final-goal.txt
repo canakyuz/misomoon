@@ -1,0 +1,281 @@
+/goal Pre-launch audit of misomoon: every part works as documented, zero known bugs, every fix tested
+
+Repository: /Users/jackzard/Code/js/@dupuu/misomoon (pnpm monorepo, Cloudflare Workers + D1 + Queues,
+SvelteKit 3 landing and docs, Svelte 5 dashboard). Nothing is launched: there is no production data,
+no legacy clients and no upgrade path to protect. Migrations are fresh files per domain and are
+edited in place, never patched.
+
+Use these skills inside this goal:
+- /prod-review: the audit itself (coverage ledger, compatibility, SQL and indexes, security, verdict).
+- /haiku: the breadth sweeps. You verify every Haiku finding yourself before acting on it.
+- /test-task: every fix. Write the failing test first, prove it fails for the right reason, then fix.
+- /seo-geo: the landing site and the docs site.
+- /resource-budget: before any parallel sweep wave, test run or build, so the machine stays usable.
+
+==================================================================================================
+0. BEFORE ANYTHING ELSE
+==================================================================================================
+1. Read AGENTS.md, CLAUDE.md, docs/ARCHITECTURE.md, docs/BRAND.md, CONTRIBUTING.md and SECURITY.md.
+   AGENTS.md rules are hard rules for this whole goal.
+2. Confirm that no other Claude session or agent is editing this repository. If one is, stop and
+   ask me. Never edit a file another session is working in.
+3. The folder is not a git repository. Run `git init`, add everything (the existing .gitignore
+   applies), and make one baseline commit, "Baseline before pre-launch audit". Commit after each
+   confirmed fix from then on, one logical change per commit, so every fix is reviewable and
+   revertible. Never push, and never add a remote.
+4. Run `pnpm install`, then `pnpm test`, `pnpm check`, `pnpm build` and `pnpm bundle`. Record the
+   exact counts and any failure. A failure here is the first finding.
+
+==================================================================================================
+1. HARD LIMITS
+==================================================================================================
+- Never deploy. Never write to a remote D1 database, queue, R2 bucket or KV namespace. Never call
+  the real Polar API or any payment provider. Never send email. Reading remote state is allowed only
+  if /prod-review asks for it and it is read-only.
+- Never loosen a test to make it pass. This includes apps/docs/src/lib/coverage.test.ts, the m.js
+  1,000-byte gzip limit in packages/tracker/test/m.test.ts, the index allow-list in
+  packages/core/test/indexes.test.ts, and the SDK budgets in packages/sdk/test/treeshake.test.ts.
+  If a limit itself is wrong, stop and ask me.
+- All SQL is built in packages/core/src/queries.ts. Unique counts stay additive across shards: no
+  ratio is computed per shard and averaged.
+- Competitor names appear only in docs/comparison.md, the README comparison table and
+  apps/landing/src/lib/alternatives.ts, each claim with a source URL and the date it was checked.
+- Svelte 5 runes only. Shared dashboard state stays in apps/dashboard/src/lib/dash.svelte.ts.
+- Docs ship with the code. Docs, README and commit messages follow .claude/skills/technical-writing
+  and .claude/skills/unslop.
+- No legacy. Nothing has launched, so remove any code, test, type, doc or config that exists only
+  for old names, old formats, old clients, renamed variables or removed providers. This includes
+  aliases, fallbacks for old payload fields, and tests asserting that an old name is ignored.
+  Formats that external providers still send today, such as a webhook secret format, are not
+  legacy.
+- Don't change prices, plan limits, retention, or what a plan includes. Those live in
+  packages/core/src/plans.ts and are product decisions. If you find a contradiction there, report
+  it to me.
+
+==================================================================================================
+2. WHAT MUST WORK, AREA BY AREA
+==================================================================================================
+For each area: read the code and the doc that describes it. Check the doc against the code. Find
+the tests that cover the behaviour below, and add a test for any behaviour no test covers, even when
+it works. A behaviour that works but is untested is a finding.
+
+Tracker (packages/tracker)
+- m.js stays under 1,000 bytes gzipped. It sends pageviews (history and hash routing, bfcache) and
+  engagement beacons, which carry engaged time, scroll depth and the view key `y`. Every part in
+  src/x/ works through misomoon.x, and the Light preset is correct.
+- Nothing is tracked in the overlay, under webdriver, or with misomoon_ignore. No cookies.
+- overlay.js loads only from next to m.js and talks only to window.opener.
+
+Ingest (apps/api/src/ingest.ts, usage.ts, packages/core/src/ingest.ts)
+- The edge accepts beacons and drops bots and invalid ones. Geo, UA and channel are classified.
+  `visitor_id` uses the daily salt. The IP is never stored.
+- Queue batching works, and with no queue bound, events are written inline.
+- Duplicates are ignored through `event_id`, and a replayed or partially committed batch counts
+  nothing twice.
+- Engagement beacons update their pageview's row. A replayed beacon adds nothing (`pings` marks).
+  A beacon that arrives out of order is handled as documented, and so is a beacon whose pageview
+  isn't on the shard. A visit open at 00:00 UTC continues.
+- The open-session lookup always uses its index.
+- The daily ingest cap never stores more than its cap, payment refs follow their rules, and the
+  capped email is sent once.
+
+Plans and limits (packages/core/src/plans.ts, apps/api/src/plans.ts, accounts.ts, control.ts)
+- With PLANS=on: the Starter site limit is atomic on site create and on site move. A retention
+  setting above the plan's limit is refused, and the daily cleanup deletes at the plan's limit.
+- Each person gets one trial. A second team starts with no trial. A lapsed team stops counting and
+  can't add sites, while payment webhooks and dashboard reads keep working.
+- Monthly events per team per UTC month: one email at 80% and one at 100%, counting stops past 125%,
+  and it resets with the new month or an upgrade.
+- With PLANS unset (self-hosted), none of these limits apply anywhere, and the deploy bundle carries
+  no PLANS or POLAR variables.
+
+Billing (apps/api/src/billing.ts, the dashboard PlanBilling component, docs/billing.md)
+- Polar webhook signatures are verified: a wrong secret, a stale timestamp and a replayed id are
+  all rejected.
+- Every subscription event has the documented effect. An event that arrives out of order never
+  rolls state back. Checkout creates a subscription, or switches the existing one. The customer
+  portal works.
+- The `billing` permission is enforced. With Polar not configured, the routes refuse and the UI
+  hides billing.
+- Customers' own revenue webhooks (`/api/webhooks/:provider/:site`) stay separate and keep working.
+
+Sharding (apps/api/src/control.ts, moves.ts, scripts/deploy.ts, packages/core/src/shard.ts)
+- Placement uses weighted rendezvous hashing. `shard_map` ranges route by site and by day.
+- A draining shard closes its range at the right day boundary.
+- Moves are resumable: copy, switch, then delete after two cache lifetimes. A retiring shard
+  unbinds only when it's empty.
+- Data regions keep each site on its region's shards.
+- Purges are chunked, and a deleted site keeps nothing.
+- Every read fans out across shard ranges and merges correctly, including the folded engagement
+  columns.
+
+Queries and the API (packages/core/src/queries.ts, apps/api/src/stats.ts, index.ts, tools.ts)
+- Every stats endpoint, Stats API v2, export, journeys, funnels, behaviour reports, imported
+  history, Search Console, shared links, reports, alerts and annotations returns the same numbers
+  through the dashboard, the API and MCP.
+- Timezones and DST buckets, the filter grammar and its limits, `compare`, and the rate limits all
+  work.
+- Every route checks permissions through `authorize`. Roles behave as the table in ARCHITECTURE.md
+  says. Guests, API keys and shared-link tokens are scoped correctly.
+
+SDK and plugins (packages/sdk, plugins/wordpress)
+- The web, React, Next.js, React Native and Node clients send what the server accepts (the
+  contract tests). They send `y` where needed, and the SDK budgets hold.
+- WordPress plugin settings and hooks match docs/wordpress.md.
+
+Dashboard (apps/dashboard)
+- Every view handles its loading, empty, error and limit states.
+- The Plan card, banners, PlanBilling, InstallCheck, the first-visit flow and the retention picker
+  behave as documented.
+- No dead UI, and no copy that contradicts the docs.
+
+Schema and deploy (apps/api/migrations, scripts/bundle.ts, deploy.ts)
+- Migrations are fresh and split by domain, because nothing has launched. Each table and its indexes
+  live in the one file for their domain:
+  - control: accounts, sites, shards, ingest, goals, reports, imports, payments, and billing if it
+    has tables;
+  - shard: events, sessions, imported.
+  There are no patch files, no ALTER TABLE, and nothing that exists only to move old data. If a
+  table is in the wrong file, move it, then prove the final schema is unchanged by diffing
+  `sqlite_schema` before and after in node:sqlite.
+- The control and shard migrations apply cleanly to an empty database.
+- Every query's index use is intended.
+- `pnpm bundle` produces a self-contained deploy/ that works for the Deploy to Cloudflare button.
+
+Legal pages (docs/dpa.md, privacy.md, terms.md, security.md, compliance.md, SECURITY.md)
+- Every statement must match what the code does today:
+  - retention per plan, and the 25-month default;
+  - the trial: once per person, 7 days;
+  - lapsed teams and the monthly event limit;
+  - what is collected and never stored (no IPs, no cookies, daily salts);
+  - data regions;
+  - deletion and export;
+  - the sub-processors: Cloudflare, the email provider, and Polar as merchant of record for
+    billing.
+- Don't rewrite legal text yourself. List each inaccurate sentence with the code evidence and a
+  proposed replacement in audit-report.md, then stop and ask me before editing any legal page.
+
+Landing site (apps/landing) and README
+- Sell the whole product truthfully. Every plan has every feature, and the landing makes the
+  breadth obvious:
+  - tracker, revenue attribution, goals, funnels, journeys;
+  - click maps, scroll, forms, errors, media, content, site search;
+  - Web Vitals, AI assistant traffic, imports, Search Console;
+  - reports and alerts, shared dashboards, teams;
+  - API and MCP, SDKs, WordPress and platform guides, proxy;
+  - data regions, privacy, open source and self-hosting.
+- Each claim must be backed by code or docs. Remove anything the product doesn't do. No invented
+  customers, testimonials or numbers.
+- No broken links anywhere: every internal route, every docLink into the docs, every anchor, and
+  every external URL in the landing, README, docs, CONTRIBUTING.md and SECURITY.md. Fetch external
+  links and fix or remove dead ones.
+- Wording is consistent everywhere: "events", plan names, prices, retention years and trial length
+  all match packages/core/src/plans.ts and docs/cloud.md.
+- The README reads like a professional open-source project, without slop:
+  - a logo from packages/brand, a one-line pitch, and badges that resolve;
+  - a real screenshot only if one exists;
+  - the Deploy to Cloudflare button;
+  - a feature overview, quick start, comparison table, docs links, contributing, security and
+    license.
+- Competitors: open every source URL behind the claims in docs/comparison.md, the README table and
+  apps/landing/src/lib/alternatives.ts. Confirm each claim, or update it with today's checked date,
+  or drop it if it can't be sourced.
+  - Comparisons are like for like. Their pageviews are not our events, so say that an event
+    includes custom events.
+  - Say plainly where misomoon wins, and where a competitor wins.
+
+Known open items, left by the build agents. Confirm each one, then fix it or report it.
+- Legacy to remove:
+  - apps/api/test/email.test.ts tests that REPORT_FROM ("the old name of EMAIL_FROM") and the
+    removed Resend provider are ignored, and the RESEND_API_KEY and REPORT_FROM fields in
+    apps/api/test/fake.ts;
+  - deploy/ still holds the old migration files (0001_init.sql, 0002_event_detail.sql, ...). Run
+    `pnpm bundle`, which wipes and rebuilds it.
+- Billing docs and code:
+  - docs/teams.md (around line 24) says "No API route checks `billing`", which is now false;
+  - the trial section of docs/cloud.md still says to email support to pick a plan;
+  - docs/dashboard.md doesn't describe the billing buttons on the Plan card;
+  - the CHANGELOG Plans bullet still says the plan is "set by support";
+  - deleting a team or a user is not refused while the team has a live Polar subscription, so the
+    customer would keep paying. Refuse it with a clear message, or cancel through Polar first.
+    Ask me which;
+  - the isolate cache in apps/api/src/plans.ts delays a webhook's plan change by up to a minute.
+    Document it, or invalidate the cache on webhook.
+- Legal sentences to propose changes for (ask me before editing):
+  - docs/dpa.md line 27 (account data "and billing": Polar now processes billing);
+  - docs/dpa.md Annex 3 (add Polar Software, Inc. as merchant of record: checkout, card payments,
+    tax, invoices);
+  - docs/privacy.md line 32 (the "[Billing details ...]" placeholder);
+  - docs/privacy.md line 57 (the "[Payment processor]" row).
+- Plans behaviour to confirm and document:
+  - On Cloud, the team that owns DEMO_SITE needs a plan, or that site stops recording after 7 days;
+  - a month can end slightly past 125%, because events already queued when counting stops are
+    still stored;
+  - there is no "trial ends soon" or "trial ended" email, only the banner and the card;
+  - a person who deletes their account and signs up again with the same email gets a new trial.
+- Not verifiable without Polar's sandbox. List exact steps for me to check each one:
+  - the Polar-Version header;
+  - checkout metadata copying to the subscription (billing finds the team through it);
+  - the status that subscription.created carries;
+  - customer reuse by email;
+  - whether webhook-id stays the same across retries;
+  - the 402, 403 and 409 error shapes, and the pending_update fields;
+  - the menu paths in Polar's UI given in docs/billing.md.
+
+==================================================================================================
+3. HOW TO RUN THE AUDIT
+==================================================================================================
+1. /prod-review with the target "everything". There is no live production, so every file is in
+   scope. Build its coverage ledger over every source file in apps/, packages/, plugins/ and the
+   scripts, plus every doc in docs/, and mark each one reviewed.
+2. Use /haiku for the sweeps. Split the work by the areas in section 2, and give each Haiku brief
+   the files, the expected behaviour above and the AGENTS.md rules. Verify every finding yourself,
+   line by line, before treating it as real. Drop false positives and record why.
+3. For every confirmed bug, use /test-task. Write a test with exact expected values, prove it fails
+   for the right reason, fix it, run the package's tests, then commit.
+4. Code quality, after the bugs:
+   - Find dead code, unused exports, duplicate helpers, leftover comments and confusing names.
+   - Look for over-long functions and inconsistent patterns between similar modules.
+   - Simplify only where behaviour stays the same and tests prove it.
+   - Keep each file's comment density and idioms.
+5. Wording: check every user-facing string in the dashboard, landing, emails and errors, every doc
+   and the README.
+   - Each must be accurate against the code, consistent ("events", plan names, limits, retention),
+     and follow technical-writing and unslop.
+   - Pricing copy everywhere must match packages/core/src/plans.ts.
+6. Landing and docs: run /seo-geo on apps/landing and apps/docs.
+   - Cover titles and descriptions, headings, structured data, sitemap-docs.xml, llms.txt and
+     llms-full.txt, Markdown copies of pages, internal links, AI crawler access and citability.
+   - Fix what's in our code, with the docs build's link check passing.
+   - Don't add competitor names outside the three allowed files.
+
+==================================================================================================
+4. DONE MEANS
+==================================================================================================
+- The /prod-review ledger shows every file reviewed. Every confirmed finding is fixed with a test
+  that failed before the fix, or is listed as a decision for me with the evidence.
+- `pnpm test`, `pnpm check`, `pnpm build` and `pnpm bundle` pass. Report the exact test counts,
+  before and after.
+- The docs coverage test, the docs build link check, the m.js size test, the index allow-list and
+  the SDK budgets all pass without being loosened.
+- There are no open P0 or P1 findings, and the /prod-review verdict is SHIP or SHIP WITH FIXES.
+
+Write the final report to audit-report.md at the repository root, with these parts:
+- the verdict;
+- the baseline and final test counts;
+- the findings, in a table: area, severity, file:line, fix, test name, commit;
+- the cleanups made;
+- the wording and SEO changes;
+- what couldn't be verified locally (real D1 billing of rows written and query plans on D1's
+  SQLite, Polar's sandbox, email delivery, Cloudflare Queues retry timing), with the exact steps
+  for me to check each one;
+- decisions that need me.
+
+Delete final-goal.txt as your last step, once everything above is done and audit-report.md is
+written, and commit the deletion. Leave audit-report.md in place.
+
+Stop and ask me before:
+- anything in section 1's limits;
+- deleting a feature;
+- changing a public API shape, plan values or legal pages (docs/dpa.md, privacy.md, terms.md);
+- any fix that needs a product decision.

@@ -1,0 +1,14 @@
+# The site-wide files and the pages that aren't docs live on misomoon.com.
+/llms.txt https://misomoon.com/llms.txt 301
+/llms-full.txt https://misomoon.com/llms-full.txt 301
+/sitemap.xml https://misomoon.com/sitemap-docs.xml 301
+/privacy https://misomoon.com/privacy 301
+/terms https://misomoon.com/terms 301
+/dpa https://misomoon.com/dpa 301
+/security https://misomoon.com/security 301
+/comparison https://misomoon.com/alternatives 301
+/privacy.md https://misomoon.com/privacy 301
+/terms.md https://misomoon.com/terms 301
+/dpa.md https://misomoon.com/dpa 301
+/security.md https://misomoon.com/security 301
+/comparison.md https://misomoon.com/alternatives 301

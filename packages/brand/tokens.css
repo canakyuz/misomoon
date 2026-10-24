@@ -1,0 +1,159 @@
+/*
+ * misomoon design tokens: "Miso Print".
+ * A risograph poster, not a glowing SaaS page. Paper is home: warm newsprint, heavy
+ * ink, one loud vermilion (miso), with cobalt, leaf, plum and mustard as spot colours.
+ * Cards are printed: a solid ink edge and a hard offset shadow, never a blur.
+ * Ink is the night edition of the same print run. Data colours are validated for CVD
+ * and contrast on both surfaces (see docs/BRAND.md).
+ */
+:root {
+	--font-display: 'Archivo', ui-sans-serif, system-ui, sans-serif;
+	--font-sans: 'Archivo', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+	--font-mono: 'Martian Mono', ui-monospace, 'SF Mono', Menlo, monospace;
+	/* display cut: condensed, heavy */
+	--display-stretch: 68%;
+	--display-weight: 800;
+
+	--radius-xs: 4px;
+	--radius-sm: 6px;
+	--radius: 8px;
+	--radius-lg: 12px;
+	--radius-xl: 16px;
+
+	--ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+	--ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+	--ease-pop: cubic-bezier(0.34, 1.56, 0.64, 1);
+	--dur-fast: 120ms;
+	--dur: 200ms;
+	--dur-slow: 480ms;
+
+	/* spot inks (theme independent) */
+	--vermilion: #e8461a;
+	--cobalt: #2b45e0;
+	--leaf: #0e8a55;
+	--plum: #b0389b;
+	--mustard: #f2b416;
+	--paper: #f2ecdf;
+	--ink: #17140f;
+	/* text on vermilion, in both themes */
+	--on-vermilion: #fff;
+
+	/* paper (default) */
+	color-scheme: light;
+	--bg: #efe8d9;
+	--bg-glow: radial-gradient(rgb(23 20 15 / 0.07) 1px, transparent 1.2px) 0 0 / 14px 14px;
+	--surface: #fbf7ee;
+	--surface-2: #f6f0e3;
+	--surface-3: #ebe3d1;
+	--surface-hover: #f3ecdd;
+	--edge: #17140f;
+	--line: rgb(23 20 15 / 0.11);
+	--line-strong: rgb(23 20 15 / 0.24);
+	--text: #17140f;
+	--text-2: #474035;
+	--text-3: #6e6556;
+	--text-4: #a2998a;
+
+	--miso: #e8461a;
+	--miso-strong: #c9370e;
+	--miso-ink: #fff8ec;
+	--miso-soft: rgb(232 70 26 / 0.1);
+	--miso-line: rgb(232 70 26 / 0.5);
+	--lunar: #2b45e0;
+	--highlight: #ffd23f;
+
+	--bar: rgb(232 70 26 / 0.13);
+	--bar-hover: rgb(232 70 26 / 0.22);
+	--chart-line: #e8461a;
+	--chart-fill-top: rgb(232 70 26 / 0.26);
+	--chart-fill-bottom: rgb(232 70 26 / 0.02);
+	--chart-dot: rgb(232 70 26 / 0.55);
+	--chart-compare: rgb(23 20 15 / 0.45);
+	--chart-grid: rgb(23 20 15 / 0.08);
+
+	--series-1: #e8461a;
+	--series-2: #2b45e0;
+	--series-3: #0e8a55;
+	--series-4: #b0389b;
+	--series-5: #b98300;
+
+	--good: #0b7a4b;
+	--warn: #b98300;
+	--bad: #d1301b;
+	--good-soft: rgb(14 138 85 / 0.12);
+	--warn-soft: rgb(242 180 22 / 0.2);
+	--bad-soft: rgb(209 48 27 / 0.1);
+
+	--shadow-sm: 2px 2px 0 var(--edge);
+	--shadow: 3px 3px 0 var(--edge);
+	--shadow-lg: 6px 6px 0 var(--edge);
+	--focus: 0 0 0 2px var(--bg), 0 0 0 4px var(--cobalt);
+}
+
+/* Apps resolve the viewer's preference and set data-theme on <html>. */
+:root[data-theme='dark'] {
+	color-scheme: dark;
+	--bg: #0f0d0a;
+	--bg-glow: radial-gradient(rgb(242 236 223 / 0.05) 1px, transparent 1.2px) 0 0 / 14px 14px;
+	--surface: #1b1813;
+	--surface-2: #211d17;
+	--surface-3: #2b261e;
+	--surface-hover: #25211a;
+	--edge: rgb(242 236 223 / 0.17);
+	--line: rgb(242 236 223 / 0.09);
+	--line-strong: rgb(242 236 223 / 0.2);
+	--text: #f2ecdf;
+	--text-2: #c4bba9;
+	--text-3: #8c8372;
+	--text-4: #615a4e;
+
+	--miso: #ff5a2a;
+	--miso-strong: #ff7448;
+	--miso-ink: #170a04;
+	--miso-soft: rgb(255 90 42 / 0.14);
+	--miso-line: rgb(255 90 42 / 0.5);
+	--lunar: #7d8fff;
+	--highlight: #f2b416;
+
+	--bar: rgb(255 90 42 / 0.16);
+	--bar-hover: rgb(255 90 42 / 0.26);
+	--chart-line: #ff5a2a;
+	--chart-fill-top: rgb(255 90 42 / 0.3);
+	--chart-fill-bottom: rgb(255 90 42 / 0.02);
+	--chart-dot: rgb(255 90 42 / 0.5);
+	--chart-compare: rgb(242 236 223 / 0.45);
+	--chart-grid: rgb(242 236 223 / 0.07);
+
+	--series-1: #ee5526;
+	--series-2: #6077f5;
+	--series-3: #1f9c62;
+	--series-4: #c952b2;
+	--series-5: #b98510;
+
+	--good: #2fb877;
+	--warn: #f2b416;
+	--bad: #ff5a4a;
+	--good-soft: rgb(47 184 119 / 0.14);
+	--warn-soft: rgb(242 180 22 / 0.14);
+	--bad-soft: rgb(255 90 74 / 0.14);
+
+	--shadow-sm: 2px 2px 0 #050403;
+	--shadow: 3px 3px 0 #050403;
+	--shadow-lg: 5px 5px 0 #050403;
+}
+
+/* The display cut, shared by both apps. */
+.display,
+.serif {
+	font-family: var(--font-display);
+	font-stretch: var(--display-stretch);
+	font-weight: var(--display-weight);
+	letter-spacing: -0.005em;
+	text-transform: uppercase;
+	line-height: 0.92;
+}
+.display em,
+.serif em {
+	font-style: normal;
+	color: var(--miso);
+}

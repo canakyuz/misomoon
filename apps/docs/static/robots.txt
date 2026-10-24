@@ -1,0 +1,7 @@
+User-agent: *
+# Search, AI answers and AI training are all allowed (https://contentsignals.org).
+Content-Signal: search=yes, ai-input=yes, ai-train=yes
+Allow: /
+
+# This site's sitemap is served by misomoon.com and lists only this site's pages.
+Sitemap: https://misomoon.com/sitemap-docs.xml

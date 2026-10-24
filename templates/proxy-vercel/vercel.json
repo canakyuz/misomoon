@@ -1,0 +1,8 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "rewrites": [
+    { "source": "/m.js", "destination": "https://app.misomoon.com/m.js" },
+    { "source": "/api/event", "destination": "https://app.misomoon.com/api/event" },
+    { "source": "/overlay.js", "destination": "https://app.misomoon.com/overlay.js" }
+  ]
+}

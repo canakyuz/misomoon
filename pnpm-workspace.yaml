@@ -1,0 +1,10 @@
+packages:
+  - apps/*
+  - packages/*
+onlyBuiltDependencies:
+  - esbuild
+  - workerd
+  - sharp
+# Vite+ ships its own Vite core; point every plugin at it so one Vite runs everywhere.
+overrides:
+  vite: npm:@voidzero-dev/vite-plus-core@1.3.0

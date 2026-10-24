@@ -1,0 +1,30 @@
+{
+  "name": "@misomoon/api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev --port 8787",
+    "build": "pnpm --filter @misomoon/tracker build && wrangler deploy --dry-run --outdir dist",
+    "deploy": "pnpm --filter @misomoon/tracker build && pnpm --filter @misomoon/dashboard build && node --experimental-strip-types scripts/deploy.ts",
+    "bundle": "pnpm --filter @misomoon/tracker build && pnpm --filter @misomoon/dashboard build && node --experimental-strip-types scripts/bundle.ts",
+    "types": "wrangler types",
+    "check": "tsc -p tsconfig.json",
+    "test": "vp test run --passWithNoTests",
+    "db:migrate": "node --experimental-strip-types scripts/migrate.ts",
+    "db:migrate:remote": "node --experimental-strip-types scripts/migrate.ts --remote",
+    "db:seed": "node --experimental-strip-types scripts/seed.ts"
+  },
+  "dependencies": {
+    "@misomoon/core": "workspace:*",
+    "aws4fetch": "1.0.20",
+    "hono": "^4.13.13"
+  },
+  "devDependencies": {
+    "@misomoon/tracker": "workspace:*",
+    "@types/node": "^22.19.0",
+    "typescript": "^5.9.3",
+    "vite-plus": "1.3.0",
+    "wrangler": "^4.152.0"
+  }
+}

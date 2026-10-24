@@ -1,0 +1,20 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "misomoon-landing",
+	"main": ".svelte-kit/cloudflare/_worker.js",
+	"workers_dev": false,
+	"routes": [{ "pattern": "misomoon.com", "custom_domain": true }],
+	"compatibility_date": "2026-10-22",
+	"compatibility_flags": ["nodejs_compat"],
+	"assets": { "binding": "ASSETS", "directory": ".svelte-kit/cloudflare" },
+	// Blog posts and pages (migrations/, docs/content.md). With no database_id, the first
+	// `wrangler deploy` creates the database and writes its id here.
+	"d1_databases": [{ "binding": "CONTENT", "database_name": "misomoon-content", "migrations_dir": "migrations" }],
+	"observability": { "enabled": true, "traces": { "enabled": true } },
+	"vars": {
+		// Where the API Worker (and the dashboard it serves) lives.
+		"PUBLIC_APP_URL": "https://app.misomoon.com",
+		// Where the docs site (apps/docs) lives. Unset, docs links open the Markdown on GitHub.
+		"PUBLIC_DOCS_URL": "https://docs.misomoon.com"
+	}
+}

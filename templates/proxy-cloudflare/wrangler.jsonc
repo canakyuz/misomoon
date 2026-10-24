@@ -1,0 +1,11 @@
+{
+	"name": "misomoon-proxy",
+	"main": "src/index.js",
+	"compatibility_date": "2026-10-22",
+	"vars": {
+		// where misomoon runs; change it if you self-host
+		"MISOMOON_URL": "https://app.misomoon.com"
+	}
+	// After deploying, add a custom domain such as stats.example.com under
+	// Settings → Domains & Routes, or a route like example.com/relay/*.
+}

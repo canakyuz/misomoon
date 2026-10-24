@@ -1,0 +1,8 @@
+{
+	"features": { "networking": true },
+	"steps": [
+		{ "step": "installPlugin", "pluginData": { "resource": "wordpress.org/plugins", "slug": "woocommerce" } },
+		{ "step": "activatePlugin", "pluginPath": "misomoon/misomoon.php" },
+		{ "step": "runPHP", "code": "<?php require '/wordpress/wp-load.php'; update_option('misomoon_settings', array('host' => 'http://misomoon.invalid', 'site' => 'shop-com', 'exclude' => true, 'proxy' => true, 'hash' => false, 'woo' => true, 'secret' => 'whsec_test')); update_option('permalink_structure', '/%postname%/'); flush_rewrite_rules();" }
+	]
+}

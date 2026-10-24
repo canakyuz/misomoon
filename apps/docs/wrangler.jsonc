@@ -1,0 +1,9 @@
+{
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "misomoon-docs",
+	"workers_dev": false,
+	"routes": [{ "pattern": "docs.misomoon.com", "custom_domain": true }],
+	"compatibility_date": "2026-10-22",
+	// prerendered pages only: no Worker code runs
+	"assets": { "directory": "build", "html_handling": "drop-trailing-slash", "not_found_handling": "404-page" }
+}

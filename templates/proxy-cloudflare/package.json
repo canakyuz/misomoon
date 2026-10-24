@@ -1,0 +1,19 @@
+{
+  "name": "misomoon-proxy",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler deploy"
+  },
+  "devDependencies": {
+    "wrangler": "^4.152.0"
+  },
+  "cloudflare": {
+    "label": "misomoon proxy",
+    "products": ["Workers"],
+    "categories": ["analytics"],
+    "bindings": {
+      "MISOMOON_URL": { "description": "Where misomoon runs. Keep the default unless you self-host." }
+    }
+  }
+}

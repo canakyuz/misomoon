@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.build.json",
+  "compilerOptions": {
+    "module": "CommonJS",
+    "moduleResolution": "Node10",
+    "verbatimModuleSyntax": false,
+    // the ESM build type-checks these same files; Node10 resolution can't see the
+    // types react-native publishes through package exports, so this pass only emits
+    "noCheck": true,
+    "outDir": "dist/cjs"
+  }
+}

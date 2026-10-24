@@ -1,0 +1,42 @@
+name: Bug report
+description: Something does not work as the docs say.
+labels: [bug]
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What did you do, what did you expect, and what happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Settings
+        2. Add a goal for /thank-you
+        3. The goal shows 0 visitors
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The release tag or commit you run.
+      placeholder: v0.1.0 or 7e1e5c5
+  - type: dropdown
+    id: where
+    attributes:
+      label: Where it runs
+      options:
+        - Deployed to Cloudflare
+        - Locally with wrangler dev
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or errors
+      description: Browser console output, `wrangler tail` output, or the API response. Remove API keys and other secrets first.
+      render: text

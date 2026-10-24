@@ -1,0 +1,330 @@
+@import '@misomoon/brand/tokens.css';
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+html {
+	-webkit-text-size-adjust: 100%;
+	text-rendering: optimizeLegibility;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+}
+
+body {
+	margin: 0;
+	min-height: 100dvh;
+	font-family: var(--font-sans);
+	font-size: 14px;
+	line-height: 1.45;
+	color: var(--text);
+	background: var(--bg);
+}
+
+button,
+input,
+select,
+textarea {
+	font: inherit;
+	color: inherit;
+}
+
+button {
+	cursor: pointer;
+	background: none;
+	border: 0;
+	padding: 0;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+:focus-visible {
+	outline: none;
+	box-shadow: var(--focus);
+	border-radius: var(--radius-sm);
+}
+
+::selection {
+	background: var(--miso-soft);
+	color: var(--text);
+}
+
+.num {
+	font-variant-numeric: tabular-nums;
+	letter-spacing: -0.01em;
+}
+
+
+.mono {
+	font-family: var(--font-mono);
+	font-stretch: 87.5%;
+}
+
+.muted {
+	color: var(--text-3);
+}
+
+.card {
+	background: var(--surface);
+	border: 1.5px solid var(--edge);
+	border-radius: var(--radius-lg);
+	box-shadow: var(--shadow);
+}
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	border-radius: var(--radius-sm);
+	border: 1.5px solid var(--edge);
+	background: var(--surface);
+	color: var(--text);
+	font-size: 13px;
+	font-weight: 600;
+	box-shadow: var(--shadow-sm);
+	white-space: nowrap;
+	transition:
+		background var(--dur-fast),
+		border-color var(--dur-fast),
+		transform var(--dur-fast);
+}
+.btn:hover {
+	background: var(--surface-3);
+}
+.btn:active {
+	transform: translate(2px, 2px);
+	box-shadow: none;
+}
+.btn.ghost {
+	background: transparent;
+	border-color: transparent;
+	box-shadow: none;
+	color: var(--text-2);
+}
+.btn.ghost:hover {
+	background: var(--surface-hover);
+	color: var(--text);
+}
+.btn.primary {
+	background: var(--vermilion);
+	color: var(--on-vermilion);
+}
+.btn.primary:hover {
+	background: var(--miso-strong);
+	color: var(--on-vermilion);
+}
+.btn.icon {
+	width: 32px;
+	padding: 0;
+	justify-content: center;
+}
+.btn.on {
+	background: var(--miso-soft);
+	color: var(--text);
+}
+/* A row of choices that reads as one control: same height, border and
+   shadow as .btn, so every control in a toolbar matches. */
+.group {
+	display: inline-flex;
+	align-items: stretch;
+	height: 32px;
+	border: 1.5px solid var(--edge);
+	border-radius: var(--radius-sm);
+	background: var(--surface);
+	box-shadow: var(--shadow-sm);
+	overflow: hidden;
+	white-space: nowrap;
+}
+.group > button,
+.group > .lead {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 11px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--text-2);
+}
+.group > * + * {
+	border-left: 1px solid var(--line-strong);
+}
+.group > .lead {
+	color: var(--text-3);
+	font-weight: 500;
+}
+.group > button:hover {
+	background: var(--surface-3);
+	color: var(--text);
+}
+.group > button.on {
+	background: var(--vermilion);
+	color: var(--on-vermilion);
+}
+/* a segmented control clips what's outside it, so its focus ring is drawn inside the choice */
+.group > button:focus-visible {
+	box-shadow:
+		inset 0 0 0 2px var(--cobalt),
+		inset 0 0 0 3.5px var(--surface);
+	border-radius: 0;
+}
+/* Tabs inside a card: printed chips that wrap in narrow columns. The chosen one is
+   printed in vermilion and lifted, like .group's selected choice. */
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+.chips > button {
+	height: 24px;
+	padding: 0 9px;
+	border: 1.5px solid var(--line-strong);
+	border-radius: var(--radius-sm);
+	background: var(--surface);
+	font-size: 11.5px;
+	font-weight: 500;
+	color: var(--text-3);
+	white-space: nowrap;
+	transition:
+		background var(--dur-fast),
+		color var(--dur-fast);
+}
+.chips > button:hover {
+	background: var(--surface-3);
+	color: var(--text);
+}
+.chips > button.on {
+	border-color: var(--edge);
+	background: var(--vermilion);
+	color: var(--on-vermilion);
+	font-weight: 600;
+	box-shadow: var(--shadow-sm);
+}
+.group.sm {
+	height: 26px;
+	box-shadow: none;
+}
+.group.sm > button {
+	padding: 0 9px;
+	font-size: 12px;
+	text-transform: capitalize;
+}
+.btn:disabled,
+.btn.primary:disabled {
+	/* unprinted: a dashed outline, no ink fill, no shadow */
+	color: var(--text-4);
+	background: var(--surface-2);
+	border-style: dashed;
+	border-color: var(--line-strong);
+	box-shadow: none;
+	cursor: default;
+	transform: none;
+}
+
+.input {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: var(--radius-sm);
+	border: 1.5px solid var(--line-strong);
+	background: var(--surface);
+	outline: none;
+	transition: border-color var(--dur-fast), box-shadow var(--dur-fast);
+}
+.input:focus {
+	border-color: var(--edge);
+	box-shadow: var(--shadow-sm);
+}
+.input::placeholder {
+	color: var(--text-4);
+}
+
+/* Icons are drawn like the rest of the print: square ends, sharp corners. */
+.lucide-icon {
+	stroke-linecap: square;
+	stroke-linejoin: miter;
+	/* a slightly off-register vermilion pass, like a two-colour riso print */
+	filter: drop-shadow(1.25px 1.25px 0 color-mix(in oklab, var(--miso) 50%, transparent));
+}
+.btn.primary .lucide-icon {
+	filter: none;
+}
+
+/* Printed fills for charts: halftone dots and hatching instead of gradients. Row text
+   sits on the dots, so they stay faint enough to read through. */
+:root {
+	--dots-ink: 16%;
+	--dots-dense-ink: 28%;
+	--dots: radial-gradient(circle, color-mix(in oklab, var(--miso) var(--dots-ink), transparent) 1px, transparent 1.35px) 0 0 / 4px 4px;
+	--dots-dense: radial-gradient(circle, color-mix(in oklab, var(--miso) var(--dots-dense-ink), transparent) 1.2px, transparent 1.55px) 0 0 / 4px 4px;
+	--hatch: repeating-linear-gradient(135deg, currentColor 0 1.5px, transparent 1.5px 5px);
+}
+:root[data-theme='dark'] {
+	--dots-ink: 24%;
+	--dots-dense-ink: 40%;
+}
+/* a list row's bar: halftone with a vermilion baseline, kept under the text so it never crosses a label */
+.paper-bar {
+	position: absolute;
+	inset: 0 auto 0 0;
+	z-index: -1;
+	background: var(--dots);
+	box-shadow: inset 0 -2px 0 var(--miso);
+	transition: width var(--dur-slow) var(--ease-out);
+}
+
+.kbd {
+	display: inline-grid;
+	place-items: center;
+	min-width: 18px;
+	height: 18px;
+	padding: 0 4px;
+	border-radius: var(--radius-xs);
+	border: 1.5px solid var(--line-strong);
+	background: var(--surface);
+	color: var(--text-2);
+	font-family: var(--font-mono);
+	font-size: 10.5px;
+	line-height: 1;
+}
+
+/* a block, so a span skeleton keeps its height in any parent */
+.skeleton {
+	display: block;
+	position: relative;
+	overflow: hidden;
+	background: var(--surface-3);
+	border-radius: var(--radius-sm);
+}
+.skeleton {
+	animation: pulse 1.4s ease-in-out infinite;
+}
+@keyframes pulse {
+	50% {
+		opacity: 0.5;
+	}
+}
+@media (prefers-reduced-motion: reduce) {
+	.skeleton {
+		animation: none;
+	}
+}
+
+.scroll-thin {
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		transition-duration: 0.01ms !important;
+	}
+}

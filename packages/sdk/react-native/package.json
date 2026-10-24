@@ -1,0 +1,6 @@
+{
+  "//": "For bundlers that ignore package exports (Metro before 0.79): @misomoon/sdk/react-native resolves here.",
+  "main": "../dist/cjs/react-native.js",
+  "module": "../dist/esm/react-native.js",
+  "types": "../dist/cjs/react-native.d.ts"
+}
