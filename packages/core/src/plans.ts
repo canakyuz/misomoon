@@ -52,7 +52,7 @@ export function teamPlan(id: string | null | undefined): Plan {
 
 // ---------------------------------------------------------------- enforcement
 
-/** Where a team asks for a plan or a change of plan. Paid plans are set up by email. */
+/** Where a team asks about more than any plan includes. Plans are chosen and paid for in Settings > Team. */
 export const SUPPORT_EMAIL = 'support@misomoon.com'
 
 /** The `code` of the API's 403 for a team at its plan's site limit, and for a retention_days longer than its plan keeps. */
@@ -147,14 +147,18 @@ const sitesText = (n: number) => (n === 1 ? '1 site' : `${n.toLocaleString('en')
 export function siteLimitMessage(plan: Plan, moving = false): string {
 	const more = PLANS.some((p) => p.sites === null || p.sites > (plan.sites ?? Infinity))
 	const team = moving ? 'The team you picked' : 'This team'
-	const upgrade = more ? ` To ${moving ? 'move this site there' : 'add another site'}, email ${SUPPORT_EMAIL} to upgrade.` : ` No plan includes more; email ${SUPPORT_EMAIL} to talk about it.`
+	const upgrade = more
+		? moving
+			? " To move this site there, choose a bigger plan in that team's Settings > Team."
+			: ' To add another site, choose a bigger plan in Settings > Team.'
+		: ` No plan includes more; email ${SUPPORT_EMAIL} to talk about it.`
 	return `${team} is on the ${plan.name} plan, which includes ${sitesText(plan.sites ?? 0)}.${upgrade}`
 }
 
 /** The API's message for a retention_days longer than the team's plan keeps. */
 export function retentionLimitMessage(plan: Plan): string {
 	const more = PLANS.some((p) => p.retentionDays > plan.retentionDays)
-	const upgrade = more ? ` To keep them longer, email ${SUPPORT_EMAIL} to upgrade.` : ' No plan keeps them longer.'
+	const upgrade = more ? ' To keep them longer, choose a bigger plan in Settings > Team.' : ' No plan keeps them longer.'
 	return `The ${plan.name} plan keeps stats for up to ${periodText(plan.retentionDays)} (${plan.retentionDays} days).${upgrade}`
 }
 

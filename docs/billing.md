@@ -16,7 +16,9 @@ open site.
 3. Pay in Polar's checkout. Your account's email is filled in, and Polar shows the tax for
    your country and the total before you pay.
 4. Polar sends you back to **Settings** > **Team**, which says **Payment received** until
-   Polar confirms the payment, usually within a minute. The plan's limits then apply.
+   Polar confirms the payment, usually within a minute. The plan's limits then apply. The
+   tracker endpoint keeps what it knows about a team for up to a minute, so a team that
+   had stopped recording starts again within a minute after that.
 
 Prices are in US dollars a month, as on [misomoon.com/pricing](https://misomoon.com/pricing).
 

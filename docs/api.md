@@ -92,7 +92,7 @@ what to do about it.
 
 ```json
 {
-	"error": "This team is on the Starter plan, which includes 1 site. To add another site, email support@misomoon.com to upgrade.",
+	"error": "This team is on the Starter plan, which includes 1 site. To add another site, choose a bigger plan in Settings > Team.",
 	"code": "plan_site_limit"
 }
 ```

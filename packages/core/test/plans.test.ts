@@ -19,7 +19,6 @@ import {
 	roomForSite,
 	siteLimitMessage,
 	storePlanRetention,
-	SUPPORT_EMAIL,
 	teamPlan,
 	teamStopped,
 	TRIAL_DAYS,
@@ -70,18 +69,18 @@ describe('plans', () => {
 })
 
 describe('plan messages', () => {
-	it('names the plan, its site limit, and the support email', () => {
-		expect(siteLimitMessage(starter)).toBe(`This team is on the Starter plan, which includes 1 site. To add another site, email ${SUPPORT_EMAIL} to upgrade.`)
-		expect(siteLimitMessage(starter, true)).toBe(`The team you picked is on the Starter plan, which includes 1 site. To move this site there, email ${SUPPORT_EMAIL} to upgrade.`)
-		expect(SUPPORT_EMAIL).toBe('support@misomoon.com')
+	it('names the plan and its site limit, and points to Settings > Team for a bigger plan', () => {
+		expect(siteLimitMessage(starter)).toBe('This team is on the Starter plan, which includes 1 site. To add another site, choose a bigger plan in Settings > Team.')
+		expect(siteLimitMessage(starter, true)).toBe("The team you picked is on the Starter plan, which includes 1 site. To move this site there, choose a bigger plan in that team's Settings > Team.")
 	})
 
-	it('offers an upgrade for retention only when a plan keeps stats longer', () => {
-		for (const p of PLANS) {
-			const msg = retentionLimitMessage(p)
-			expect(msg.startsWith(`The ${p.name} plan keeps stats for up to ${periodText(p.retentionDays)} (${p.retentionDays} days).`)).toBe(true)
-			expect(msg.includes(SUPPORT_EMAIL)).toBe(p.retentionDays < longest)
-		}
+	it('offers a bigger plan for retention only when one keeps stats longer', () => {
+		const kept = (p: Plan) => `The ${p.name} plan keeps stats for up to ${periodText(p.retentionDays)} (${p.retentionDays} days).`
+		expect(PLANS.map(retentionLimitMessage)).toEqual(
+			PLANS.map((p) => (p.retentionDays < longest ? `${kept(p)} To keep them longer, choose a bigger plan in Settings > Team.` : `${kept(p)} No plan keeps them longer.`)),
+		)
+		// Starter keeps less than the others, so it is the one offered more
+		expect(retentionLimitMessage(starter)).toBe('The Starter plan keeps stats for up to 2 years (730 days). To keep them longer, choose a bigger plan in Settings > Team.')
 	})
 })
 

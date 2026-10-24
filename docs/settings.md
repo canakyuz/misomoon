@@ -154,8 +154,23 @@ it. It shows:
   a line says that recording starts again on the 1st of next month
   ([Go past your monthly events](cloud.md#go-past-your-monthly-events)).
 
-Owners and billing members choose or change the plan in the card
-([Billing](billing.md)). A self-hosted server shows no **Plan** card.
+When the server takes payments, the card lists the three plans with their price, events a
+month, sites, and how long they keep stats. Owners and billing members get one button on
+each plan:
+
+- **Choose** a plan, when the team pays for none. It opens Polar's checkout. Back in the
+  dashboard, the card says **Payment received** until Polar confirms the payment, and the
+  buttons stay off meanwhile.
+- **Switch to** another plan, when the team pays for one. The card asks you to confirm the
+  plan and its price, then changes the subscription. When Polar schedules the switch for
+  the next renewal, the card says on which day the new plan starts.
+- **Keep** the plan, when it is canceled and still running. It stays, and renews.
+
+**Manage billing** opens Polar's customer portal for the card, invoices, and cancelling. It
+shows once the team has paid for a plan. The card also says when the plan renews, when a
+canceled plan ends, and when the last payment failed. Admins see the plans without the
+buttons. [Pay for misomoon Cloud](billing.md) covers each step. A self-hosted server shows
+no **Plan** card.
 
 - To rename the team, edit the name and select **Rename**.
 - To change someone's role, pick it from the menu next to their name. Only an owner can
@@ -200,7 +215,7 @@ To add a site:
    setup guide until the first visit ([The dashboard](dashboard.md)).
 
 On misomoon Cloud, a team on Starter has room for one site. At the limit, the form shows
-the plan, its limit, and support@misomoon.com, and adds nothing
+the plan and its limit, says to choose a bigger plan in **Settings** > **Team**, and adds nothing
 ([Add a site at the site limit](cloud.md#add-a-site-at-the-site-limit)). A team with no
 plan and no trial running can't add a site either. The form says to choose a plan in
 **Settings** > **Team** ([Try it free for 7 days](cloud.md#try-it-free-for-7-days)).

@@ -76,9 +76,9 @@ The first public release.
   database and are written through its content API with `CONTENT_TOKEN`
   ([Publish posts and pages](docs/content.md)).
 - Plans on misomoon Cloud, turned on with `PLANS=on`, which the self-hosted bundle never
-  sets. A team's plan is `teams.plan`, set by support, and NULL is no plan. Adding a
-  site or moving one into a team past the plan's site limit answers `403`
-  `plan_site_limit`, and a `retention_days` past the plan's answers `403`
+  sets. A team's plan is `teams.plan`, set by Polar's subscription webhooks or by support,
+  and NULL is no plan. Adding a site or moving one into a team past the plan's site limit
+  answers `403` `plan_site_limit`, and a `retention_days` past the plan's answers `403`
   `plan_retention_limit`. The cleanup keeps stats for the plan's limit at most. Settings >
   Team shows the plan ([Plans](docs/cloud.md#plans)).
 - One free trial per person on misomoon Cloud, on the first team they create, and a

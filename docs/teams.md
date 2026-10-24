@@ -23,7 +23,7 @@ The API checks the permissions from `packages/core/src/roles.ts` on every reques
 | **Admin** | `read`, `edit`, `manage` | Everything an editor can do. Manage members other than owners, manage guests, delete sites, and rename the team. |
 | **Editor** | `read`, `edit` | Everything a viewer can do. Change goals, funnels, saved filters, imports, shared links, email reports, annotations, the proxy, and site details. Add sites to the team. |
 | **Viewer** | `read` | See stats and saved reports. Save personal saved filters. |
-| **Billing** | `billing` | No stats and no settings. Opening a site shows **Billing access**. On misomoon Cloud, **Settings** > **Team** shows them the team's plan. No API route checks `billing`. |
+| **Billing** | `billing` | No stats and no settings. Opening a site shows **Billing access**. On misomoon Cloud, **Settings** > **Team** shows them the team's plan, and they choose, switch, and pay for it ([Pay for misomoon Cloud](billing.md)). The checkout and billing portal routes check `billing`. |
 
 A guest holds one of two roles on a single site:
 

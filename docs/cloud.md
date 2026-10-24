@@ -50,10 +50,11 @@ events than Scale includes, email [support@misomoon.com](mailto:support@misomoon
 ### Add a site at the site limit
 
 A team that has all the sites its plan includes can't add another site, or take one in
-from another team. The dashboard shows which plan the team is on, how many sites it
-includes, and the support address. The API answers `403` with the code `plan_site_limit`
-([Errors](api.md#errors)). To make room, delete a site, move one to another team, or email
-support to upgrade. Sites you are a guest on belong to another team and don't count.
+from another team. The dashboard shows which plan the team is on and how many sites it
+includes. The API answers `403` with the code `plan_site_limit` ([Errors](api.md#errors)).
+To make room, delete a site, move one to another team, or choose a bigger plan in
+**Settings** > **Team** ([Pay for misomoon Cloud](billing.md)). Sites you are a guest on
+belong to another team and don't count.
 
 ### Move to a smaller plan
 
@@ -116,11 +117,9 @@ the team has lapsed:
   export them at any time.
 - Payments from your payment provider's webhooks are still recorded.
 
-A plan starts recording again within a minute. Your sites, settings, and the numbers from
-the trial stay.
-
-To pick a plan, email [support@misomoon.com](mailto:support@misomoon.com) with your
-account email and the plan you want ([Pick or change a plan](#pick-or-change-a-plan)).
+To pick a plan, open **Settings** > **Team** and choose one in the **Plan** card
+([Pick or change a plan](#pick-or-change-a-plan)). A plan starts recording again within a
+minute. Your sites, settings, and the numbers from the trial stay.
 
 ## Where your data lives
 

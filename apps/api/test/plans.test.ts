@@ -59,13 +59,13 @@ afterEach(() => {
 })
 
 describe('the site limit', () => {
-	it('lets a Starter team add sites up to its limit and refuses the next with the plan, the code, and the support email', async () => {
+	it('lets a Starter team add sites up to its limit and refuses the next with the plan, the code, and where to pick a bigger one', async () => {
 		const env = cloudEnv()
 		setPlan(env, 't1', 'starter')
 		for (let i = 0; i < starter.sites!; i++) expect((await addSite(env, `site${i}.com`)).status).toBe(201)
 		const over = await addSite(env, 'one-more.com')
 		expect(over).toEqual({ status: 403, body: { error: siteLimitMessage(starter), code: PLAN_SITE_LIMIT } })
-		expect(over.body.error).toContain('support@misomoon.com')
+		expect(over.body.error).toContain('choose a bigger plan in Settings > Team')
 		expect(teamSites(env, 't1')).toHaveLength(starter.sites!)
 		// naming the team is refused the same way as leaving it out
 		expect((await addSite(env, 'again.com', 't1')).body.code).toBe(PLAN_SITE_LIMIT)
