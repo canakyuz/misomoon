@@ -56,6 +56,10 @@ describe('reading the URL (F30)', () => {
 		expect(readUrlState('?period=bogus&metric=foo&view=nope')).toMatchObject({ period: '30d', metric: 'visitors', view: 'overview' })
 	})
 
+	it('falls back to People for a metric the chart has no tile for', () => {
+		expect(readUrlState('?metric=events').metric).toBe('visitors')
+	})
+
 	it('keeps a valid custom range', () => {
 		expect(readUrlState('?period=custom&from=2026-01-01&to=2026-01-31')).toMatchObject({ period: 'custom', from: '2026-01-01', to: '2026-01-31' })
 	})

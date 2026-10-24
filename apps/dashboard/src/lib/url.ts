@@ -1,7 +1,7 @@
 import { MAX_FILTERS, MAX_TOTAL_VALUES, MAX_VALUES } from '@misomoon/core/filters'
 
 export type View = 'overview' | 'realtime' | 'funnels' | 'journeys' | 'behavior' | 'vitals' | 'settings'
-export type MetricKey = 'visitors' | 'visits' | 'pageviews' | 'views_per_visit' | 'bounce_rate' | 'visit_duration' | 'events' | 'revenue'
+export type MetricKey = 'visitors' | 'visits' | 'pageviews' | 'views_per_visit' | 'bounce_rate' | 'visit_duration' | 'revenue'
 export type FilterOp = '==' | '!=' | '~' | '!~'
 
 export interface Filter {
@@ -27,7 +27,7 @@ export const PERIODS = [
 ] as const
 
 export const VIEWS: View[] = ['overview', 'realtime', 'funnels', 'journeys', 'behavior', 'vitals', 'settings']
-const METRIC_KEYS: MetricKey[] = ['visitors', 'visits', 'pageviews', 'views_per_visit', 'bounce_rate', 'visit_duration', 'events', 'revenue']
+const METRIC_KEYS: MetricKey[] = ['visitors', 'visits', 'pageviews', 'views_per_visit', 'bounce_rate', 'visit_duration', 'revenue']
 const OPS: FilterOp[] = ['!=', '==', '!~', '~']
 const DAY = 86_400_000
 /** The server's limit for a custom range (core resolvePeriod). */
