@@ -7,6 +7,7 @@
 	import { get, type Journey } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
 	import { num, pct } from '../lib/format'
+	import { journeyUrls } from '../lib/journeys'
 
 	const dash = getDash()
 	let direction = $state<'forward' | 'backward'>('forward')
@@ -18,26 +19,11 @@
 	let shown = new Map<string, Journey>()
 
 	const END = new Set(['(exit)', '(entrance)'])
-	// The API wants pages in visit order; picking backward prepends.
-	const pathFor = (k: number) => {
-		const chosen = picked.slice(0, k)
-		return direction === 'forward' ? chosen : [...chosen].reverse()
-	}
 
 	$effect(() => {
-		const params = dash.params
-		const dir = direction
-		const count = picked.length + 1
-		void dash.tick
+		const urls = journeyUrls(dash.params, direction, picked, dash.tick)
 		error = null
 		let stale = false
-		const urls = Array.from({ length: count }, (_, k) => {
-			const q = new URLSearchParams(params)
-			q.set('direction', dir)
-			const path = pathFor(k)
-			if (path.length) q.set('path', path.join(','))
-			return `/api/v1/stats/journeys?${q}`
-		})
 		// keep the columns whose question didn't change while the rest load
 		const prev = shown
 		columns = urls.map((u) => prev.get(u) ?? null)
@@ -110,7 +96,9 @@
 					<button class="close" onclick={() => drop(k - 1)} aria-label="Remove {picked[k - 1]}{k < picked.length ? ' and the steps after it' : ''}" title={k < picked.length ? 'Remove this step and the ones after it' : 'Remove this step'}><X size={14} /></button>
 				{/if}
 			</header>
-			{#if !col}
+			{#if !col && error}
+				<p class="muted empty">This step didn't load.</p>
+			{:else if !col}
 				{#each Array(5) as _, i (i)}<div class="row sk"><span class="skeleton" style="width: {85 - i * 12}%; height: 14px"></span></div>{/each}
 			{:else if !col.steps.length}
 				<p class="muted empty">Nobody went further in this period.</p>
