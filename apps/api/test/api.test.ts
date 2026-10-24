@@ -475,6 +475,55 @@ describe('page interactions', () => {
 	})
 })
 
+describe('shared links', () => {
+	const send = async (env: FakeEnv, path: string) => {
+		const { ctx } = await call(env, 'POST', '/api/event', { s: 'shop-com', n: 'pageview', u: `https://shop.com${path}` }, { 'user-agent': UA, 'cf-connecting-ip': '198.51.100.7' })
+		await ctx.settle()
+	}
+	const segment = async (env: FakeEnv, body: Record<string, unknown>, site = 'shop-com') => (await (await call(env, 'POST', `/api/v1/sites/${site}/segments`, body, ADMIN)).json()).id as string
+	/** a link limited to /pricing, unlocked, with its read-only session */
+	async function pricingLink() {
+		const env = fakeEnv()
+		await site(env, { domain: 'shop.com' })
+		await send(env, '/pricing')
+		await send(env, '/admin')
+		const seg = await segment(env, { name: 'Pricing', filters: 'page==/pricing' })
+		const { slug } = await (await call(env, 'POST', '/api/v1/sites/shop-com/shared', { name: 'Client', segment_id: seg }, ADMIN)).json()
+		const { token } = await (await call(env, 'POST', `/api/v1/share/${slug}`, {})).json()
+		const viewer = { authorization: `Bearer ${token}` }
+		const pageviews = async () => (await (await call(env, 'GET', '/api/v1/stats/aggregate?site=shop-com&period=today', undefined, viewer)).json()).current.pageviews
+		return { env, seg, slug, viewer, pageviews }
+	}
+
+	it("applies the link's segment to a page interaction report for another page", async () => {
+		const { env, viewer, pageviews } = await pricingLink()
+		expect(await pageviews()).toBe(1)
+		const r = await (await call(env, 'GET', '/api/v1/stats/behavior?site=shop-com&period=today&report=clicks&page=/admin', undefined, viewer)).json()
+		expect(r.pageviews).toBe(0)
+	})
+
+	it('refuses to delete a segment a link is limited to, which would open the link to the whole site', async () => {
+		const { env, seg, slug, pageviews } = await pricingLink()
+		const del = await call(env, 'DELETE', `/api/v1/sites/shop-com/segments/${seg}`, undefined, ADMIN)
+		expect([del.res.status, (await del.json()).error]).toEqual([409, 'the shared link "Client" shows only this segment; delete the link first'])
+		expect(await pageviews()).toBe(1)
+		expect((await call(env, 'DELETE', `/api/v1/sites/shop-com/shared/${slug}`, undefined, ADMIN)).res.status).toBe(204)
+		expect((await call(env, 'DELETE', `/api/v1/sites/shop-com/segments/${seg}`, undefined, ADMIN)).res.status).toBe(204)
+	})
+
+	it("limits a link only to a segment of its own site that every editor sees, not another site's or a personal one", async () => {
+		const env = fakeEnv()
+		await site(env, { domain: 'shop.com' })
+		await site(env, { domain: 'blog.com' })
+		const other = await segment(env, { name: 'Posts', filters: 'page==/posts' }, 'blog-com')
+		const personal = await segment(env, { name: 'Mine', filters: 'page==/pricing', personal: true })
+		for (const segment_id of [other, personal, 'missing']) {
+			const r = await call(env, 'POST', '/api/v1/sites/shop-com/shared', { segment_id }, ADMIN)
+			expect([r.res.status, (await r.json()).error]).toEqual([400, 'segment_id must be a saved filter of this site that the whole team sees'])
+		}
+	})
+})
+
 describe('shards', () => {
 	it.each(['draining', 'readonly'])('moves a site off a %s shard from tomorrow, not from the day of a late event (F4, F27)', async (status) => {
 		vi.useFakeTimers({ toFake: ['Date'] })

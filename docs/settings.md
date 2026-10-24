@@ -64,7 +64,8 @@ To create a read-only dashboard at `/share/<slug>`, use **Shared links**:
 
 1. Type a name. Without one, the link is named **Shared link**.
 2. Optionally, type a password.
-3. Pick a **Saved filter** to limit the link to, or keep **All traffic**.
+3. Pick a **Saved filter** to limit the link to, or keep **All traffic**. The list holds
+   the saved filters everyone on the site sees, not your own.
 4. Pick when it **Expires**: **Never expires**, **7 days**, **30 days**, **90 days**, or
    **1 year**.
 5. Select **Create link**.

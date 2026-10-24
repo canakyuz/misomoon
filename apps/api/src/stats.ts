@@ -70,6 +70,8 @@ interface Prepared {
 	scope: Scope
 	/** the scope conversion rates divide by: no goal, event or property filters */
 	totalScope: Scope
+	/** dimensions a shared link's segment sets, which a request can't replace */
+	forced: Set<string>
 	window: Window
 	interval: Interval
 	compare: boolean
@@ -112,16 +114,15 @@ export async function prepare(env: Env, who: Principal, input: StatsInput): Prom
 	const interval = (INTERVALS as string[]).includes(input.interval ?? '') ? (input.interval as Interval) : period.interval
 	let parsed = parseFilters(input.filters)
 	// A shared link limited to a segment always applies the segment's filters.
-	if (who.share?.filters) {
-		const forced = parseFilters(who.share.filters)
-		parsed = [...forced, ...parsed.filter((f) => !forced.some((g) => g.dim === f.dim))]
-	}
+	const forced = who.share?.filters ? parseFilters(who.share.filters) : []
+	if (forced.length) parsed = [...forced, ...parsed.filter((f) => !forced.some((g) => g.dim === f.dim))]
 	const filters = await resolveGoalFilters(env, site.id, parsed)
 	const scope = { siteId: site.id, filters, tz: zone, currency: site.currency, imported: input.imported !== '0' && input.imported !== false }
 	return {
 		site,
 		scope,
 		totalScope: { ...scope, filters: parsed.filter((f) => f.dim !== 'goal' && f.dim !== 'event' && !f.dim.startsWith('prop:')) },
+		forced: new Set(forced.map((f) => f.dim)),
 		window: { from: period.from, to: period.to },
 		interval,
 		compare: input.compare === true || input.compare === 'true' || input.compare === '1' || input.compare === 'previous' || input.compare === 'year',
@@ -349,13 +350,15 @@ export type BehaviorReport = (typeof BEHAVIOR_REPORTS)[number]
 
 /**
  * One page interaction report. `page` narrows it to one path (`*` wildcards allowed),
- * replacing any page filter, which is what the click and scroll maps need.
+ * replacing any page filter but a shared link's, which is what the click and scroll maps need.
  */
 export async function behaviorStats(env: Env, who: Principal, report: string, input: StatsInput & { page?: string }) {
 	if (!(BEHAVIOR_REPORTS as readonly string[]).includes(report)) throw new HttpError(400, `unknown report: ${report}; use one of ${BEHAVIOR_REPORTS.join(', ')}`)
 	if (input.page != null && (typeof input.page !== 'string' || /[;|]/.test(input.page))) throw new HttpError(400, 'page must be one path')
 	const p = await prepare(env, who, input)
-	const scope = input.page ? { ...p.scope, filters: [...p.scope.filters.filter((f) => f.dim !== 'page'), { dim: 'page', op: '==' as const, values: [normalizePath(input.page)] }] } : p.scope
+	// a shared link's page filter stays, so the page narrows it instead
+	const replace = (f: Filter) => f.dim === 'page' && !p.forced.has('page')
+	const scope = input.page ? { ...p.scope, filters: [...p.scope.filters.filter((f) => !replace(f)), { dim: 'page', op: '==' as const, values: [normalizePath(input.page)] }] } : p.scope
 	const targets = await p.targets(p.window)
 	const limit = Number(input.limit) || undefined
 	const head = { site: p.site.id, window: p.window, report, ...(input.page ? { page: input.page } : {}) }

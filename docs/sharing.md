@@ -64,8 +64,10 @@ Every field is optional:
 
 - `name` is the label for the link.
 - `password` locks the link. misomoon stores only a salted hash of it.
-- `segment_id` is the `id` of a saved filter from `GET /api/v1/sites/:id/segments`. The
-  API calls saved filters segments.
+- `segment_id` is the `id` of a saved filter from `GET /api/v1/sites/:id/segments` that
+  everyone on the site sees (`personal` is `0`). The API calls saved filters segments.
+  Every query through the link applies it, the page interaction reports too. While a link
+  uses it, the saved filter can't be deleted.
 - `expires_days` is the number of days until the link stops working, at most 3650. Leave
   it out for a link that never expires.
 

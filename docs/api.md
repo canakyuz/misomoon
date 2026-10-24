@@ -382,7 +382,7 @@ so a viewer can save one.
 | --- | --- | --- |
 | `GET /api/v1/sites/:id/segments` | Viewer | Lists the site's segments and your personal ones, by name: `id`, `name`, `filters`, `personal` (`0` or `1`). |
 | `POST /api/v1/sites/:id/segments` | Editor, or Viewer with a session for a personal segment | Saves a segment. Takes `name` (required, cut to 80 characters), `filters` (required), and `personal` (`true` for a personal segment). A name the same owner already has gets the new filters and keeps its id. Returns `201` with `id`, `name`, `filters`, and `personal`. |
-| `DELETE /api/v1/sites/:id/segments/:segment` | Editor for a site segment, the author for a personal one | Deletes a segment. Returns `204`, also when it doesn't exist. |
+| `DELETE /api/v1/sites/:id/segments/:segment` | Editor for a site segment, the author for a personal one | Deletes a segment. Returns `204`, also when it doesn't exist, and `409` while a shared link is limited to it. |
 
 ### Annotations
 
@@ -409,7 +409,7 @@ A shared link opens a read-only dashboard of one site.
 | Method and path | Role | What it does |
 | --- | --- | --- |
 | `GET /api/v1/sites/:id/shared` | Editor | Lists the links: `slug`, `name`, `protected`, `segment_id`, `expires_at`, `created_at`. |
-| `POST /api/v1/sites/:id/shared` | Editor | Makes a link. Takes `name` (cut to 80 characters, default `Shared link`), `password`, `segment_id` (a segment applied to every query through the link), and `expires_days` (at most 3650, or no expiry). Returns `201` with `slug`, `name`, `protected`, `segment_id`, and `expires_at`. |
+| `POST /api/v1/sites/:id/shared` | Editor | Makes a link. Takes `name` (cut to 80 characters, default `Shared link`), `password`, `segment_id` (a site segment, not a personal one, applied to every query through the link; `400` for any other id), and `expires_days` (at most 3650, or no expiry). Returns `201` with `slug`, `name`, `protected`, `segment_id`, and `expires_at`. |
 | `DELETE /api/v1/sites/:id/shared/:slug` | Editor | Deletes a link. Returns `204`. |
 | `GET /api/v1/share/:slug` | Public | `{"name": ..., "protected": true}`, so the page knows to ask for a password. `404` for a link that expired or was removed. |
 | `POST /api/v1/share/:slug` | Public | Trades the link and its `password`, if it has one, for a `sh_` token: `{"token": ..., "site": ..., "name": ..., "expires_at": ...}`. A wrong password returns `401`. |

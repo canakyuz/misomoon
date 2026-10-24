@@ -369,6 +369,9 @@ app.delete('/api/v1/sites/:id/segments/:segment', async (c) => {
 		await authorize(c.env, who, c.req.param('id'))
 		if (seg.user_id !== who.userId) throw new HttpError(403, 'this is someone else’s segment')
 	} else await authorize(c.env, who, c.req.param('id'), 'edit')
+	// shared_links.segment_id is ON DELETE SET NULL: the link would show the whole site
+	const link = await c.env.CONTROL.prepare('SELECT name FROM shared_links WHERE segment_id = ? LIMIT 1').bind(c.req.param('segment')).first<{ name: string }>()
+	if (link) throw new HttpError(409, `the shared link "${link.name}" shows only this segment; delete the link first`)
 	await c.env.CONTROL.prepare('DELETE FROM segments WHERE id = ?').bind(c.req.param('segment')).run()
 	return c.body(null, 204)
 })
@@ -462,6 +465,9 @@ app.get('/api/v1/sites/:id/shared', async (c) => {
 app.post('/api/v1/sites/:id/shared', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const body = await c.req.json<{ name?: string; password?: string; segment_id?: string | null; expires_days?: number }>()
+	// A personal segment goes when its author does, and the link would then show everything.
+	if (body.segment_id && !(await c.env.CONTROL.prepare('SELECT 1 FROM segments WHERE id = ? AND site_id = ? AND user_id IS NULL').bind(body.segment_id, site.id).first()))
+		throw new HttpError(400, 'segment_id must be a saved filter of this site that the whole team sees')
 	const slug = [...crypto.getRandomValues(new Uint8Array(9))].map((b) => 'abcdefghijkmnpqrstuvwxyz23456789'[b % 32]).join('')
 	const expires = body.expires_days ? Date.now() + Math.min(body.expires_days, 3650) * 86_400_000 : null
 	await c.env.CONTROL.prepare('INSERT INTO shared_links (slug, site_id, name, password_hash, segment_id, expires_at, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)')

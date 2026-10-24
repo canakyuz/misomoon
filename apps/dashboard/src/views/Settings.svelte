@@ -808,7 +808,7 @@
 					<input class="input" type="password" placeholder="Password (optional)" bind:value={newShare.password} />
 				</div>
 				<div class="inline">
-					<Select label="Saved filter" class="grow" bind:value={newShare.segment_id} options={[{ value: '', label: 'All traffic' }, ...(segments.data ?? []).map((s) => ({ value: s.id, label: s.name }))]} />
+					<Select label="Saved filter" class="grow" bind:value={newShare.segment_id} options={[{ value: '', label: 'All traffic' }, ...(segments.data ?? []).filter((s) => !s.personal).map((s) => ({ value: s.id, label: s.name }))]} />
 					<Select
 						label="Expires"
 						bind:value={newShare.expires_days}

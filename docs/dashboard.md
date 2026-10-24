@@ -242,7 +242,8 @@ you are signed in and have set a filter. To apply one, open **Saved filters** an
 its name. To delete one, select the close
 button next to it. You can delete your own. The Owner, Admin, Editor, and Guest editor
 roles can also share saved filters and delete shared ones. A shared link can be limited
-to one saved filter ([Sharing](settings.md#sharing)).
+to one shared saved filter ([Sharing](settings.md#sharing)). While a link uses a saved
+filter, it can't be deleted: delete the link first.
 
 ## Watch visitors live
 
