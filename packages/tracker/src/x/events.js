@@ -13,7 +13,8 @@ window.misomoon.x(function (api) {
 			if (n.indexOf('data-misomoon-prop-') === 0) o.props[n.slice(19)] = v
 			if (n.indexOf('data-misomoon-revenue-') === 0) (o.revenue = o.revenue || {})[n.slice(22)] = v
 		}
-		if (link) o.props.url = link.href
+		// without the query string, which can carry a signed URL's token
+		if (link) o.props.url = link.href.split(/[?#]/)[0]
 		window.misomoon(el.getAttribute('data-misomoon-event'), o)
 	}
 	function click(ev) {

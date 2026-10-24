@@ -51,7 +51,8 @@ sends the event. On a form, the submit sends it.
 <a href="/checkout" data-misomoon-event="Buy" data-misomoon-revenue-amount="19" data-misomoon-revenue-currency="USD">Buy</a>
 ```
 
-Each `data-misomoon-prop-<name>` attribute adds the property `<name>` to the event.
+Each `data-misomoon-prop-<name>` attribute adds the property `<name>` to the event. On a
+link, the event also gets a `url` property: the link's address without its query string.
 `data-misomoon-revenue-amount` and `data-misomoon-revenue-currency` add revenue, as the
 `revenue` option of `misomoon()` does.
 

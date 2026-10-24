@@ -2,7 +2,8 @@
 // as m.js, so it listens from the moment the tracker runs.
 window.misomoon.x(function (api) {
 	var w = window
-	var errors = {}
+	// no prototype: a message such as __proto__ is a key like any other
+	var errors = Object.create(null)
 	var n = 0
 	if ((api.data.disable || '').includes('errors')) return
 	function onError(e) {
@@ -31,7 +32,7 @@ window.misomoon.x(function (api) {
 		if (!p) return
 		var out = []
 		for (var k in errors) out.push(errors[k])
-		errors = {}
+		errors = Object.create(null)
 		n = 0
 		if (out.length) return (p.x = out)
 	})

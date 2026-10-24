@@ -191,6 +191,18 @@ describe('m.js page interactions', () => {
 		expect(t.flush().x).toEqual([['TypeError: x is undefined', 'https://shop.com/app.js?v=2:3:7', 2]])
 	})
 
+	it("reports an error named like a built-in property without touching the page's objects", () => {
+		const t = load('')
+		for (const message of ['__proto__', 'constructor']) t.win.dispatchEvent(new t.win.ErrorEvent('error', { message }) as unknown as Event)
+		const polluted = Object.hasOwn(Object.prototype, 2)
+		delete (Object.prototype as Record<number, unknown>)[2]
+		expect(polluted).toBe(false)
+		expect(t.flush().x).toEqual([
+			['__proto__', '', 1],
+			['constructor', '', 1],
+		])
+	})
+
 	it('sends nothing for clicks or errors that are turned off', () => {
 		const t = load('<button id="go">Go</button>', 'https://shop.com/', { 'data-disable': 'clicks,errors' })
 		t.click('#go')
@@ -214,6 +226,12 @@ describe('m.js links, forms and tagged events', () => {
 		const t = load('<a id="a" href="https://github.com/x" data-misomoon-event="Star" data-misomoon-prop-repo="x">Star</a>')
 		t.click('#a')
 		expect(t.events()).toEqual([['Star', { repo: 'x', url: 'https://github.com/x' }]])
+	})
+
+	it("sends a tagged link's url without its query, which can carry a signed URL's token", () => {
+		const t = load('<a id="a" href="https://cdn.example.com/x.pdf?X-Amz-Signature=abc#p2" data-misomoon-event="Brochure">Get it</a>')
+		t.click('#a')
+		expect(t.events()).toEqual([['Brochure', { url: 'https://cdn.example.com/x.pdf' }]])
 	})
 
 	it('counts a tagged form on submit, unless it is ignored', () => {

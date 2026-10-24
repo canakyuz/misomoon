@@ -119,8 +119,11 @@ visitor from headers (`edgeFromRequest` in `packages/core/src/proxy.ts`):
 | Vercel, Next.js on Vercel, Netlify, SvelteKit on Cloudflare | what the platform forwards |
 | Nginx, Caddy, other self-hosted | unknown, unless you add `x-misomoon-country` (e.g. from the GeoIP2 module or `CF-IPCountry` when Cloudflare sits in front) |
 
-Anyone can send these headers, which only lets them misreport their own visit; the
-same is true of any beacon, and the site's hostname check still applies.
+Anyone can send these headers. A script that sends them picks the address and the
+location of each beacon and skips Cloudflare's bot score, so one machine can count as
+many visitors. The user-agent check, the site's hostname check, and the site's daily
+event cap still apply. Without the headers, the same script could fake beacons from
+many addresses, as with any analytics endpoint that a browser can reach.
 
 The Worker, SvelteKit, Nginx and Caddy snippets drop the site's cookies on the way
 through. Platform rewrites (Next.js, Vercel, Netlify) forward them; misomoon never reads
