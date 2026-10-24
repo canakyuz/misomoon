@@ -100,8 +100,6 @@ export interface FakeEnv {
 	CF_API_TOKEN?: string
 	CF_ZONE_ID?: string
 	INGEST_DAILY_CAP?: string
-	RESEND_API_KEY?: string
-	REPORT_FROM?: string
 	EMAIL_FROM?: string
 	EMAIL_PROVIDER?: string
 	EMAIL?: { send: (message: unknown) => Promise<{ messageId: string }> }

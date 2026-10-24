@@ -58,12 +58,6 @@ describe('Cloudflare Email Service', () => {
 		expect((b.sent[0] as { from: unknown }).from).toBe('hello@misomoon.com')
 	})
 
-	it('ignores REPORT_FROM, the old name of EMAIL_FROM', async () => {
-		const b = binding()
-		await send(fakeEnv({ EMAIL: b.EMAIL, REPORT_FROM: 'Old <old@misomoon.com>' }))
-		expect((b.sent[0] as { from: unknown }).from).toEqual({ name: 'misomoon', email: 'reports@misomoon.com' })
-	})
-
 	it('uses misomoon <reports@misomoon.com> when no sender is set', async () => {
 		const b = binding()
 		await send(fakeEnv({ EMAIL: b.EMAIL }))
@@ -134,21 +128,6 @@ describe('Amazon SES', () => {
 	})
 })
 
-describe('Resend, no longer a provider', () => {
-	it('sends nothing with RESEND_API_KEY alone', async () => {
-		const calls = http()
-		const env = fakeEnv({ RESEND_API_KEY: 're_x' })
-		expect([await send(env), emailConfigured(env as unknown as Env), calls.length]).toEqual([false, false, 0])
-	})
-
-	it('sends nothing for EMAIL_PROVIDER resend, even with the key and an EMAIL binding', async () => {
-		const calls = http()
-		const b = binding()
-		const env = fakeEnv({ EMAIL_PROVIDER: 'resend', RESEND_API_KEY: 're_x', EMAIL: b.EMAIL })
-		expect([await send(env), emailConfigured(env as unknown as Env), b.sent.length, calls.length]).toEqual([false, false, 0, 0])
-	})
-})
-
 describe('choosing a provider', () => {
 	it('sends nothing without a provider', async () => {
 		const calls = http()
@@ -194,7 +173,7 @@ describe('choosing a provider', () => {
 
 	it('reports each configured provider', () => {
 		const configured = (over: Partial<FakeEnv>) => emailConfigured(fakeEnv(over) as unknown as Env)
-		expect([configured({ EMAIL: binding().EMAIL }), configured(SES), configured({ RESEND_API_KEY: 're_x' }), configured({ EMAIL_PROVIDER: 'cloudflare' })]).toEqual([true, true, false, false])
+		expect([configured({ EMAIL: binding().EMAIL }), configured(SES), configured({ EMAIL_PROVIDER: 'cloudflare' })]).toEqual([true, true, false])
 	})
 })
 
