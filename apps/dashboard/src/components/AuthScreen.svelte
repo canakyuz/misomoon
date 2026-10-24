@@ -2,6 +2,7 @@
 	import X from '@lucide/svelte/icons/x'
 	import { get, send, setToken, signupLink } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
+	import { otherAccount } from '../lib/invite'
 	import Logo from './Logo.svelte'
 
 	type Mode = 'signin' | 'signup' | 'forgot' | 'reset' | 'invite'
@@ -49,6 +50,23 @@
 	}
 
 	/** Signs in with the token and opens the dashboard at a clean URL. */
+	/** Leaves an invitation or reset link for the dashboard (or the sign-in screen it was on). */
+	function leave() {
+		if (emailLink) history.replaceState(null, '', '/')
+		dash.authOpen = false
+		dash.authLink = null
+	}
+
+	/** Signs out of the account an invitation isn't for, so you can sign in or sign up as the invited email. */
+	async function switchAccount() {
+		await send('POST', '/api/v1/auth/logout').catch(() => {})
+		setToken(null)
+		error = null
+		await dash.load()
+	}
+
+	const wrong = $derived(invite ? otherAccount(invite.email, dash.me) : null)
+
 	async function enter(token: string | undefined, site?: string | null) {
 		if (token) setToken(token)
 		history.replaceState(null, '', site ? `/?site=${encodeURIComponent(site)}` : '/')
@@ -108,9 +126,7 @@
 </script>
 
 <main class="auth">
-	{#if !emailLink}
-		<button class="btn ghost icon close" onclick={() => (dash.authOpen = false)} aria-label="Close"><X size={16} /></button>
-	{/if}
+	<button class="btn ghost icon close" onclick={leave} aria-label="Close"><X size={16} /></button>
 	<section class="card sheet">
 		<Logo size={30} />
 		<span class="kicker">{mode === 'invite' ? 'invitation' : mode === 'signup' ? 'new account' : 'sign in'}</span>
@@ -124,6 +140,9 @@
 				</p>
 				{#if invite.has_account && !dash.signedIn}
 					<button class="btn primary wide" onclick={() => (mode = 'signin')}>Sign in as {invite.email}</button>
+				{:else if wrong}
+					<p class="muted">You're signed in as <strong>{wrong}</strong>. Sign out to accept it as {invite.email}.</p>
+					<button class="btn primary wide" onclick={switchAccount}>Sign out</button>
 				{/if}
 			{/if}
 		{:else if mode === 'signin'}
@@ -136,7 +155,7 @@
 			<p class="muted">At least 10 characters. You'll be signed out everywhere else.</p>
 		{/if}
 
-		{#if mode !== 'invite' || (invite && !(invite.has_account && !dash.signedIn))}
+		{#if mode !== 'invite' || (invite && !(invite.has_account && !dash.signedIn) && !wrong)}
 			<form
 				onsubmit={(e) => {
 					e.preventDefault()
@@ -170,6 +189,8 @@
 				{#if dash.me?.signups && !invite}<button class="link" onclick={() => (mode = 'signup')}>Create an account</button>{/if}
 			{:else if mode === 'signup' || mode === 'forgot'}
 				<button class="link" onclick={() => (mode = 'signin')}>I have an account</button>
+			{:else if mode === 'reset'}
+				<button class="link" onclick={() => (mode = 'forgot')}>Send me a new link</button>
 			{/if}
 		</footer>
 	</section>

@@ -138,9 +138,13 @@
 	let details = $state({ name: '', timezone: '', currency: '' })
 	let detailsSaved = $state(false)
 	// reload the form whenever another site is opened
+	// Each card's form starts over only when its own saved values change: every save
+	// reloads dash.current, which must not throw away what another card has unsaved.
+	const savedDetails = $derived(dash.current ? JSON.stringify([dash.current.id, dash.current.name, dash.current.timezone, dash.current.currency]) : '')
 	$effect(() => {
-		const c = dash.current
-		if (c) details = { name: c.name, timezone: c.timezone, currency: c.currency }
+		if (!savedDetails) return
+		const [, name, timezone, currency] = JSON.parse(savedDetails)
+		details = { name, timezone, currency }
 	})
 	const detailsChanged = $derived(!!dash.current && (details.name.trim() !== dash.current.name || details.timezone !== dash.current.timezone || details.currency !== dash.current.currency))
 	const saveDetails = () =>
@@ -170,11 +174,12 @@
 	let features = $state<Feature[]>([])
 	let tracking = $state({ search: '', include: '', exclude: '' })
 	let featuresSaved = $state(false)
+	const savedTracking = $derived(dash.current ? JSON.stringify([dash.current.id, dash.current.features, dash.current.search_params, dash.current.include_paths, dash.current.exclude_paths]) : '')
 	$effect(() => {
-		const c = dash.current
-		if (!c) return
-		features = siteFeatures(c.features)
-		tracking = { search: c.search_params ?? '', include: c.include_paths ?? '', exclude: c.exclude_paths ?? '' }
+		if (!savedTracking) return
+		const [, f, search, include, exclude] = JSON.parse(savedTracking)
+		features = siteFeatures(f)
+		tracking = { search: search ?? '', include: include ?? '', exclude: exclude ?? '' }
 	})
 	const list = (text: string | null) => (text ?? '').split(',').map((p) => p.trim()).filter(Boolean)
 	const featuresChanged = $derived(
@@ -205,9 +210,11 @@
 	const limits = $derived(dash.current?.retention ?? dash.me?.retention ?? { max: 0, default: 0 })
 	let privacy = $state({ retention: '', ips: '', signals: false })
 	let privacySaved = $state(false)
+	const savedPrivacy = $derived(dash.current ? JSON.stringify([dash.current.id, dash.current.retention_days, dash.current.exclude_ips, dash.current.privacy_signals]) : '')
 	$effect(() => {
-		const c = dash.current
-		if (c) privacy = { retention: c.retention_days == null ? '' : String(c.retention_days), ips: c.exclude_ips ?? '', signals: !!c.privacy_signals }
+		if (!savedPrivacy) return
+		const [, retention, ips, signals] = JSON.parse(savedPrivacy)
+		privacy = { retention: retention == null ? '' : String(retention), ips: ips ?? '', signals: !!signals }
 	})
 	const retentionOptions = $derived.by(() => {
 		const days = RETENTION.map(([d]) => d).filter((d) => !limits.max || d <= limits.max)
@@ -294,8 +301,9 @@
 	let invite = $state<{ email: string; role: string; scope: 'team' | 'site' }>({ email: '', role: 'viewer', scope: 'team' })
 	let inviteLink = $state<{ url: string; sent: boolean } | null>(null)
 	let teamName = $state('')
+	const savedTeamName = $derived(team ? `${team.id}\u0000${team.name}` : '')
 	$effect(() => {
-		teamName = team?.name ?? ''
+		teamName = savedTeamName.split('\u0000')[1] ?? ''
 	})
 	const isMe = (id: string) => id === dash.me?.user?.id
 	const sendInvite = () =>

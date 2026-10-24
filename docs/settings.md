@@ -148,7 +148,8 @@ it. It shows:
   the date it ended, and that the team's sites record nothing until it has a plan. A team
   that never had a trial says why: each person gets one, on their first team.
 - Its sites out of the plan's limit, how long its sites keep stats, and the events a month
-  the plan includes.
+  the plan includes. With no plan, it says that no site can be added and that no events
+  are recorded until the team has a plan.
 - A meter of this month's events. The bar runs to 125% of the plan's events, where
   recording stops, and a mark shows 100%. It turns yellow at 80%. Past 100%, a line says
   when recording will stop, and at 125% the bar turns red, the card shows **Paused**, and

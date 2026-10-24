@@ -76,7 +76,9 @@ name, or remove them with the trash icon.
 
 Open the link, and select **Accept invitation**. Without an account, enter your name and a
 password of at least 10 characters first. With an account, sign in as the invited email
-address. An expired or withdrawn link shows an error, so ask for a new one.
+address. If you're signed in with another email, the invitation says so: select **Sign
+out**, then sign in or create the account as the invited email. An expired or withdrawn
+link shows an error, so ask for a new one.
 
 ## Change a role
 
@@ -174,6 +176,9 @@ password from the dashboard or the API.
 2. Enter your email address, and select **Send the link**.
 3. Open the link in the email within one hour.
 4. Enter a new password, and select **Save and sign in**.
+
+A link older than an hour shows an error. Select **Send me a new link** to ask for
+another.
 
 The new password signs you out of every other browser and device.
 

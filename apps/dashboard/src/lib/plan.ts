@@ -23,9 +23,9 @@ export function planFacts(plan: TeamPlanInfo): [label: string, value: string][] 
 	const most = span(plan.retention_days)
 	return [
 		['Plan', plan.state === 'plan' ? plan.name : plan.trial ? `Trial, ${plan.name} limits` : 'None'],
-		['Sites', plan.sites === null ? `${plan.sites_used}, no limit` : `${plan.sites_used} of ${plan.sites}`],
+		['Sites', plan.lapsed ? `${plan.sites_used}, none can be added` : plan.sites === null ? `${plan.sites_used}, no limit` : `${plan.sites_used} of ${plan.sites}`],
 		['Keeps stats for', plan.retention_default_days < plan.retention_days ? `${span(plan.retention_default_days)} by default, up to ${most}` : `Up to ${most}`],
-		['Events a month', `${plan.events.toLocaleString('en')} included`],
+		['Events a month', plan.lapsed ? 'None recorded until it has a plan' : `${plan.events.toLocaleString('en')} included`],
 	]
 }
 

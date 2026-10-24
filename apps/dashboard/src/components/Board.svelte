@@ -263,7 +263,7 @@
 {/snippet}
 
 {#if detailsOpen}
-	<Details tab={{ property: tab.property, label: tab.label }} title={tab.label} onclose={() => (detailsOpen = false)} />
+	<Details tab={{ property: tab.property, label: tab.label, filterFor: tab.filterFor }} title={tab.label} onclose={() => (detailsOpen = false)} />
 {/if}
 
 <style>

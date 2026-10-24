@@ -21,12 +21,19 @@ describe('the plan card', () => {
 		])
 	})
 
-	it('names the trial with the limits it runs under, a team with no plan, and a plan without a site limit', () => {
-		const trial = info({ sites_used: 4 })
-		const facts = Object.fromEntries(planFacts(trial))
-		expect(facts.Plan).toBe(`Trial, ${trial.name} limits`)
-		expect(facts.Sites).toBe(trial.sites === null ? '4, no limit' : `4 of ${trial.sites}`)
-		expect(Object.fromEntries(planFacts(info({ trial_ends_at: NOW - DAY }))).Plan).toBe('None')
+	it('names the trial with the limits it runs under, which allow any number of sites', () => {
+		const facts = Object.fromEntries(planFacts(info({ sites_used: 4 })))
+		expect([facts.Plan, facts.Sites]).toEqual([`Trial, ${growth.name} limits`, '4, no limit'])
+	})
+
+	it("shows a team with no plan and no trial what it can't do, not the trial's limits", () => {
+		const lapsed = info({ trial_ends_at: NOW - DAY, sites_used: 2 })
+		expect(planFacts(lapsed)).toEqual([
+			['Plan', 'None'],
+			['Sites', '2, none can be added'],
+			['Keeps stats for', `Up to ${span(lapsed.retention_days)}`],
+			['Events a month', 'None recorded until it has a plan'],
+		])
 	})
 
 	it("says the default when it is shorter than the plan's longest, in the picker's words", () => {
