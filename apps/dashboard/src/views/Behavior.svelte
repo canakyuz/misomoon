@@ -83,7 +83,7 @@
 	{/if}
 </div>
 
-{#if report.error}<p class="error-text">{report.error}</p>{/if}
+{#if report.error ?? pages.error}<p class="error-text">{report.error ?? pages.error}</p>{/if}
 {#if off}
 	<section class="card off">
 		<p><strong>{off} is turned off for this site.</strong> Nothing new is collected until it is ticked under Settings, Install, What to track.</p>
@@ -93,7 +93,7 @@
 
 {#if perPage && !page && pages.data}
 	<section class="card empty"><h3>No pages in this period</h3><p class="muted">Once the page gets visits, its clicks and scroll depth show here.</p></section>
-{:else if !data}
+{:else if !data && !(report.error ?? pages.error)}
 	<section class="card body">
 		{#each Array(6) as _, i (i)}<div class="row sk"><span class="skeleton" style="width: {90 - i * 11}%; height: 14px"></span></div>{/each}
 	</section>

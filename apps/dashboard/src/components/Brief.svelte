@@ -40,7 +40,9 @@
 </script>
 
 <section class="brief card">
-	{#if people == null}
+	{#if agg.error}
+		<p class="muted">The summary didn't load: {agg.error}</p>
+	{:else if people == null}
 		<div class="skeleton" style="height: 22px; width: 70%"></div>
 		<div class="skeleton" style="height: 22px; width: 45%; margin-top: 10px"></div>
 	{:else if people === 0}
