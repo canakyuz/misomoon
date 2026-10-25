@@ -1,5 +1,5 @@
 import { channelForSource, sourceName } from '../channel'
-import type { ImportedSet } from '../imported'
+import { normalizeImportedPath, type ImportedSet } from '../imported'
 import { localDay, type Zone } from '../time'
 import { importerInfo } from './info'
 import { ImportError, type ApiCall, type Importer } from './types'
@@ -122,11 +122,11 @@ export const umami: Importer<State> = {
 function addRows(set: ImportedSet, day: string, type: (typeof TYPES)[number], rows: Row[], total: Row, domain: string) {
 	switch (type) {
 		case 'path':
-			for (const r of rows) set.add(day, 'page', r.name, { visitors: count(r.visitors), visits: count(r.visits), pageviews: count(r.pageviews) })
+			for (const r of rows) set.add(day, 'page', normalizeImportedPath(r.name), { visitors: count(r.visitors), visits: count(r.visits), pageviews: count(r.pageviews) })
 			return
 		case 'entry':
 		case 'exit':
-			for (const r of rows) set.add(day, type === 'entry' ? 'entry_page' : 'exit_page', r.name, visit(r))
+			for (const r of rows) set.add(day, type === 'entry' ? 'entry_page' : 'exit_page', normalizeImportedPath(r.name), visit(r))
 			return
 		case 'referrer': {
 			// visits without a referrer, or from the site itself, are direct

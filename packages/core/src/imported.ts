@@ -325,7 +325,8 @@ export function addGoogleRows(set: ImportedSet, pull: GooglePull, rows: { dimens
 	}
 }
 
-function normalizeImportedPath(p: string): string {
+/** A page path as the tracker stores it: no query, no trailing slash. */
+export function normalizeImportedPath(p: string): string {
 	const path = (p || '/').split('?')[0]
 	return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }

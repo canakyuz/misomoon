@@ -70,7 +70,7 @@ describe('the Umami importer', () => {
 		expect(set.list().find((r) => r.dim === '')).toMatchObject({ day: '2024-03-31', visitors: 12, visits: 15, pageviews: 50, bounces: 6, duration: 900 })
 	})
 
-	it("names browsers, systems, devices and sources as misomoon does, and counts the rest as Direct", async () => {
+	it("names pages, browsers, systems, devices and sources as misomoon does, and counts the rest as Direct", async () => {
 		const { call } = fakeUmami({
 			referrer: [row('www.google.com', 5, { visits: 6 }), row('shop.com', 2), row('news.ycombinator.com', 3)],
 			browser: [row('crios', 4), row('chrome', 2), row('edge-chromium', 1)],
@@ -78,7 +78,8 @@ describe('the Umami importer', () => {
 			device: [row('laptop', 1), row('desktop', 2), row('mobile', 3)],
 			country: [row('de', 4), row('', 1)],
 			event: [row('Signup', 3, { pageviews: 7 })],
-			entry: [row('/pricing', 4, { visits: 5, bounces: 2 })],
+			entry: [row('/pricing/', 4, { visits: 5, bounces: 2 })],
+			path: [row('/blog/?ref=x', 2)],
 			utmSource: [row('newsletter', 2)],
 		})
 		const { state } = await umami.open({ website: SITE, key: 'k' }, call, 'UTC')
@@ -95,7 +96,9 @@ describe('the Umami importer', () => {
 		expect(keys('country')).toEqual({ DE: 4 })
 		expect(keys('event')).toEqual({ Signup: [3, 7] })
 		expect(keys('utm_source')).toEqual({ newsletter: 2 })
+		// paths as the tracker stores them, without a trailing slash or a query
 		expect(set.list().find((r) => r.dim === 'entry_page')).toMatchObject({ key: '/pricing', visits: 5, bounces: 2 })
+		expect(set.list().find((r) => r.dim === 'page')).toMatchObject({ key: '/blog' })
 	})
 
 	it('pages through a breakdown longer than 500 rows', async () => {
