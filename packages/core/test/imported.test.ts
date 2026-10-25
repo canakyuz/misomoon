@@ -72,6 +72,13 @@ describe('imported history', () => {
 		expect(rows.filter((r) => r.dim === 'event').map((r) => r.key)).toEqual(['sign_up'])
 	})
 
+	it("files Google's outbound clicks, downloads, and form submissions under misomoon's names", () => {
+		const set = new ImportedSet()
+		const row = (d: string[], m: number[]) => ({ dimensionValues: d.map((value) => ({ value })), metricValues: m.map((x) => ({ value: String(x) })) })
+		addGoogleRows(set, pull('event'), ['click', 'file_download', 'form_submit', 'form_start'].map((name) => row(['20240101', name], [1, 2])))
+		expect(set.list().map((r) => r.key)).toEqual(['Outbound link', 'Download', 'Form sent', 'form_start'])
+	})
+
 	it('classifies imported source names', () => {
 		expect(channelForSource('Google', null, null)).toBe('Organic Search')
 		expect(channelForSource('Google', 'cpc', null)).toBe('Paid Search')

@@ -211,6 +211,8 @@ const GA_CHANNELS: Record<string, Channel> = {
 
 /** CSV exports name automatic events differently; imports use misomoon's names. */
 const EXPORT_EVENTS: Record<string, string> = { 'Outbound Link: Click': BUILTIN_EVENTS.outbound, 'File Download': BUILTIN_EVENTS.download, 'Form: Submission': BUILTIN_EVENTS.form }
+/** Google's enhanced measurement events that misomoon tracks under its own names (`click` is an outbound click). */
+const GA_EVENTS: Record<string, string> = { click: BUILTIN_EVENTS.outbound, file_download: BUILTIN_EVENTS.download, form_submit: BUILTIN_EVENTS.form }
 
 const GA_DEVICES: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet' }
 
@@ -269,7 +271,7 @@ export const GOOGLE_PULLS: GooglePull[] = [
 		name: 'event',
 		dims: ['eventName'],
 		metrics: ['totalUsers', 'eventCount'],
-		rows: (d, m) => (GA_OWN_EVENTS.has(d.eventName) ? [] : [['event', d.eventName, { visitors: m.totalUsers, events: m.eventCount }]]),
+		rows: (d, m) => (GA_OWN_EVENTS.has(d.eventName) ? [] : [['event', GA_EVENTS[d.eventName] ?? d.eventName, { visitors: m.totalUsers, events: m.eventCount }]]),
 	},
 	{
 		name: 'place',

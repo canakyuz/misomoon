@@ -189,6 +189,8 @@ other secrets.
 - From Google, a bounce is a session that wasn't engaged (`sessions` minus
   `engagedSessions`). Google's own events `page_view`, `session_start`, `first_visit`,
   `user_engagement`, and `scroll` are left out, because misomoon measures them itself.
+  Google's `click` (an outbound click), `file_download`, and `form_submit` become
+  `Outbound link`, `Download`, and `Form sent`, so they add up with what misomoon tracks.
 
 ### What imports leave out
 
