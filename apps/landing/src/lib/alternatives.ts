@@ -97,7 +97,7 @@ const plausible: Alternative = {
 	switching: [
 		'Add the misomoon script next to the Plausible one and run both for two weeks.',
 		'Recreate your goals in misomoon. Custom events with the same names keep working.',
-		'Bring your history: upload the CSV export from Plausible’s site settings, without the days misomoon already counted.',
+		'Bring your history: upload the CSV export from Plausible’s site settings. misomoon skips the days it already counted.',
 	],
 	faq: [
 		['Is misomoon a drop-in Plausible replacement?', 'For counting, yes: one script tag, no cookies, and the same kinds of reports. Your goals and dashboards need setting up again in misomoon.'],
