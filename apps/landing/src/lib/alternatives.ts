@@ -388,6 +388,7 @@ const simple: Alternative = {
 	],
 	switching: [
 		'Add the misomoon script next to the Simple Analytics one and compare for a few weeks.',
+		'Upload the raw export of your page views and events under Settings > Integrations.',
 		'Connect your payment provider under Settings > Revenue.',
 		'Set how long to keep events per site under Settings.',
 	],
@@ -738,6 +739,7 @@ const mixpanel: Alternative = {
 	switching: [
 		'Add the misomoon script for your marketing site and keep Mixpanel in the product, or replace it on both.',
 		'Send the events that mark a conversion, such as `misomoon(\'Signup\')`, and turn them into goals.',
+		'Upload your Mixpanel Raw Event Export under Settings > Integrations to bring your website history.',
 		'Connect your payment provider under Settings > Revenue to see which sources bring paying customers.',
 	],
 	faq: [

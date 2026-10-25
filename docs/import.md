@@ -129,6 +129,24 @@ An export of another tool's that misomoon reads but can't take, such as one in a
 version it doesn't know, fails with the reason, and stores nothing. To upload from a script, see
 [the API reference](api.md#imports).
 
+### Raw event exports
+
+Some tools export raw events, one row or line per page view or custom event. misomoon
+counts them as its tracker counts visits:
+
+- A visitor's visit ends after 30 minutes without an event, unless the export has its own
+  visit id ([A visit ends after 30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity)).
+- A visit takes its source, UTM tags, place, browser, operating system, and device from its
+  first event. A referrer on the site's own host counts as none.
+- A visit with one page view and no other event is a bounce
+  ([A bounce is a visit with one pageview and no interaction](metrics.md#a-bounce-is-a-visit-with-one-pageview-and-no-interaction)).
+- A visit counts on the day it starts in the site's **Timezone**, and a custom event on
+  the day it was sent.
+
+Upload all the files of one export at once, such as the page views and the events, so
+that an event joins its visit. A visit cut off at the end of an export counts as a shorter
+visit, so export whole days.
+
 ### CSV format
 
 Each file holds one report and is named `imported_<report>.csv` or
@@ -294,6 +312,7 @@ other secrets.
 | Google import dates | `YYYY-MM-DD`. Another form falls back to the default. A **From** after the day before misomoon's first counted day fails with `misomoon has counted this site since 2026-10-12, so the import must start before it`. |
 | Import name, import error, and CSV text value | 120, 500, and 500 characters |
 | Another tool's CSV export of single page views | 50 MB unzipped. A larger one fails with the reason, and the tool's guide names a smaller export to upload instead. |
+| Raw event exports in one upload | 50 MB unzipped, all files together. More fails with `these raw event exports are larger than 50 MB unzipped; upload fewer days at a time`. |
 | A field of an import from another tool | 500 characters. More fails with `<field> must be text of at most 500 characters`. |
 | Requests an import from another tool makes in one run | 2,000, and no more than the tool allows |
 | Search terms per page | 1,000 from the breakdown, 100 from the MCP tool |

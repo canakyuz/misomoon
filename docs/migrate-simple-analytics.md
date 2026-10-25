@@ -1,10 +1,10 @@
 # Switch from Simple Analytics
 
-Simple Analytics' raw export lists every pageview and event, and misomoon's
-[CSV import](import.md#csv-format) reads daily totals, so you count the rows per day and
-write the files yourself. Without the Export API, the Stats API gives a smaller set of
-daily totals. Your tracking calls keep their names: `sa_event('click_signup')` becomes
-`misomoon('click_signup')`. Bounces, exit pages, and metadata stay behind.
+misomoon reads Simple Analytics' raw export as you download it: every pageview and event,
+counted into visits by their session. Without the Export API, the Stats API gives a
+smaller set of daily totals, which you write into misomoon's
+[CSV files](import.md#csv-format) yourself. Your tracking calls keep their names:
+`sa_event('click_signup')` becomes `misomoon('click_signup')`. Metadata stays behind.
 
 ## Add misomoon next to Simple Analytics
 
@@ -60,35 +60,43 @@ The raw export needs the Export API, which the Simple plan doesn't include.
 
 ### Export the raw data points
 
-If your plan has the Export API, use **Export your data** in the dashboard, or call
-`GET /api/export/datapoints` with your key in the `Api-Key` header.
+If your plan has the Export API, call `GET /api/export/datapoints` with your key in the
+`Api-Key` header, once for page views and once for events, and upload both files
+together.
 
-1. Set `start` and `end` to a range that ends today, and
-   `timezone` to the misomoon site's time zone.
-2. Set `format` to CSV and `fields` to `added_iso`, `path`, `is_unique`,
-   `referrer_hostname`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`,
-   `utm_term`, `duration_seconds`, `scrolled_percentage`, `country_code`, `browser_name`,
-   `browser_version`, `os_name`, `os_version`, `device_type`, and `datapoint`.
-3. Export once with `type` set to `pageviews`, and once with `type` set to `events`.
+1. Set `version=6`, `format=csv`, `hostname` to your site, `start` and `end` to whole
+   days, `timezone` to the misomoon site's **Timezone** ([Sites](settings.md#sites)), and
+   `robots=false`.
+2. Set `fields` to `added_iso`, `hostname`, `path`, `is_unique`, `referrer_hostname`,
+   `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, `utm_term`,
+   `duration_seconds`, `scrolled_percentage`, `country_code`, `browser_name`,
+   `browser_version`, `os_name`, `os_version`, `device_type`, and `session_id`, and
+   `type=pageviews`.
+3. Ask again with `fields` set to `added_iso`, `hostname`, `datapoint`, `path`, and
+   `session_id`, and `type=events`.
+4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and
+   pick both files, or a ZIP of them.
 
-Count the rows per day. Take the day from `added_iso`, because `added_date` is in UTC.
-`is_unique` marks a pageview that Simple Analytics counted as a visitor.
+```sh
+curl -H "Api-Key: $SA_KEY" -o pageviews.csv \
+  "https://simpleanalytics.com/api/export/datapoints?version=6&format=csv&hostname=example.com&start=2026-01-01&end=2026-03-31&timezone=Europe/Amsterdam&robots=false&type=pageviews&fields=added_iso,hostname,path,is_unique,referrer_hostname,utm_source,utm_medium,utm_campaign,utm_content,utm_term,duration_seconds,scrolled_percentage,country_code,browser_name,browser_version,os_name,os_version,device_type,session_id"
+```
 
-| misomoon file | From the pageviews export |
+misomoon counts the rows as its tracker counts visits
+([Raw event exports](import.md#raw-event-exports)). An export without `session_id`
+fails with `this Simple Analytics export has no session_id column; export it again with
+session_id among the fields`.
+
+| Simple Analytics field | Goes into |
 | --- | --- |
-| `imported_visitors.csv` | The rows with `is_unique` as `visitors` and `visits`, all rows as `pageviews`, and the sum of `duration_seconds` as `visit_duration`. `bounces` has no source. |
-| `imported_sources.csv` | The rows with `is_unique`, counted as `visitors` and `visits` per `referrer_hostname` and UTM values. Write the host as `referrer`, and as `source` the way misomoon names a known site, such as `Google` ([Sources and referrers](metrics.md#sources-and-referrers)). Keep a row's referrer and UTM values together, because a row with an empty `source` counts as `Direct`. |
-| `imported_pages.csv` | `path` as `page`, with the rows as `pageviews`. There is no visitor id, so use the row count for `visitors` and `visits` too. `total_time_on_page` is the sum of `duration_seconds` and `total_time_on_page_visits` the rows that have one. `total_scroll_depth` is the sum of `scrolled_percentage` and `total_scroll_depth_visits` the rows that have one. |
-| `imported_entry_pages.csv` | The `path` of the rows with `is_unique` as `entry_page`, and their count as `entrances` and `visitors`. The other columns have no source. |
-| `imported_locations.csv` | `country_code` as `country`. `region` has no source. |
-| `imported_browsers.csv` | `browser_name` as `browser`, and `browser_version` |
-| `imported_operating_systems.csv` | `os_name` as `operating_system`, and `os_version` as `operating_system_version` |
-| `imported_devices.csv` | `device_type` as `device`, written `Desktop`, `Mobile`, or `Tablet` |
-| `imported_custom_events.csv` | From the events export, `datapoint` as `name` and the rows as `events`. There is no visitor id, so use the row count for `visitors` too. |
-
-`auto-events.js` names its events `outbound_<host>` and `download_<file>`. Write them as
-`Outbound Link: Click` and `File Download`, and misomoon adds them to its own
-`Outbound link` and `Download` events.
+| `session_id` | The visit. Its first page view gives the entry page, source, UTM tags, country, browser, system, and device, and its last page view the exit page. A session with one page view and no event is a bounce. |
+| `is_unique` | Visitors. A session counts as a visitor when one of its page views has `is_unique`, as Simple Analytics counts them. Simple Analytics has no visitor id, so a person with two sessions in a day counts twice in breakdowns where both land. |
+| `added_iso` | The day, in the misomoon site's time zone |
+| `referrer_hostname` | Sources, referrers, and channels. A referrer on `hostname` counts as none, and a name without a dot, such as `google`, is a source's name. |
+| `duration_seconds`, `scrolled_percentage` | Time on page and scroll depth per page, and the time on a visit's last page adds to its duration |
+| `browser_name`, `os_name`, and their versions | misomoon's names: `Google Chrome` becomes `Chrome` and `Microsoft Edge` becomes `Edge`. Windows `10` and up, which includes Simple Analytics' `19.0.0` for Windows 11, is `Windows 10/11`. |
+| `device_type` | `Desktop`, `Mobile`, or `Tablet` |
+| `datapoint` | Custom events. `auto-events.js` names its events `outbound_<host>` and `download_<file>`; they count as misomoon's own `Outbound link` and `Download` events. |
 
 ### Use the Stats API on the Simple plan
 
@@ -110,15 +118,15 @@ Call `GET https://simpleanalytics.com/<hostname>.json?version=6` once for each d
 Leave out the UTM lists. Each comes as its own list, and a row with no `source` would add
 its visits to `Direct` a second time. A list stops at 1,000 values a day.
 
-### Upload the files
+### Upload the Stats API files
 
 1. Zip the files as `simple-analytics-history.zip`, with `imported_visitors.csv` among
    them.
 2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
    `simple-analytics-history.zip`.
 
-An empty `bounces` counts as `0`, so the imported days lower the bounce rate of any period
-that includes them. Imported days appear only in reports without filters
+From the Stats API, an empty `bounces` counts as `0`, so the imported days lower the
+bounce rate of any period that includes them. Imported days appear only in reports without filters
 ([What imported data fills](import.md#what-imported-data-fills)). If you uploaded the
 wrong file, [delete the import](import.md#delete-an-import) and upload again.
 
@@ -130,19 +138,19 @@ while you need to.
 
 ## What stays behind
 
-- Bounces. Simple Analytics has no visit that spans pages, so imported days have none.
-- Exit pages. The export has no way to tell a visit's last page.
-- Exact visitors per page and per event. There is no visitor id, so the counts above
-  count a person once per view or per event.
-- Metadata. misomoon's CSV import reads no properties.
+- Metadata. misomoon imports events without properties.
 - Regions and cities. Simple Analytics records countries only.
-- From the Stats API, UTM tags, browser and operating system versions, time on page, and
-  scroll depth. The API gives only a median time on page.
+- From the Stats API, bounces, exit pages, UTM tags, browser and operating system
+  versions, time on page, and scroll depth. The API gives only a median time on page.
 - Goals and funnels. Add them again in misomoon.
 
 ## Sources
 
-Checked on 2026-10-25.
+Checked on 2026-10-26.
+
+The raw export import was tested on one real day of Simple Analytics' own public
+dashboard, 2026-10-20, read from its Export API on 2026-10-26. misomoon counted the 625
+visitors the export marks with `is_unique`, and all 817 page views, in 685 visits.
 
 - Simple Analytics: [export your data](https://docs.simpleanalytics.com/export-data),
   [Export API](https://docs.simpleanalytics.com/api/export-data-points),

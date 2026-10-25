@@ -3,8 +3,8 @@
 misomoon replaces Mixpanel's website analytics: visitors, sources, pages, events, goals,
 funnels, and revenue. It doesn't replace per-user product analytics. User profiles,
 identity merging, cohorts, retention, experiments, feature flags, and session replay stay
-in Mixpanel. Mixpanel's Raw Event Export holds every event, which you add up into
-misomoon's daily [CSV files](import.md#csv-format). Your events keep their names:
+in Mixpanel. misomoon reads Mixpanel's Raw Event Export as you download it and counts its
+events into visits. Your events keep their names:
 `mixpanel.track('Signup', { plan: 'pro' })` becomes
 `misomoon('Signup', { props: { plan: 'pro' } })`.
 
@@ -47,65 +47,52 @@ collected, so you can add them at any time.
 ## Bring your history
 
 misomoon's event endpoint takes only current events, so Mixpanel's old events can't be
-sent again. Add them up into one row per day and value instead. Mixpanel keeps 2 years of
+sent again. Upload the Raw Event Export instead, and misomoon counts it as its tracker
+would ([Raw event exports](import.md#raw-event-exports)). Mixpanel keeps 2 years of
 events by default. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 1. In Mixpanel, make a service account with access to the project.
-2. Download one day per request from `GET https://data.mixpanel.com/api/2.0/export`, with
-   `project_id` and `from_date` and `to_date` both set to that day. Use
-   `data-eu.mixpanel.com` for a project in the EU and `data-in.mixpanel.com` for one in
-   India. Each line of the answer is one event, as `{ "event": …, "properties": { … } }`.
-3. Group each visitor's events into visits: an event more than 30 minutes after that
-   visitor's last one starts a new visit, as in misomoon
-   ([A visit ends after 30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity)).
-   Take each visit's source, location, browser, OS, and device from its first event.
-4. Count the rows of the table below, zip the files, and upload the ZIP in misomoon under
-   **Settings** > **Integrations** > **Upload CSV or zip**.
+2. Download the events from `GET https://data.mixpanel.com/api/2.0/export`, with
+   `project_id`, `from_date`, and `to_date`. Use `data-eu.mixpanel.com` for a project in
+   the EU and `data-in.mixpanel.com` for one in India:
 
-The export allows 60 requests an hour, so 2 years at one day per request takes about 12
-hours. Mixpanel dates the export in UTC for projects created after 1 January 2023, and in
-the project's time zone for older ones. misomoon files each row under its `date` as a day
-in the site's time zone, so convert each event's `time` (Unix seconds) to that time zone
-first.
+   ```sh
+   curl --user "$SERVICE_ACCOUNT:$SECRET" \
+     "https://data.mixpanel.com/api/2.0/export?project_id=123&from_date=2025-01-01&to_date=2025-03-31" \
+     -o mixpanel-2025-q1.jsonl
+   ```
 
-| misomoon file and column | From Mixpanel's raw events |
+3. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and
+   pick the file. A `.gz` or ZIP file works too.
+
+An upload holds at most 50 MB of events unzipped. For more, download fewer days per file
+and upload each file on its own. The export allows 60 requests an hour.
+
+misomoon reads each line as follows:
+
+| Mixpanel property | Goes into |
 | --- | --- |
-| `date` | `time`, as a date in your misomoon site's time zone |
-| `visitors` | Distinct `$device_id` per day. Distinct `distinct_id` counts a signed-in person once across devices. |
-| `visits` | The visits from step 4 |
-| `pageviews` | Events named `$mp_web_page_view`, or your own page view event |
-| `bounces` | Visits with one page view and no other event ([A bounce is a visit with one pageview and no interaction](metrics.md#a-bounce-is-a-visit-with-one-pageview-and-no-interaction)) |
-| `visit_duration` | The seconds from each visit's first event to its last, added up |
-| `imported_pages.csv`: `page` | The path of `$current_url`, without the query string |
-| `imported_entry_pages.csv`, `imported_exit_pages.csv`: `entry_page`, `exit_page`, `entrances`, `exits` | The first and last page of each visit, and the number of visits that started or ended there |
-| `imported_sources.csv`: `referrer`, `source`, `utm_*` | `$referring_domain`, and `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`, and `utm_term`, from the visit's first event |
-| `imported_locations.csv`: `country`, `region` | `mp_country_code` and `$region` |
-| `imported_browsers.csv`: `browser`, `browser_version` | `$browser` and `$browser_version` |
-| `imported_operating_systems.csv`: `operating_system` | `$os` |
-| `imported_devices.csv`: `device` | `$screen_width`: `Mobile` under 576 px, `Tablet` under 992, and `Desktop` above. Or leave the file out. |
-| `imported_custom_events.csv`: `name`, `visitors`, `events` | Every event other than the page view: its name, the distinct visitors who sent it that day, and its count |
+| `time` | The event's time, in seconds, or in milliseconds when you add `time_in_ms=true`. misomoon files each visit on its day in the site's **Timezone** ([Sites](settings.md#sites)). |
+| `$device_id`, or `distinct_id` without `$device:` | The visitor. Events without either, such as ones your server sent, stay out. |
+| `$mp_web_page_view` events | Page views, with the page from `current_url_path` or the path of `$current_url`, and the site's host from `current_domain` |
+| Other events | Custom events, under their names. Mixpanel's own events, whose names start with `$` or `mp_`, such as `$identify` and `$mp_click`, stay out. |
+| `$referrer`, and `utm_source` to `utm_term` or the tags in `$current_url` | The visit's source, channel, referrer, and UTM tags, from its first page view. `$direct` and a referrer on the site's host count as none. |
+| `mp_country_code`, `$region`, `$city` | Countries, regions, and cities |
+| `$browser`, `$browser_version`, `$os` | Browsers with their major version, and operating systems, with misomoon's names: `Mobile Safari` becomes `Safari`, and `Mac OS X` becomes `macOS` |
+| `$screen_width` | Devices: `Mobile` under 576 px, `Tablet` under 992, and `Desktop` above. Without it, an iPad is a tablet, another `$device` a phone, and Windows, macOS, Linux, and ChromeOS desktops. |
 
-Write the values the way misomoon stores them ([Dimensions](metrics.md#dimensions)):
+Mixpanel cuts the export's days at midnight UTC for projects created after 1 January 2023,
+and at midnight in the project's time zone for older ones. When that isn't midnight in
+the misomoon site's time zone, each file's first and last day hold part of a day, and
+misomoon keeps a day from the first upload that has it. Upload the whole range at once
+when it fits. Otherwise upload the oldest file first if the site's time zone is behind
+the export's, such as in the Americas, and the newest first if it is ahead, such as in
+Europe or Asia. Each day between two files then misses only the hours between the two
+time zones.
 
-- `source` is empty for direct visits, misomoon's name for a known host, such as `Google`
-  for `google.com` ([Sources and referrers](metrics.md#sources-and-referrers)), or the host
-  itself. A referrer on your own domain counts as none.
-- `country` is a two-letter code, and `region` is a name, such as California.
-- `device` is `Desktop`, `Mobile`, or `Tablet`, and `operating_system` uses misomoon's
-  names, such as `macOS`. A value in another form sits on its own row.
-- Leave out events you don't want in the counts, such as identity events and events your
-  server sent for no visit.
-
-Some columns have no source and stay empty: `operating_system_version`,
-`total_time_on_page`, `total_time_on_page_visits`, `total_scroll_depth`, and
-`total_scroll_depth_visits`. Imported pages therefore have no time on page or scroll
-depth.
-
-Run the conversion on your own machine, because the raw export is much larger than the
-daily files. The import fills the top-line numbers, the chart, and the breakdowns
-([What imported data fills](import.md#what-imported-data-fills)). Imported days appear only
-in reports without filters. If you uploaded the wrong file,
-[delete the import](import.md#delete-an-import) and upload again.
+Imported days appear only in reports without filters
+([What imported data fills](import.md#what-imported-data-fills)). If you uploaded the
+wrong file, [delete the import](import.md#delete-an-import) and upload again.
 
 ## Remove Mixpanel
 
@@ -122,11 +109,15 @@ of your cookie banner on those pages. If you keep Mixpanel in your product, leav
 - Event properties. Imported events have no property breakdown.
 - Funnels and reports. Build the funnels again in misomoon. They count misomoon's own
   events only ([What imports leave out](import.md#what-imports-leave-out)).
-- Cities. misomoon's CSV import has no city column.
+- Operating system versions and time on page. The export has neither.
 
 ## Sources
 
-Checked on 2026-10-25.
+Checked on 2026-10-26.
+
+The import was tested on the example lines in Mixpanel's API reference and on a page view
+from a real export that the open-source OpenPanel keeps in its tests. It has not yet read
+a whole real export, because Mixpanel's export needs a project's service account.
 
 - Mixpanel: [Raw Event Export API](https://docs.mixpanel.com/reference/raw-event-export),
   [export methods](https://docs.mixpanel.com/docs/export-methods),
@@ -134,3 +125,4 @@ Checked on 2026-10-25.
   [JavaScript SDK](https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript),
   [identifying users](https://docs.mixpanel.com/docs/tracking-methods/id-management/identifying-users),
   [pricing and data retention](https://mixpanel.com/pricing)
+- A real exported page view: [OpenPanel's Mixpanel importer test](https://github.com/Openpanel-dev/openpanel/blob/main/packages/core/src/modules/import/src/providers/mixpanel.test.ts)

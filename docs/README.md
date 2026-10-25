@@ -55,7 +55,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Rybbit](migrate-rybbit.md): bring daily totals from the dashboard export and breakdowns from raw events.
 - [Google Analytics 4](migrate-google-analytics.md): import a GA4 property straight from Google, and keep your event names.
 - [Fathom Analytics](migrate-fathom.md): import your history from Fathom's API, and move event values to revenue.
-- [Simple Analytics](migrate-simple-analytics.md): count the raw export or the Stats API into history files, and keep your event names.
+- [Simple Analytics](migrate-simple-analytics.md): upload the raw export as it is, or write the Stats API into history files, and keep your event names.
 - [Cloudflare Web Analytics](migrate-cloudflare-web-analytics.md): swap the beacon, and bring six months of history from the GraphQL API.
 - [DataFast](migrate-datafast.md): move goals and revenue attribution, and import your history from DataFast's API.
 - [Pirsch](migrate-pirsch.md): import your history from Pirsch's API, and keep your event calls.
@@ -63,7 +63,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Swetrix](migrate-swetrix.md): bring history from the Statistics API, and keep your event calls.
 - [Vercel Web Analytics](migrate-vercel-web-analytics.md): swap the React component, and bring the reporting window from the API.
 - [Microsoft Clarity](migrate-microsoft-clarity.md): move click maps, scroll depth, and errors to Behavior. Recordings stay behind.
-- [Mixpanel](migrate-mixpanel.md): replace website analytics, and add up the Raw Event Export into history files.
+- [Mixpanel](migrate-mixpanel.md): replace website analytics, and upload the Raw Event Export as it is.
 
 ## Dashboard
 

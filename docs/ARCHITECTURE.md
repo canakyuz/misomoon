@@ -384,6 +384,13 @@ request that starts it for 20 seconds and then in each five-minute cron run, and
 seven days at a time. Each day's rows are deleted before they are written, so a run cut
 off before saving its place counts a day once. A lease keeps two runs off one job.
 
+Another tool's own export files are told apart by what they hold
+(`packages/core/src/importers/files.ts`). Raw event exports become hits, which
+`importers/raw.ts` sorts by time and counts into visits in memory, as the tracker counts
+them: a 30-minute gap or the tool's own visit id, source and place from the first hit, and
+a bounce for one page view with nothing else. All raw files of one upload are counted
+together, up to 50 MB, so an event can join a visit from another file.
+
 ### Google Search Console
 
 Editors connect a Search Console property per site through Google OAuth (the same client

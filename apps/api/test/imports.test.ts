@@ -172,6 +172,21 @@ describe("another tool's export", () => {
 		expect(importedDays(env, 'America/New_York')).toEqual(['2020-11-30', '2020-12-26'])
 	})
 
+	it('counts raw page views and events uploaded together into visits', async () => {
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com', timezone: 'Europe/Amsterdam' }), { 'content-type': 'application/json' })
+		const fixture = (name: string) => new File([readFileSync(new URL(`../../../packages/core/test/importers/fixtures/${name}`, import.meta.url))], name, { type: 'text/csv' })
+		const form = new FormData()
+		form.append('file', fixture('simpleanalytics-pageviews.csv'))
+		form.append('file', fixture('simpleanalytics-events.csv'))
+		const res = await call(env, 'POST', '/api/v1/sites/shop-com/imports', form)
+		expect(res.status).toBe(201)
+		expect(await res.json()).toMatchObject({ source: 'csv', status: 'done', from_day: '2026-10-20', to_day: '2026-10-20' })
+		// the real day's visitors, visits, page views and bounces
+		const shards = [env.SHARD_0, env.SHARD_1].flatMap((db) => db.rows("SELECT visitors, visits, pageviews, bounces FROM imported WHERE dim = ''"))
+		expect(shards).toEqual([{ visitors: 625, visits: 685, pageviews: 817, bounces: 273 }])
+	})
+
 	it('answers 400 with the reason for an export it reads in another version, or a broken gzip file', async () => {
 		const env = fakeEnv()
 		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
