@@ -5,7 +5,6 @@
 	import { docLink } from '#lib/links.ts'
 	import { page } from '$app/state'
 	import { FEATURES } from '#lib/features.ts'
-	import { REPO } from '#lib/seo.ts'
 	import { CTA, signupUrl } from '#lib/pricing.ts'
 
 	let { children, data } = $props()
@@ -80,7 +79,6 @@
 	<div class="wrap cols">
 		<div class="brand">
 			<p class="mono">Cookieless analytics, hosted for you or run yourself. Printed fresh every day; forgotten every night.</p>
-			<a class="gh mono" href={REPO}>★ Open source on GitHub</a>
 		</div>
 		<div>
 			<h2 class="mono">Product</h2>
@@ -114,11 +112,12 @@
 			<a href="/security">Security</a>
 		</div>
 	</div>
-	<div class="giant" aria-hidden="true">misomoon</div>
 	<div class="wrap fine mono">
 		<span>© {new Date().getFullYear()} misomoon · MIT license</span>
 		<span>printed under a quiet moon</span>
 	</div>
+	<!-- the wordmark sinks below the footer's edge: only its top half shows -->
+	<div class="giant" aria-hidden="true"><span>misomoon</span></div>
 </footer>
 
 <style>
@@ -175,21 +174,13 @@
 	.foot {
 		background: var(--block);
 		color: var(--on-block);
-		padding: 72px 0 28px;
+		padding: 72px 0 0;
 		overflow: hidden;
 	}
 	.cols {
 		display: grid;
 		grid-template-columns: 1.6fr repeat(4, 1fr);
 		gap: 32px;
-	}
-	.gh {
-		display: inline-block;
-		margin-top: 18px;
-		font-size: 12px;
-		padding: 6px 10px;
-		border: 1.5px solid rgb(242 236 223 / 0.4);
-		border-radius: 999px;
 	}
 	.skip {
 		position: absolute;
@@ -281,7 +272,9 @@
 		color: var(--miso);
 	}
 	.giant {
-		margin: 56px 0 0;
+		height: 0.46em;
+		margin-top: 40px;
+		overflow: hidden;
 		font-family: var(--font-display);
 		font-weight: 900;
 		font-stretch: 100%;
@@ -290,13 +283,17 @@
 		letter-spacing: -0.06em;
 		text-align: center;
 		color: var(--miso);
+		opacity: 0.35;
 		white-space: nowrap;
 		user-select: none;
+	}
+	.giant span {
+		display: block;
 	}
 	.fine {
 		display: flex;
 		justify-content: space-between;
-		margin-top: 22px;
+		margin-top: 48px;
 		font-size: 11px;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
