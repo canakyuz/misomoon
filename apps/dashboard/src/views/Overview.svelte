@@ -33,7 +33,7 @@
 				{ property: 'referrer', label: 'Links' },
 				{ property: 'utm_campaign', label: 'Campaigns' },
 				{ property: 'utm_medium', label: 'Mediums' },
-				{ property: 'page', label: 'Landed on' },
+				{ property: 'entry_page', label: 'Landed on' },
 			],
 		},
 		{ property: 'source', label: 'Sites', plural: 'sites' },
