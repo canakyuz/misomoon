@@ -10,9 +10,7 @@ on Matomo On-Premise alike. Your tracking calls change from `_paq.push()` arrays
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Matomo's tracking code ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Matomo's calls
 
@@ -44,16 +42,15 @@ already collected, so you can add it at any time.
 
 ## Bring your history
 
-Call Matomo's Reporting API once per report, with `period=day` and a date range that ends
-the day before the cutoff day. misomoon reads every row of an upload, so a day that is
-both in the files and in misomoon counts twice. The range keeps those days out. Matomo
-Cloud and On-Premise both process unique visitors for single days.
+Call Matomo's Reporting API once per report, with `period=day`. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for a
+range that ends today, or end it the day before you added misomoon to make fewer requests.
+Matomo Cloud and On-Premise both process unique visitors for single days.
 
 ### Matomo Cloud and On-Premise
 
 1. In Matomo, open **Personal** > **Security** > **Auth tokens** and create a token.
 2. Call each method in the table below. This call gets `VisitsSummary.get` from the first
-   day you want to the day before a cutoff day of 2026-10-12:
+   day you want to the day before you added misomoon, here 2026-10-11:
 
    ```sh
    curl -d "token_auth=$MATOMO_TOKEN" "https://matomo.example.com/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=2024-01-01,2026-10-11&format=json&flat=1&filter_limit=-1" > VisitsSummary.get.json

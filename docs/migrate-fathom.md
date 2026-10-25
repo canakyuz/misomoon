@@ -12,9 +12,7 @@ pages.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Fathom's ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Fathom's calls
 
@@ -50,13 +48,12 @@ collected, so you can add it at any time.
 ## Bring your history
 
 Every Fathom plan has the custom export. Fathom emails a CSV file for each export when it
-is ready.
+is ready. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 ### Export from Fathom
 
 1. In Fathom, open **Settings**, pick the site, then open **More** > **Exports**.
-2. Make a **Pageviews** export with **Daily** grouping and a range that ends the day before
-   the cutoff day. Pick the metrics **Pageviews**, **Site Visitors**, **Bounce Rate**, and
+2. Make a **Pageviews** export with **Daily** grouping and a range that ends today. Pick the metrics **Pageviews**, **Site Visitors**, **Bounce Rate**, and
    **Avg Time on Site**.
 3. Make one such export with no dimension, for the totals, and one for each of these:
    - **Page**
@@ -109,10 +106,8 @@ March 2021 on.
 
 ### Upload the files
 
-1. Check that every file holds only days before the cutoff day. misomoon reads every row,
-   so a day that misomoon also collected counts twice. Delete the later rows.
-2. Zip the files as `fathom-history.zip`, with `imported_visitors.csv` among them.
-3. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
+1. Zip the files as `fathom-history.zip`, with `imported_visitors.csv` among them.
+2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
    `fathom-history.zip`.
 
 Imported days appear only in reports without filters

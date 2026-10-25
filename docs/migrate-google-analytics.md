@@ -12,8 +12,7 @@ moves without export files. Your tracking calls keep their event names:
    to the Google tag ([Track your site](tracking.md#add-the-script)). If Google Tag Manager
    loads your Google tag, add misomoon there instead
    ([Install with Google Tag Manager](google-tag-manager.md#add-the-tag)).
-2. Write down the day you added the tag. The import below ends the day before it.
-3. Leave both on for a week or two, until misomoon's numbers look right to you.
+2. Leave both on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Google Analytics' calls
 
@@ -78,10 +77,9 @@ misomoon('purchase', { revenue: { amount: 72.05, currency: 'USD' }, props: { tra
 ## Bring your history
 
 Use misomoon's Google import. Follow
-[Import a Google Analytics property](import.md#import-a-google-analytics-property), and in
-**To**, set the day before misomoon started, the day before the one you wrote down. Both
-dates are included, so a **To** on or after the day you added the tag counts that day
-twice.
+[Import a Google Analytics property](import.md#import-a-google-analytics-property), and leave
+**To** empty. The import ends the day before misomoon started counting
+([Days that count once](import.md#days-that-count-once)).
 
 The import fills the top-line numbers, the chart, channels, sources, referrers, UTM tags,
 pages, entry pages, countries, regions, cities, browsers, operating systems, devices, and
@@ -97,8 +95,7 @@ If the import shows **Failed:**, or you picked the wrong dates,
 Universal Analytics data is gone. Google shut Universal Analytics down, its API included,
 from the week of July 1, 2024. A report you downloaded from it before then can come in
 only as a CSV upload that you rewrite in misomoon's [CSV format](import.md#csv-format).
-Keep only its days before the first day your GA4 property has data, and before the day
-you added misomoon's tag. misomoon counts a day in two sources twice.
+Upload it after your GA4 import, so misomoon skips any day the GA4 import already holds.
 
 ## Remove Google Analytics
 

@@ -15,15 +15,13 @@ Vercel's reporting window stay behind.
    your own domain ([Install misomoon on Next.js and React](nextjs.md)). On any other site,
    paste misomoon's script tag into the `<head>` of every page
    ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added it.
-   The steps below call it the cutoff day.
-3. Leave both on for a week or two, until misomoon's numbers look right to you. Vercel
+2. Leave both on for a week or two, until misomoon's numbers look right to you. Vercel
    identifies a visitor by a hash of the request that it discards after 24 hours, and
    misomoon by a hash with a daily salt, so the visitor counts should be close.
 
 Vercel's API reads only the days inside your plan's reporting window: 1 month on Hobby, 12
 months on Pro, and 24 months with Web Analytics Plus or on Enterprise. Each day you wait
-drops the oldest day, so on Hobby, export your history the day after the cutoff day.
+drops the oldest day, so on Hobby, export your history soon after you add misomoon.
 
 ## Replace Vercel's calls
 
@@ -54,7 +52,7 @@ collected, so you can add it at any time.
 ## Bring your history
 
 The **Export as CSV** menu on each dashboard panel holds totals for the whole timeframe, not
-days, so it can't fill daily rows. Use the Web Analytics API instead.
+days, so it can't fill daily rows. Use the Web Analytics API instead. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 1. In Vercel, make an access token. Requests send it as `Authorization: Bearer <token>`,
    with your `projectId` and `teamId`.
@@ -63,9 +61,7 @@ days, so it can't fill daily rows. Use the Web Analytics API instead.
 3. For each breakdown, ask once per day, with `since` and `until` around that day,
    `by` set to the dimension, and `limit=100`. Rows past the top 100 come back as `Others`.
    Leave that row out.
-4. Make sure the last day in your files is the day before the cutoff day. The CSV upload
-   reads every row, so a row for the cutoff day or later counts twice.
-5. Zip the files and upload the ZIP in misomoon under **Settings** > **Integrations** >
+4. Zip the files and upload the ZIP in misomoon under **Settings** > **Integrations** >
    **Upload CSV or zip**.
 
 | misomoon file | Columns to fill | Vercel API |

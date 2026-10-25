@@ -444,12 +444,12 @@ it to the site's own data.
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
-| `GET /api/v1/sites/:id/imports` | Editor | Lists the imports, newest first: `id`, `site_id`, `source` (`csv` or `google`), `label`, `from_day`, `to_day`, `status` (`importing`, `done`, or `failed`), `error`, `rows`, `created_at`. |
-| `POST /api/v1/sites/:id/imports` | Editor | Imports a CSV export. Returns `201` and the import. |
+| `GET /api/v1/sites/:id/imports` | Editor | Lists the imports, newest first: `id`, `site_id`, `source` (`csv` or `google`), `label`, `from_day`, `to_day`, `status` (`importing`, `done`, or `failed`), `error`, `rows`, `skipped_days` (days left out because misomoon or an earlier import counted them), `created_at`. |
+| `POST /api/v1/sites/:id/imports` | Editor | Imports a CSV export, without the days misomoon or an earlier import counted ([Days that count once](import.md#days-that-count-once)). Returns `201` and the import, or `400` when no day is left. |
 | `DELETE /api/v1/sites/:id/imports/:import` | Editor | Deletes the import and its rows on every shard. Returns `204`. |
 | `POST /api/v1/sites/:id/imports/google/connect` | Editor | Step 1 of a Google import. Returns `{"url": ...}`, the Google consent page. Sign-in must finish within an hour. Google then returns the person to the dashboard settings with `google=<grant id>` in the URL. |
 | `GET /api/v1/sites/:id/imports/google/properties` | Editor | Step 2. The Google Analytics properties the Google account can read, for `grant=<grant id>`: `id` (`properties/123`), `name`, `account`. |
-| `POST /api/v1/sites/:id/imports/google` | Editor | Step 3. Takes `grant` and `property` (both required), `from` and `to` (`YYYY-MM-DD`, default the earliest day Google serves and yesterday in UTC), and `label`. Imports in the background and returns `202` with `{"id": ..., "status": "importing"}`. The server deletes the grant when the import finishes. |
+| `POST /api/v1/sites/:id/imports/google` | Editor | Step 3. Takes `grant` and `property` (both required), `from` and `to` (`YYYY-MM-DD`, default the earliest day Google serves and the day before misomoon's first counted day, or yesterday in UTC before it). A `to` on or after misomoon's first day becomes the day before it, and a `from` after that returns `400`. Also takes `label`. Imports in the background and returns `202` with `{"id": ..., "status": "importing"}`. The server deletes the grant when the import finishes. |
 
 The CSV import takes `multipart/form-data` with one or more `file` fields: a ZIP of the
 export, or its CSV files named `imported_<table>.csv` or

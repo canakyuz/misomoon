@@ -13,9 +13,7 @@ profiles stay behind.
    to PostHog's snippet ([Track your site](tracking.md#add-the-script)). In a React or
    Next.js app, use the SDK instead
    ([Add the tracker to a React or Next.js app](sdk.md#add-the-tracker-to-a-react-or-nextjs-app)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both on for a week or two, until misomoon's numbers look right to you.
+2. Leave both on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace PostHog's calls
 
@@ -51,16 +49,13 @@ collected, so you can add them at any time.
 Write one query per file in PostHog's SQL editor, export each result as CSV, and name it
 after the file. The table below gives each query's table, grouping, and columns. Batch
 exports and file download exports hold raw events in Parquet or JSON Lines, which misomoon
-doesn't read.
+doesn't read. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
-1. In each query, keep only the sessions whose `$start_timestamp`, or the events whose
-   `timestamp`, falls before the cutoff day. misomoon reads every row of an upload, so a
-   day that is both in the files and in misomoon counts twice.
-2. Add a `LIMIT` that covers every row. PostHog returns 100 rows without one. For the
+1. Add a `LIMIT` that covers every row. PostHog returns 100 rows without one. For the
    page reports, run one month or one quarter at a time.
-3. Export each result as CSV and name it `imported_<report>.csv`. For a report you ran in
+2. Export each result as CSV and name it `imported_<report>.csv`. For a report you ran in
    parts, add the dates, such as `imported_pages_20250101_20250331.csv`.
-4. Compare one day's visitors in `imported_visitors.csv` with PostHog's web analytics
+3. Compare one day's visitors in `imported_visitors.csv` with PostHog's web analytics
    dashboard. PostHog's docs don't say which time zone `toDate()` uses in the SQL editor,
    and misomoon stores each imported day under the same date in the site's **Timezone**
    ([Sites](settings.md#sites)).

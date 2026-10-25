@@ -72,6 +72,11 @@ export function fromLocal(local: number, zone: Zone): number {
 	return local - off * MINUTE
 }
 
+/** The local date of the instant `at` in `zone`, as YYYY-MM-DD. */
+export function localDay(at: number, zone: Zone): string {
+	return new Date(toLocal(at, zone)).toISOString().slice(0, 10)
+}
+
 /** Start of the local day containing `at`, as a UTC ms instant. */
 export function startOfLocalDay(at: number, zone: Zone): number {
 	return fromLocal(Math.floor(toLocal(at, zone) / DAY) * DAY, zone)

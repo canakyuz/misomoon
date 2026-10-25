@@ -10,9 +10,7 @@ daily totals. Your tracking calls keep their names: `sa_event('click_signup')` b
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Simple Analytics' `latest.js` ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 The visitor counts differ by design. Simple Analytics counts a visitor for each pageview
 that arrives from another site or with no referrer, so its visitors equal its visits.
@@ -53,6 +51,9 @@ already collected, so you can add it at any time.
 
 ## Bring your history
 
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for a range that ends today, or end it the day before you added misomoon to
+make fewer requests.
+
 What you can bring depends on your plan. On the Free plan, Simple Analytics keeps 30 days
 and has no Stats API, so skip the import. On the Simple plan, the Stats API gives daily totals.
 The raw export needs the Export API, which the Simple plan doesn't include.
@@ -62,7 +63,7 @@ The raw export needs the Export API, which the Simple plan doesn't include.
 If your plan has the Export API, use **Export your data** in the dashboard, or call
 `GET /api/export/datapoints` with your key in the `Api-Key` header.
 
-1. Set `start` and `end` to a range that ends the day before the cutoff day, and
+1. Set `start` and `end` to a range that ends today, and
    `timezone` to the misomoon site's time zone.
 2. Set `format` to CSV and `fields` to `added_iso`, `path`, `is_unique`,
    `referrer_hostname`, `utm_source`, `utm_medium`, `utm_campaign`, `utm_content`,
@@ -111,11 +112,9 @@ its visits to `Direct` a second time. A list stops at 1,000 values a day.
 
 ### Upload the files
 
-1. Check that every file holds only days before the cutoff day. misomoon reads every row,
-   so a day that misomoon also collected counts twice. Delete the later rows.
-2. Zip the files as `simple-analytics-history.zip`, with `imported_visitors.csv` among
+1. Zip the files as `simple-analytics-history.zip`, with `imported_visitors.csv` among
    them.
-3. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
+2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
    `simple-analytics-history.zip`.
 
 An empty `bounces` counts as `0`, so the imported days lower the bounce rate of any period

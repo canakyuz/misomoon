@@ -12,9 +12,7 @@ visitors, bounces, visit durations, and anything older than six months stay behi
    to Cloudflare's `beacon.min.js` tag ([Track your site](tracking.md#add-the-script)). On a
    proxied zone with automatic setup, Cloudflare adds its beacon itself, so your HTML has
    no Cloudflare tag.
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
    The visits won't match. Cloudflare counts a visit for each page view that comes from
    another site or a direct link, and misomoon ends a visit after
    [30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity).
@@ -44,6 +42,10 @@ the oldest days. It keeps unsampled data for the last seven days only and keeps 
 of older data. If you read mostly people and bounce rate, skip the import: Cloudflare
 measures neither, so imported days show 0 people and pull the bounce rate down.
 
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+Ask for a range that ends today, or end it the day before you added misomoon to make fewer
+requests.
+
 Cloudflare's Web Analytics docs describe no export file. The data comes from the account's
 `rumPageloadEventsAdaptiveGroups` dataset in the GraphQL Analytics API, at
 `POST https://api.cloudflare.com/client/v4/graphql`. Cloudflare doesn't document that
@@ -52,7 +54,7 @@ dataset on its own pages, so the field names below come from the published API s
 1. Create a Cloudflare API token for the account, and note the account ID.
 2. Query `rumPageloadEventsAdaptiveGroups` once per report. Filter on your site's
    `siteTag`, `bot: 0`, `date_geq` set to the first day you want, and `date_leq` set to
-   the day before the cutoff day. Group by `date` and the report's dimension from the table
+   the last day you want. Group by `date` and the report's dimension from the table
    below, and select `count` and `sum { visits }`.
 3. Compare one week of results with Cloudflare's dashboard. Cloudflare samples each query
    and returns a `sampleInterval` field, but doesn't document whether `count` and `visits`

@@ -15,9 +15,7 @@ misomoon's daily [CSV files](import.md#csv-format). Your events keep their names
    Otherwise, replace it on both.
 2. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to `mixpanel.init()` ([Track your site](tracking.md#add-the-script)).
-3. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-4. Leave both on for a week or two, until misomoon's numbers look right to you. misomoon
+3. Leave both on for a week or two, until misomoon's numbers look right to you. misomoon
    counts a visitor per browser per day, so it reads higher than a count of Mixpanel's
    `distinct_id`, which joins a signed-in person's devices
    ([A visitor id lasts one UTC day](metrics.md#a-visitor-id-lasts-one-utc-day)).
@@ -50,20 +48,18 @@ collected, so you can add them at any time.
 
 misomoon's event endpoint takes only current events, so Mixpanel's old events can't be
 sent again. Add them up into one row per day and value instead. Mixpanel keeps 2 years of
-events by default.
+events by default. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 1. In Mixpanel, make a service account with access to the project.
 2. Download one day per request from `GET https://data.mixpanel.com/api/2.0/export`, with
    `project_id` and `from_date` and `to_date` both set to that day. Use
    `data-eu.mixpanel.com` for a project in the EU and `data-in.mixpanel.com` for one in
    India. Each line of the answer is one event, as `{ "event": …, "properties": { … } }`.
-3. Stop at the day before the cutoff day. The CSV upload reads every row, so a row for the
-   cutoff day or later counts twice.
-4. Group each visitor's events into visits: an event more than 30 minutes after that
+3. Group each visitor's events into visits: an event more than 30 minutes after that
    visitor's last one starts a new visit, as in misomoon
    ([A visit ends after 30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity)).
    Take each visit's source, location, browser, OS, and device from its first event.
-5. Count the rows of the table below, zip the files, and upload the ZIP in misomoon under
+4. Count the rows of the table below, zip the files, and upload the ZIP in misomoon under
    **Settings** > **Integrations** > **Upload CSV or zip**.
 
 The export allows 60 requests an hour, so 2 years at one day per request takes about 12

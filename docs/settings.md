@@ -106,10 +106,12 @@ the old secret stop working. See [Ask AI tools about your traffic](mcp.md).
 
 - **Upload CSV or zip** takes a CSV export, as a zip or as its CSV files.
 - **Connect Google** signs in to Google. Pick a **Google property**, optionally the dates,
-  and select **Import**. Without dates, the import runs up to yesterday.
+  and select **Import**. Without dates, the import takes every day Google has.
 
-Import only the days before you added misomoon, or they count twice. The list shows each
-import with its status, dates, and row count, and a button to delete it.
+An import keeps only the days before misomoon started counting and the days no earlier
+import covers ([Days that count once](import.md#days-that-count-once)). The list shows each
+import with its status, dates, row count, and the days it skipped, and a button to delete
+it.
 
 **Google Search Console** adds the Google searches that bring people to the site. Select
 **Connect Search Console**, pick the property, and select **Connect**. The searches show

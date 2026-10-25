@@ -1,4 +1,4 @@
-import { addGoogleRows, addCsvExport, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localMidnight, unzipTexts } from '@misomoon/core'
+import { addGoogleRows, addCsvExport, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localDay, localMidnight, unzipTexts } from '@misomoon/core'
 import { getRanges, HttpError, shardDb, writeShard, type Site } from './control'
 import { google, googleConfigured, grantToken } from './google'
 import { moveTargets, moving } from './moves'
@@ -19,6 +19,8 @@ export interface ImportRow {
 	status: 'importing' | 'done' | 'failed'
 	error: string | null
 	rows: number
+	/** days left out because misomoon or an earlier import counted them already */
+	skipped_days: number
 	created_at: number
 }
 
@@ -35,8 +37,42 @@ async function begin(env: Env, site: Site, source: 'csv' | 'google', label: stri
 	return id
 }
 
+/** The first local day misomoon counted on the site, or null before its first event. */
+async function firstCountedDay(env: Env, site: Site): Promise<string | null> {
+	let first: number | null = null
+	for (const shard of new Set((await getRanges(env, site.id)).map((r) => r.shard))) {
+		const t = await (await shardDb(env, shard)).prepare('SELECT MIN(ts) AS t FROM events WHERE site_id = ?').bind(site.id).first<number | null>('t')
+		if (t != null && (first == null || t < first)) first = t
+	}
+	return first == null ? null : localDay(first, site.timezone)
+}
+
+const dayBefore = (day: string) => new Date(Date.parse(day + 'T00:00:00Z') - 86_400_000).toISOString().slice(0, 10)
+
+/**
+ * Keeps only the days nothing has counted yet: those before misomoon's first day on the
+ * site, and outside every earlier import. Returns the days it dropped, or throws when no
+ * day is left.
+ */
+async function keepNew(env: Env, site: Site, set: ImportedSet, id?: string): Promise<number> {
+	if (!set.days) throw new HttpError(400, 'no row has a date as YYYY-MM-DD, so there is nothing to add')
+	const first = await firstCountedDay(env, site)
+	const { results: taken } = await env.CONTROL.prepare("SELECT from_day, to_day FROM imports WHERE site_id = ? AND status = 'done' AND id != ? AND from_day IS NOT NULL").bind(site.id, id ?? '').all<{ from_day: string; to_day: string }>()
+	let covered = false
+	const skipped = set.drop((day) => {
+		if (first != null && day >= first) return true
+		if (!taken.some((r) => day >= r.from_day && day <= r.to_day)) return false
+		covered = true
+		return true
+	})
+	if (set.days) return skipped
+	throw new HttpError(400, covered
+		? 'earlier imports already cover every day in this import, so there is nothing to add'
+		: `misomoon has counted this site since ${first}, and every day in this import is on or after it, so there is nothing to add`)
+}
+
 /** Writes an import's rows to the shards that own their days, then marks it done. */
-async function persist(env: Env, site: Site, id: string, set: ImportedSet) {
+async function persist(env: Env, site: Site, id: string, set: ImportedSet, skipped: number) {
 	// Rows written behind a running shard move would be lost when its old copy is purged.
 	if (await moving(env, site.id)) throw new HttpError(409, 'this site\'s history is being moved between shards; try the import again in a few hours')
 	const byShard = new Map<string, ReturnType<ImportedSet['list']>>()
@@ -60,8 +96,8 @@ async function persist(env: Env, site: Site, id: string, set: ImportedSet) {
 		throw e
 	}
 	const days = set.days
-	await env.CONTROL.prepare("UPDATE imports SET status = 'done', rows = ?, from_day = ?, to_day = ? WHERE id = ?")
-		.bind(set.list().length, days?.from ?? null, days?.to ?? null, id)
+	await env.CONTROL.prepare("UPDATE imports SET status = 'done', rows = ?, from_day = ?, to_day = ?, skipped_days = ? WHERE id = ?")
+		.bind(set.list().length, days?.from ?? null, days?.to ?? null, skipped, id)
 		.run()
 }
 
@@ -81,9 +117,10 @@ export async function importCsv(env: Env, site: Site, files: File[]): Promise<Im
 	let lines = 0
 	for (const t of texts) lines += addCsvExport(set, t.name, t.text)
 	if (!lines) throw new HttpError(400, 'no imported_*.csv files found (expected a CSV export)')
+	const skipped = await keepNew(env, site, set)
 	const id = await begin(env, site, 'csv', files.map((f) => f.name).join(', '))
 	try {
-		await persist(env, site, id, set)
+		await persist(env, site, id, set, skipped)
 	} catch (e) {
 		await fail(env, id, e)
 		throw e
@@ -163,7 +200,7 @@ export async function googleImport(env: Env, site: Site, grantId: string, proper
 				if (!r.rows?.length || offset + PAGE >= (r.rowCount ?? 0)) break
 			}
 		}
-		await persist(env, site, id, set)
+		await persist(env, site, id, set, await keepNew(env, site, set, id))
 	} catch (e) {
 		await fail(env, id, e)
 	} finally {
@@ -177,8 +214,12 @@ export async function startGoogleImport(env: Env, ctx: ExecutionContext, site: S
 	// the property goes into the runReport URL, so it is a property id and nothing else
 	if (!body.grant || !body.property || !/^properties\/\d+$/.test(body.property)) throw new HttpError(400, 'grant and property (properties/123) are required')
 	const day = /^\d{4}-\d{2}-\d{2}$/
-	const to = body.to && day.test(body.to) ? body.to : new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
+	// a day misomoon counted would count twice, so the import ends the day before its first
+	const first = await firstCountedDay(env, site)
+	const last = first ? dayBefore(first) : dayBefore(new Date().toISOString().slice(0, 10))
+	const to = body.to && day.test(body.to) && body.to < last ? body.to : last
 	const from = body.from && day.test(body.from) ? body.from : '2015-08-14' // earliest date Google serves
+	if (from > to) throw new HttpError(400, first ? `misomoon has counted this site since ${first}, so the import must start before it` : 'From must be on or before To')
 	const id = await begin(env, site, 'google', body.label || `Google ${body.property}`)
 	ctx.waitUntil(googleImport(env, site, body.grant, body.property, from, to, id))
 	return { id, status: 'importing' }

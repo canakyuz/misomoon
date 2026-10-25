@@ -15,11 +15,31 @@ To hide imported history, turn off
 appears once the site has a finished import, and it starts on. Turning it off adds
 `imported=0` to the address, which [the API](api.md#query-parameters) also accepts.
 
+## Days that count once
+
+misomoon adds imported days to the days it counted itself, so it keeps each day from one
+place only. An import keeps the days that are:
+
+- Before the first day misomoon counted on the site, in the site's time zone. The day you
+  added the script holds part of a day from misomoon, so it isn't imported either.
+- Outside the days of every earlier finished import. The first import of a day wins, so
+  import the source you trust most first.
+
+You can upload a whole export and leave the trimming to misomoon. The import's row says
+how many days it skipped, as in `Skipped 5 days already counted`. If no day is left, the
+upload fails and stores nothing, with one of these errors:
+
+- `misomoon has counted this site since 2026-10-12, and every day in this import is on or after it, so there is nothing to add`
+- `earlier imports already cover every day in this import, so there is nothing to add`
+
+An import checks the days when it runs. Days misomoon counts later don't change it, and
+deleting an import doesn't bring back days another import skipped. To import those days,
+delete the later import and upload it again.
+
 ## Import a Google Analytics property
 
-misomoon adds imported days to the days it collected, so a day in both counts twice.
-Import only the days before misomoon started collecting on the site. A self-hosted
-instance first needs [Google sign-in](#set-up-google-sign-in-on-your-instance).
+A self-hosted instance first needs
+[Google sign-in](#set-up-google-sign-in-on-your-instance).
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Connect Google**.
@@ -31,12 +51,15 @@ instance first needs [Google sign-in](#set-up-google-sign-in-on-your-instance).
    example "The Google sign-in was canceled, so nothing was connected."
 4. Back in **Settings**, pick the property in **Google property**. The list shows each
    property as `Account: Property`.
-5. In **To**, set the day before misomoon started collecting.
-6. To start later than the earliest day Google has, set **From**.
-7. Click **Import**.
+5. To start later than the earliest day Google has, set **From**. To end earlier, set
+   **To**.
+6. Click **Import**.
 
 Both dates are included. An empty **From** starts at `2015-08-14`, the earliest day
-Google serves. An empty **To** ends yesterday.
+Google serves. An empty **To**, or one on or after the first day misomoon counted, ends
+the day before that day. On a site misomoon hasn't counted yet, an empty **To** ends
+yesterday. Days an earlier import covers are skipped
+([Days that count once](#days-that-count-once)).
 
 The import runs on the server, so you can close the page. Its row says **Importing…**
 until it shows the first and last day and the number of rows stored. If it shows
@@ -58,7 +81,8 @@ misomoon reads a CSV export as one ZIP file or as the CSV files from it.
 3. Pick the ZIP file, or one or more CSV files.
 
 Include `imported_visitors.csv`, the only file that fills the site totals and the chart.
-misomoon reads the files while you wait and skips the ones it doesn't read. If no file
+misomoon keeps only the days nothing counted yet
+([Days that count once](#days-that-count-once)). It reads the files while you wait and skips the ones it doesn't read. If no file
 holds rows it reads, the upload fails with
 `no imported_*.csv files found (expected a CSV export)`. To upload from a script, see
 [the API reference](api.md#imports).
@@ -98,7 +122,7 @@ The visit columns are `visitors` (unique visitors that day), `visits`, `pageview
 ## Delete an import
 
 Each import is separate. To import the same days again, delete the old import first, or
-those days count twice. If an import says **Importing…**, wait until it finishes or
+the new one skips them ([Days that count once](#days-that-count-once)). If an import says **Importing…**, wait until it finishes or
 fails. Rows that a running import writes after you delete it stay in your reports.
 
 1. Open **Settings** > **Integrations**.
@@ -225,7 +249,7 @@ other secrets.
 | Limit | Value |
 | --- | --- |
 | Time to finish a Google sign-in | 1 hour from the click on **Connect Google** or **Connect Search Console** |
-| Google import dates | `YYYY-MM-DD`. Another form falls back to the default. |
+| Google import dates | `YYYY-MM-DD`. Another form falls back to the default. A **From** after the day before misomoon's first counted day fails with `misomoon has counted this site since 2026-10-12, so the import must start before it`. |
 | Import name, import error, and CSV text value | 120, 500, and 500 characters |
 | Search terms per page | 1,000 from the breakdown, 100 from the MCP tool |
 | Imports while the site's data moves between shards | Fail with `this site's history is being moved between shards; try the import again in a few hours` |

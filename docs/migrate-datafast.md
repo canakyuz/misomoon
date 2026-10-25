@@ -10,9 +10,7 @@ source, country, and device. Revenue history, funnels, and visitor profiles stay
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to DataFast's `script.js` tag ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a billing cycle, until misomoon's numbers and revenue look
+2. Leave both scripts on for a billing cycle, until misomoon's numbers and revenue look
    right to you.
 
 ## Replace DataFast's calls
@@ -84,12 +82,12 @@ subscription toward that visit for 400 days.
 DataFast's docs describe no export file, so the history comes from its API. The overview
 and the breakdown routes return totals for the whole period you ask for, so call each one
 once per day, with the start and the end on the same day. That is about ten calls for
-each day of history. Ask for days before the cutoff day only: misomoon adds imported days
-to its own, so a day in both counts twice. If DataFast answers `429`, wait as its
+each day of history. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for days up to
+today, or stop the day before you added misomoon to make fewer calls. If DataFast answers `429`, wait as its
 `X-RateLimit-*` headers say and call again.
 
 1. Create an API key for the site in DataFast.
-2. Call the routes in the table below for each day before the cutoff day.
+2. Call the routes in the table below for each day you want.
 3. Write the rows into the files that the table names, with a header line of column
    names. Then zip the files.
 4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick

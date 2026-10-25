@@ -11,9 +11,7 @@ revenue stay behind.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Pirsch's `pa.js` tag ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Pirsch's calls
 
@@ -49,11 +47,11 @@ the events misomoon already collected, so you can add them at any time.
 Pirsch's statistics routes under `https://api.pirsch.io/api/v1/statistics/` return JSON.
 `/visitor` and `/duration/session` return one row per day with `scale=day`. The other
 routes return totals for the period you ask for, so call them once per day, with `from` and
-`to` on the same day. Ask for days before
-the cutoff day only: misomoon adds imported days to its own, so a day in both counts twice.
+`to` on the same day. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for days up to
+today, or stop the day before you added misomoon to make fewer calls.
 
 1. In Pirsch, create an API client and get an access token, as Pirsch's API guide shows.
-2. For each day before the cutoff day, call the routes in the table below. Set `tz` to
+2. For each day you want, call the routes in the table below. Set `tz` to
    the time zone of your misomoon site. A call returns up to 100 rows, so page through
    longer lists with `offset`.
 3. Write the rows into the files that the table names, with a header line of column

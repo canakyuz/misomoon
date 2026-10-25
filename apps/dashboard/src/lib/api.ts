@@ -279,6 +279,8 @@ export interface ImportRow {
 	status: 'importing' | 'done' | 'failed'
 	error: string | null
 	rows: number
+	/** days left out because misomoon or an earlier import counted them already */
+	skipped_days: number
 	created_at: number
 }
 

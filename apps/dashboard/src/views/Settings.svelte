@@ -944,14 +944,14 @@
 					<h3>Import history</h3>
 					<a class="doc-link" href={docUrl('import')} target="_blank" rel="noopener">Import docs <ArrowUpRight size={13} /></a>
 				</div>
-				<p class="muted">Bring your past data. Upload a CSV export (the zip or its CSV files), or import straight from a Google property. Imported numbers show in unfiltered reports, next to what misomoon collects.</p>
+				<p class="muted">Bring your past data. Upload a CSV export (the zip or its CSV files), or import straight from a Google property. Imported numbers show in unfiltered reports, next to what misomoon collects. An import keeps only the days before misomoon started counting, so no day counts twice.</p>
 				<ul class="goals">
 					{#each imports.data ?? [] as i (i.id)}
 						<li>
 							<span class="pill {i.status === 'failed' ? 'page' : 'event'}">{i.source === 'google' ? 'Google' : 'CSV'}</span>
 							<strong class="grow">{i.label}</strong>
 							<span class="muted small">
-								{#if i.status === 'importing'}Importing…{:else if i.status === 'failed'}Failed: {i.error}{:else}{i.from_day} to {i.to_day}, {i.rows.toLocaleString()} rows{/if}
+								{#if i.status === 'importing'}Importing…{:else if i.status === 'failed'}Failed: {i.error}{:else}{i.from_day} to {i.to_day}, {i.rows.toLocaleString()} rows{#if i.skipped_days}. Skipped {i.skipped_days.toLocaleString()} {i.skipped_days === 1 ? 'day' : 'days'} already counted{/if}{/if}
 							</span>
 							<button class="btn ghost icon" onclick={() => removeImport(i.id)} aria-label="Delete import"><Trash size={14} /></button>
 						</li>
@@ -966,7 +966,7 @@
 						<input class="input" type="date" bind:value={gaTo} aria-label="To" />
 						<button class="btn primary" onclick={startGoogle} disabled={!gaProperty}>Import</button>
 					</div>
-					<p class="muted small">Leave the dates empty to import everything up to yesterday. Import only days before you added misomoon, or they count twice.</p>
+					<p class="muted small">Leave the dates empty to import everything Google has. The import ends the day before misomoon started counting, and skips days an earlier import covers.</p>
 				{:else}
 					<div class="inline">
 						<label class="btn file">

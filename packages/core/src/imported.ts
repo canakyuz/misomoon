@@ -62,6 +62,17 @@ export class ImportedSet {
 		return [...this.rows.values()]
 	}
 
+	/** Removes the days `skip` returns true for, and returns how many days that was. */
+	drop(skip: (day: string) => boolean): number {
+		const gone = new Set<string>()
+		for (const [id, r] of this.rows) {
+			if (!skip(r.day)) continue
+			gone.add(r.day)
+			this.rows.delete(id)
+		}
+		return gone.size
+	}
+
 	get days(): { from: string; to: string } | null {
 		let from = ''
 		let to = ''

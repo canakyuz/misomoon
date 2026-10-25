@@ -18,8 +18,111 @@ function visitorsCsv(days: number) {
 	return new File([`date,visitors,pageviews,bounces,visits,visit_duration\n${rows.join('\n')}\n`], 'imported_visitors_20220101_20240630.csv', { type: 'text/csv' })
 }
 
+/** A visitors CSV with one row per day for `days` days from `from`. */
+function daysCsv(from: string, days: number) {
+	const start = Date.parse(from + 'T00:00:00Z')
+	const rows = Array.from({ length: days }, (_, i) => `${new Date(start + i * 86_400_000).toISOString().slice(0, 10)},10,30,4,12,600`)
+	return new File([`date,visitors,pageviews,bounces,visits,visit_duration\n${rows.join('\n')}\n`], 'imported_visitors.csv', { type: 'text/csv' })
+}
+
+const upload = (env: FakeEnv, file: File) => {
+	const form = new FormData()
+	form.append('file', file)
+	return call(env, 'POST', '/api/v1/sites/shop-com/imports', form)
+}
+
+/** The local days of the stored site totals, oldest first. */
+const importedDays = (env: FakeEnv, zone = 'UTC') =>
+	[...env.SHARD_0.rows("SELECT ts FROM imported WHERE dim = ''"), ...env.SHARD_1.rows("SELECT ts FROM imported WHERE dim = ''")]
+		.map((r) => new Date((r as { ts: number }).ts).toLocaleDateString('sv-SE', { timeZone: zone }))
+		.sort()
+
+const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0 Safari/537.36'
+/** A pageview misomoon counts now, so the site's first counted day is today. */
+const pageview = (env: FakeEnv) =>
+	call(env, 'POST', '/api/event', JSON.stringify({ s: 'shop-com', n: 'pageview', u: 'https://shop.com/' }), { 'content-type': 'application/json', 'user-agent': UA, 'cf-connecting-ip': '198.51.100.7' })
+
 beforeEach(() => invalidate(''))
-afterEach(() => vi.unstubAllGlobals())
+afterEach(() => {
+	vi.unstubAllGlobals()
+	vi.useRealTimers()
+})
+
+describe('imports skip days already counted', () => {
+	async function site(timezone = 'UTC') {
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com', timezone }), { 'content-type': 'application/json' })
+		return env
+	}
+
+	it('stops a CSV import the day before misomoon counted its first pageview', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(Date.UTC(2024, 2, 10, 12))
+		const env = await site()
+		expect((await pageview(env)).status).toBe(202)
+		const res = await upload(env, daysCsv('2024-03-05', 10))
+		expect(res.status).toBe(201)
+		expect(await res.json()).toMatchObject({ status: 'done', from_day: '2024-03-05', to_day: '2024-03-09', skipped_days: 5 })
+		expect(importedDays(env)).toEqual(['2024-03-05', '2024-03-06', '2024-03-07', '2024-03-08', '2024-03-09'])
+	})
+
+	it("finds the first counted day in the site's time zone", async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		// 03:00 UTC on 10 March is 22:00 on 9 March in New York
+		vi.setSystemTime(Date.UTC(2024, 2, 10, 3))
+		const env = await site('America/New_York')
+		await pageview(env)
+		const res = await upload(env, daysCsv('2024-03-07', 4))
+		expect(await res.json()).toMatchObject({ from_day: '2024-03-07', to_day: '2024-03-08', skipped_days: 2 })
+		expect(importedDays(env, 'America/New_York')).toEqual(['2024-03-07', '2024-03-08'])
+	})
+
+	it('keeps every day when misomoon has counted nothing yet', async () => {
+		const env = await site()
+		const res = await upload(env, daysCsv('2022-01-01', 3))
+		expect(await res.json()).toMatchObject({ from_day: '2022-01-01', to_day: '2022-01-03', skipped_days: 0 })
+	})
+
+	it('takes from a second import only the days no earlier import covers', async () => {
+		const env = await site()
+		await upload(env, daysCsv('2022-01-01', 10))
+		const res = await upload(env, daysCsv('2021-12-25', 12))
+		expect(await res.json()).toMatchObject({ from_day: '2021-12-25', to_day: '2021-12-31', skipped_days: 5 })
+		expect(importedDays(env)).toHaveLength(17)
+	})
+
+	it('refuses an upload whose every day is already counted, and stores nothing', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(Date.UTC(2024, 2, 10, 12))
+		const env = await site()
+		await pageview(env)
+		const res = await upload(env, daysCsv('2024-03-10', 3))
+		expect([res.status, await res.json()]).toEqual([400, { error: 'misomoon has counted this site since 2024-03-10, and every day in this import is on or after it, so there is nothing to add' }])
+		await upload(env, daysCsv('2022-01-01', 3))
+		const again = await upload(env, daysCsv('2022-01-02', 2))
+		expect([again.status, await again.json()]).toEqual([400, { error: 'earlier imports already cover every day in this import, so there is nothing to add' }])
+		expect(env.CONTROL.rows('SELECT from_day FROM imports')).toEqual([{ from_day: '2022-01-01' }])
+	})
+
+	it('asks Google for days up to the one before misomoon counted its first pageview', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(Date.UTC(2024, 2, 10, 12))
+		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		await pageview(env)
+		grant(env, 'g1', Date.now())
+		const ranges: unknown[] = []
+		vi.stubGlobal('fetch', async (_: string, init: RequestInit) => (ranges.push(JSON.parse(String(init.body)).dateRanges), Response.json({ rows: [] })))
+		// a To after the first counted day, and no To at all, both end the day before it
+		for (const to of ['2024-06-01', undefined]) {
+			ranges.length = 0
+			const res = await call(env, 'POST', '/api/v1/sites/shop-com/imports/google', JSON.stringify({ grant: 'g1', property: 'properties/123', from: '2024-01-01', to }), { 'content-type': 'application/json' })
+			expect(res.status).toBe(202)
+			expect(ranges[0]).toEqual([{ startDate: '2024-01-01', endDate: '2024-03-09' }])
+			grant(env, 'g1', Date.now())
+		}
+	})
+})
 
 describe('CSV imports', () => {
 	it("stores each day at that day's midnight in the site's time zone, across a DST change", async () => {

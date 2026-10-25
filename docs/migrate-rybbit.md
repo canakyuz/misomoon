@@ -12,9 +12,7 @@ users stay behind.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Rybbit's ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Rybbit's calls
 
@@ -46,14 +44,15 @@ events misomoon already collected, so you can add it at any time.
 
 ## Bring your history
 
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+
 Rybbit Cloud's Free and Basic plans have no API keys, so on them only the daily totals and
 the chart can come across, from the dashboard export. Rybbit doesn't say which plans show
 the **Export** button.
 
 ### Export the daily totals
 
-1. In Rybbit's dashboard, clear the filters and set the range to end the day before the
-   cutoff day. The export holds the dashboard's current range and filters.
+1. In Rybbit's dashboard, clear the filters and set the range to end today. The export holds the dashboard's current range and filters.
 2. Click **Export** and unzip the download.
 3. Open `overview-timeseries.csv`, the only file in the ZIP with a row per day. The other
    files hold totals for the whole range and have no date, so misomoon can't use them.
@@ -77,7 +76,7 @@ returns the same daily numbers.
 The breakdowns need Rybbit's raw events, one row per event:
 
 - On Rybbit Cloud's Standard and Pro plans, page through
-  `GET /api/sites/:site/events` with an API key, back from the day before the cutoff day.
+  `GET /api/sites/:site/events` with an API key, back from today, or from the day before you added misomoon to make fewer requests.
   The API allows 50 requests per 10 seconds, and 5,000 a day on Standard or 25,000 on Pro.
   Past the limit it answers `429` with a `Retry-After` header.
 - On a self-hosted Rybbit, the events are in the `events` table of the `analytics`
@@ -107,10 +106,8 @@ seconds from each session's first event to its last, added up).
 
 ### Upload the files
 
-1. Check that every file holds only days before the cutoff day. misomoon reads every row,
-   so a day that misomoon also collected counts twice. Delete the later rows.
-2. Zip the files as `rybbit-history.zip`, with `imported_visitors.csv` among them.
-3. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
+1. Zip the files as `rybbit-history.zip`, with `imported_visitors.csv` among them.
+2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
    `rybbit-history.zip`.
 
 Imported days appear only in reports without filters

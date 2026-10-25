@@ -10,9 +10,7 @@ history, goals, funnels, sessions, and profiles stay behind.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Swetrix's ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Swetrix's calls
 
@@ -47,14 +45,14 @@ collected, so you can add them at any time.
 The **Export** button on Swetrix's dashboard writes one CSV per panel, with totals for the
 whole period and no dates, so it can't fill daily rows. Use the
 [Statistics API v2](https://swetrix.com/docs/statistics-api-v2) instead. It comes with the
-Standard, Plus, and Enterprise plans.
+Standard, Plus, and Enterprise plans. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 1. In Swetrix, make an API key in your account settings. Requests send it in the
    `X-Api-Key` header.
 2. Ask for the day totals from `GET https://api.swetrix.com/v2/projects/{pid}/traffic/timeseries`
    with `timeBucket=day`, `from`, `to`, and `timezone` set to your misomoon site's time
-   zone. Set `to` to the day before the cutoff day. The CSV upload has no end date, so a
-   row for the cutoff day or later counts twice.
+   zone. Set `to` to today, or to the day before you added misomoon to make fewer
+   requests.
 3. Ask `…/traffic/breakdown` once per day and dimension, with `from` and `to` both set to
    that day. A breakdown returns at most 100 rows, so page through longer lists with
    `offset`.

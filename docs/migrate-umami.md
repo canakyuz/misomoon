@@ -10,9 +10,7 @@ Revenue history and event data stay behind.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Umami's tag with `data-website-id` ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Umami's calls
 
@@ -47,8 +45,7 @@ total per value for the whole period, with no dates, bounces, or visit durations
 one `imported_<report>.csv` file per report instead, with a `date` column and one row
 per day and value.
 
-Include only the days before the cutoff day. misomoon reads every row of an upload, so a
-day that is both in the files and in misomoon counts twice. Count each day in the time
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Count each day in the time
 zone of the misomoon site's **Timezone** ([Sites](settings.md#sites)), because misomoon
 stores an imported day under the same date.
 
@@ -66,7 +63,7 @@ raw page views, events, and sessions. Umami doesn't document their columns, and 
 reads neither `.gz` files nor raw events, so use the API instead.
 
 1. Create an API key in Umami Cloud ([Umami's API key page](https://docs.umami.is/docs/cloud/api-key)).
-2. For each day before the cutoff day, call the endpoints in the table below under
+2. For each day you want, call the endpoints in the table below under
    `https://api.umami.is/v1/websites/<website id>/`. Set `startAt` and `endAt` to the
    start and the end of the day, in milliseconds.
 3. Write each answer into the file and columns that the table names, with the day in
@@ -114,8 +111,7 @@ Call the same endpoints on your own server, under
 
 Or read the database. The table says where each file comes from in the `website_event`
 and `session` tables of Umami 3.4.1. In `website_event`, an `event_type` of `1` is a page
-view and `2` is a custom event. Keep only rows whose `created_at` falls before the cutoff
-day.
+view and `2` is a custom event.
 
 | misomoon file | Umami tables and columns |
 | --- | --- |

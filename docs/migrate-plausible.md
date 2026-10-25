@@ -9,9 +9,7 @@ tracking calls keep their shape: `plausible('Signup', { props })` becomes
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to Plausible's ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
 
 ## Replace Plausible's calls
 
@@ -47,21 +45,19 @@ dashboard holds totals for one period, not days, and the upload refuses it with
    **Export to CSV**.
 2. Download the ZIP file from the email Plausible sends. On Plausible Cloud, the link works
    for 24 hours.
-3. Unzip it. Plausible exports every day up to its last visit, so the days you ran both
-   scripts are in the files and in misomoon. Delete those rows, or misomoon counts them
-   twice. The command keeps the rows before the cutoff day and drops Plausible's own
-   `engagement` events, a name misomoon keeps for itself:
+3. Unzip it. Plausible exports every day up to its last visit, and misomoon skips the
+   days it already counted ([Days that count once](import.md#days-that-count-once)). The
+   command drops Plausible's own `engagement` events from the custom events file, a name
+   misomoon keeps for itself, and zips the files:
 
    ```sh
-   cut=2026-10-12   # your cutoff day
-   for f in imported_*.csv; do
-   	awk -F, -v cut="$cut" 'NR == 1 || ($1 < cut && $2 != "engagement")' "$f" > "$f.new" && mv "$f.new" "$f"
+   for f in imported_custom_events*.csv; do
+   	awk -F, 'NR == 1 || $2 != "engagement"' "$f" > "$f.new" && mv "$f.new" "$f"
    done
    zip plausible-history.zip imported_*.csv
    ```
 
-   The first column of every file is `date`, and the second column of
-   `imported_custom_events` is the event name.
+   The second column of the custom events file is the event name.
 4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
    `plausible-history.zip`.
 

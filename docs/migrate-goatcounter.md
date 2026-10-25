@@ -12,9 +12,7 @@ those moves.
 
 1. Add your site in misomoon and paste its script tag into the `<head>` of every page, next
    to GoatCounter's `count.js` tag ([Track your site](tracking.md#add-the-script)).
-2. Write down the first full day misomoon collects, which is the day after you added the
-   tag. The steps below call it the cutoff day.
-3. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
+2. Leave both scripts on for a week or two, until misomoon's numbers look right to you.
    misomoon's page views run higher. GoatCounter counts the first view of each path in a
    session of 8 hours, and misomoon counts every page view.
 
@@ -41,8 +39,7 @@ conversion, add it in **Settings** > **Goals**
 
 Both exports are under **Settings** > **Export/Import** in GoatCounter, and each runs at
 most once per hour. An export runs up to the day you start it, so the files hold the days
-you ran both scripts. Keep only the days before the cutoff day, because misomoon adds imported days to
-its own and a day in both counts twice.
+you ran both scripts. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
 
 1. Pick the export:
    - The CSV export holds one row per page view, but only if **Settings** >
