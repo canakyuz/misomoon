@@ -43,11 +43,12 @@
 	</div>
 	<div class="actions">
 		{#if periodless}
-			<button class="btn icon" onclick={refresh} aria-label="Refresh" title="Refresh"><RefreshCw size={14} /></button>
+			{#if !dash.isEmbed}<button class="btn icon" onclick={refresh} aria-label="Refresh" title="Refresh"><RefreshCw size={14} /></button>{/if}
 		{:else}
 			<PeriodPicker />
 			<FilterBar />
-			<div class="anchor">
+			<!-- embedded in the landing's fig. 1: no export or refresh, just the reports -->
+			{#if !dash.isEmbed}<div class="anchor">
 				<button class="btn icon" class:on={more} onclick={() => (more = !more)} aria-expanded={more} aria-haspopup="menu" aria-label="More" title="More"><Ellipsis size={14} /></button>
 				{#if more}
 					<div class="scrim" role="presentation" onclick={() => (more = false)}></div>
@@ -65,7 +66,7 @@
 						{/if}
 					</div>
 				{/if}
-			</div>
+			</div>{/if}
 		{/if}
 	</div>
 	{#if !periodless}<FilterChips />{/if}

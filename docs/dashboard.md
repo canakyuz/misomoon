@@ -380,9 +380,10 @@ out, with **Settings** hidden. The Worker writes Acme's traffic every five minut
 has no sample site.
 
 The landing page's fig. 1 shows the same demo in a frame, at `/demo?embed&theme=dark` or
-`theme=light`. In this mode the dashboard hides its top bar, view tabs and plan banner,
-opens on **Overview**, and shows **← Overview** when a click leads to another view. It
-takes the theme from the URL and doesn't save it. The page around it switches the theme
+`theme=light`. In this mode the dashboard hides its top bar, view tabs, plan banner, and
+the **Export CSV** and **Refresh** controls. It opens on **Overview** and shows
+**← Overview** when a click leads to another view. It takes the theme from the URL and
+doesn't save it. The page around it switches the theme
 without reloading the frame by posting `{"type": "misomoon:theme", "theme": "dark"}`.
 `?embed` works only on `/demo`; any other path ignores it.
 
