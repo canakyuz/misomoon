@@ -88,8 +88,9 @@ Set the `PUBLIC_URL` variable to the address of your dashboard, for example
 
 The Stats API allows 100 requests a minute for each API key, or for each IP address
 when the caller has no key. Signed-in dashboards and shared links aren't limited.
-Sign-up, sign-in, password resets, invitation accepts, and shared-link passwords share
-the same limit for each IP address. Wait a minute, or spread the requests out.
+Sign-up, sign-in, password resets, account deletion, invitation accepts, and shared-link
+passwords each allow 100 attempts a minute for each IP address, counted separately for
+each one. Wait a minute, or spread the requests out.
 
 ## Google import fails with `redirect_uri_mismatch`
 
