@@ -44,7 +44,9 @@ API (needs the edit permission, so an editor's session or an API key for the sit
 1. On the zone that owns the target (say `misomoon.com`), enable Cloudflare for SaaS,
    create `proxy.misomoon.com` (proxied) and set it as the fallback origin.
 2. Route customer hostnames to the Worker: add `{ "pattern": "*/*", "zone_name":
-   "misomoon.com" }` to `routes` in `apps/api/wrangler.jsonc`, after the app's own route.
+   "misomoon.com" }` to `routes`, after the app's own route. misomoon Cloud's routes are
+   in `apps/api/wrangler.cloud.jsonc`. A self-hosted server adds `routes` to
+   `apps/api/wrangler.jsonc`, with its own domain first.
 3. Set `CF_ZONE_ID` and `PROXY_CNAME_TARGET` as vars and `CF_API_TOKEN` as a secret
    (token permission: *SSL and Certificates: Edit* on that zone).
 4. Apply the control migrations. [`apps/api/migrations/control/0002_sites.sql`](../apps/api/migrations/control/0002_sites.sql) creates the `proxy_domains` table.

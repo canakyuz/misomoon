@@ -113,7 +113,8 @@ Support can still set `teams.plan` by hand ([Set a team's plan](configuration.md
 ## Set up billing on your server
 
 misomoon Cloud runs this setup. A self-hosted server has no plans and no billing: the
-deploy bundle leaves out `PLANS` and every `POLAR_*` setting. To try billing, do these
+self-hosted template `apps/api/wrangler.jsonc` and the deploy bundle leave out `PLANS` and
+every `POLAR_*` setting. To try billing, do these
 steps in [Polar's sandbox](https://sandbox.polar.sh) first, with `POLAR_SERVER=sandbox`.
 The sandbox needs its own account, token, products, and webhook.
 
@@ -141,9 +142,10 @@ The sandbox needs its own account, token, products, and webhook.
    wrangler secret put POLAR_WEBHOOK_SECRET
    ```
 
-5. In `vars` in `apps/api/wrangler.jsonc`, add `POLAR_PRODUCT_STARTER`,
+5. In `vars` in `apps/api/wrangler.cloud.jsonc`, add `POLAR_PRODUCT_STARTER`,
    `POLAR_PRODUCT_GROWTH`, and `POLAR_PRODUCT_SCALE` with the product ids, and
-   `POLAR_SERVER` set to `sandbox` while you test. Keep `PLANS` set to `on`. Deploy.
+   `POLAR_SERVER` set to `sandbox` while you test. Keep `PLANS` set to `on`. Deploy with
+   `pnpm --filter @misomoon/api run deploy:cloud`.
 6. Sign in to the dashboard. `GET /api/v1/me` now says `"billing": true`, and the
    **Plan** card shows the plans. Choose one and pay with a test card from
    [Polar's sandbox docs](https://polar.sh/docs/integrate/sandbox). The plan shows within

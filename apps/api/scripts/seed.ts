@@ -18,8 +18,9 @@ async function call(method: string, path: string, body?: unknown, allow: number[
 	return text ? JSON.parse(text) : null
 }
 
-const signedUp = await call('POST', '/api/v1/auth/signup', { email, password, name: 'Demo' }, [409])
-const session = signedUp?.token ? signedUp : await call('POST', '/api/v1/auth/login', { email, password })
+// sign in first: on an invite-only server (SIGNUPS=invite) only the first account can sign up
+const signedIn = await call('POST', '/api/v1/auth/login', { email, password }, [401])
+const session = signedIn?.token ? signedIn : await call('POST', '/api/v1/auth/signup', { email, password, name: 'Demo' })
 headers.Authorization = `Bearer ${session.token}`
 console.log(`signed in as ${email} (password: ${password})`)
 

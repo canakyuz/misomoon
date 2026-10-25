@@ -74,8 +74,9 @@ pnpm --filter @misomoon/api exec wrangler login
 pnpm --filter @misomoon/api run deploy
 ```
 
-Before the deploy, set `SIGNUPS` to `invite` so that only the first account can sign up.
-The [command-line steps](docs/self-hosting.md#deploy-from-the-command-line) show where.
+Only the first account can sign up, and everyone after it needs an invitation. The
+[command-line steps](docs/self-hosting.md#deploy-from-the-command-line) explain what the
+deploy creates.
 
 ## Why misomoon
 
@@ -118,7 +119,7 @@ project, and it also has every feature on every plan.
 | | Deploy to Cloudflare button | Command line |
 | --- | --- | --- |
 | What you need | A browser, and a GitHub or GitLab account | Node.js 22.5 or later, pnpm 10, and git |
-| Who can sign up | Only the first account | Only the first account, after you set `SIGNUPS` to `invite` |
+| Who can sign up | Only the first account | Only the first account |
 | Shards | 2 | Any number, with `SHARD_COUNT`, and per data region with `SHARD_REGIONS` |
 | Change the code | No. Your copy holds the built files. | Yes. Edit any package, and deploy. |
 | Deploys run from | Cloudflare, on each push to your copy | Your machine, or your own CI |

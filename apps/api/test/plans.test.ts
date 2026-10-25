@@ -12,7 +12,7 @@ const { default: worker } = await import('../src/index')
 const starter = planById('starter')!
 const growth = planById('growth')!
 const trial = planById(TRIAL_PLAN)!
-// misomoon Cloud's server limits (apps/api/wrangler.jsonc): 5 years at most, 25 months by default
+// misomoon Cloud's server limits (apps/api/wrangler.cloud.jsonc): 5 years at most, 25 months by default
 const CLOUD = { PLANS: 'on', RETENTION_DAYS: '1825', RETENTION_DEFAULT_DAYS: '761' }
 const DEFAULT = 761
 

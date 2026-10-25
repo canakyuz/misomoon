@@ -19,7 +19,14 @@ ignores them.
    ```
 
    If you keep your own fork, merge the upstream `main` branch into it instead. Keep
-   your database ids in `apps/api/wrangler.jsonc`.
+   your database ids in `apps/api/wrangler.jsonc`: if git reports a conflict in its
+   `d1_databases`, keep your own `database_id` lines and take the rest from upstream.
+   Upstream's ids are placeholders, such as `00000000-0000-0000-0000-000000000000`, and
+   a deploy with them would create new, empty databases.
+
+   If you also run misomoon locally, run `pnpm db:migrate && pnpm db:seed` once after
+   this pull. Local dev data is kept per database id, and the template's ids changed to
+   placeholders. [CONTRIBUTING.md](../CONTRIBUTING.md) has the local setup.
 
 2. Deploy:
 

@@ -17,7 +17,7 @@ You need Node.js 22.5 or later and pnpm 10.
    ```
 
 2. Create the local settings file. It turns on the demo data endpoint that the seed
-   script uses:
+   script uses, keeps sign-up open, and opens the demo site first:
 
    ```sh
    cp apps/api/.dev.vars.example apps/api/.dev.vars
@@ -50,6 +50,22 @@ You need Node.js 22.5 or later and pnpm 10.
 
 7. Open `http://localhost:5173/?site=demo`. Sign in with the account that the seed
    script prints.
+
+Local dev runs `apps/api/wrangler.jsonc`, the self-hosted template, with the settings in
+`.dev.vars` on top. Wrangler keeps local data per database id, and the template's ids are
+placeholders. If your local databases were created before the template moved to
+placeholder ids, the dev server starts with empty databases and answers `500`. Run the
+migrations and the seed once:
+
+```sh
+pnpm db:migrate && pnpm db:seed
+```
+
+If `pnpm db:migrate` then fails with `no such column`, a database from an older schema is
+in the way. Delete `apps/api/.wrangler/state` and run both commands again.
+
+misomoon Cloud deploys from `apps/api/wrangler.cloud.jsonc` with
+`pnpm --filter @misomoon/api run deploy:cloud`.
 
 The marketing site is in `apps/landing`. Start it with
 `pnpm --filter @misomoon/landing dev` on port 5174. The docs site is in `apps/docs`, on

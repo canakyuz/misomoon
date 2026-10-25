@@ -6,18 +6,23 @@
 // A site stays on the shards of the region it was added with (src/control.ts).
 //
 // The first run creates the D1 databases and the queues. Growing creates the missing
-// D1 databases, binds them in wrangler.jsonc, migrates and deploys; a migrated shard
+// D1 databases, binds them in the config, migrates and deploys; a migrated shard
 // registers itself. Shrinking marks the extra shards `retiring`: the Worker moves their
 // data onto the others (src/moves.ts), and a later run with the same count unbinds each
 // one once it holds nothing. Databases are never deleted here. A count left unset keeps
 // what is bound. `--plan` prints what would change and touches nothing.
 // D1_JURISDICTION=eu keeps the control database and shards without a region in the EU;
 // D1 sets it at creation only, so an existing database keeps where it is.
+// It deploys wrangler.jsonc, the self-hosted template, unless `--config <file>` or
+// WRANGLER_CONFIG names another, like misomoon Cloud's wrangler.cloud.jsonc
+// (`pnpm run deploy:cloud`). Every wrangler call gets that config.
 import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
+import { basename } from 'node:path'
+import { configPath } from './config.ts'
 import { createArgs, parseRegions, planShards, shardOf, type Db, type Region } from './shards.ts'
 
-const CONFIG = new URL('../wrangler.jsonc', import.meta.url)
+const CONFIG = configPath(process.argv.slice(2), process.env)
 const plan = process.argv.includes('--plan')
 const PLACEHOLDER = /^0{8}-0{4}-0{4}-0{4}-\d{12}$/
 const JURISDICTION = process.env.D1_JURISDICTION
@@ -25,7 +30,7 @@ if (JURISDICTION && !/^(eu|us|fedramp)$/.test(JURISDICTION)) throw new Error(`D1
 const LINE = /^\s*\{ "binding": "(\w+)", "database_name": "([\w-]+)", "database_id": "([\w-]+)", "migrations_dir": "([\w/]+)" \},?$/
 
 function wrangler(...args: string[]): string {
-	return execFileSync('wrangler', args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] })
+	return execFileSync('wrangler', [...args, '--config', CONFIG], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'inherit'] })
 }
 
 function control<T>(sql: string): T[] {
@@ -105,19 +110,19 @@ const next = out.join('\n')
 console.log(`shards: ${shards.length} bound, ${wanted.keep.length} wanted, ${kept.length} after this run`)
 for (const p of pending) console.log(p)
 if (plan) {
-	if (next !== text) console.log('\nwrangler.jsonc would become:\n' + next.split('\n').filter((l) => l.includes('"database_id"')).join('\n'))
+	if (next !== text) console.log(`\n${basename(CONFIG)} would become:\n` + next.split('\n').filter((l) => l.includes('"database_id"')).join('\n'))
 	process.exit(0)
 }
 if (next !== text) writeFileSync(CONFIG, next)
 // The events queue and its dead-letter queue; creating one that exists is a no-op.
 for (const name of new Set([...text.matchAll(/"(?:queue|dead_letter_queue)": "([\w-]+)"/g)].map((m) => m[1]))) {
 	try {
-		execFileSync('wrangler', ['queues', 'create', name], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
+		execFileSync('wrangler', ['queues', 'create', name, '--config', CONFIG], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] })
 		console.log(`created queue ${name}`)
 	} catch (e) {
 		const out = `${(e as { stdout?: string }).stdout ?? ''}${(e as { stderr?: string }).stderr ?? ''}`
 		if (!/already (exists|taken)/i.test(out)) throw new Error(`could not create queue ${name}: ${out.trim()}`)
 	}
 }
-execFileSync('node', ['--experimental-strip-types', new URL('./migrate.ts', import.meta.url).pathname, '--remote'], { stdio: 'inherit' })
-execFileSync('wrangler', ['deploy'], { stdio: 'inherit' })
+execFileSync('node', ['--experimental-strip-types', new URL('./migrate.ts', import.meta.url).pathname, '--remote', '--config', CONFIG], { stdio: 'inherit' })
+execFileSync('wrangler', ['deploy', '--config', CONFIG], { stdio: 'inherit' })

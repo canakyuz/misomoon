@@ -51,8 +51,9 @@ domain.
 
 - **A D1 database is not found**: A `database_id` in `wrangler.jsonc` doesn't exist in
   this account, for example after you copied the file from another account. On a
-  command-line install, set the id back to its placeholder, such as
-  `00000000-0000-0000-0000-000000000001`, and the deploy creates the database.
+  command-line install, set the id back to its placeholder from the repository's
+  `apps/api/wrangler.jsonc`, such as `00000000-0000-0000-0000-000000000001`, and the
+  deploy creates a new, empty database.
 - **`pnpm deploy` copies files into a folder instead of deploying**: `deploy` is a
   built-in pnpm command. Use `pnpm --filter @misomoon/api run deploy`.
 

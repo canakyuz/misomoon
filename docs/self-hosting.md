@@ -48,7 +48,8 @@ misomoon creates these resources in your account:
 Continue with [claim your instance](#claim-your-instance).
 
 The button deploys the bundle that CI builds from `main` and publishes to the `deploy`
-branch. It sets `SIGNUPS` to `invite`, so only the first person can sign up.
+branch from `apps/api/wrangler.jsonc`, the same template as the command-line deploy. It
+sets `SIGNUPS` to `invite`, so only the first person can sign up.
 
 ## Deploy from the command line
 
@@ -68,16 +69,7 @@ You need Node.js 22.5 or later, pnpm 10, and git.
    pnpm --filter @misomoon/api exec wrangler login
    ```
 
-3. Close open sign-up. In `apps/api/wrangler.jsonc`, set `SIGNUPS` in `vars` to
-   `invite`. Change the line if `vars` already has one, so the key appears once:
-
-   ```jsonc
-   "SIGNUPS": "invite"
-   ```
-
-   The first account can still sign up. Everyone after that needs an invitation.
-
-4. Deploy:
+3. Deploy:
 
    ```sh
    pnpm --filter @misomoon/api run deploy
@@ -88,7 +80,15 @@ You need Node.js 22.5 or later, pnpm 10, and git.
    `apps/api/wrangler.jsonc`. Then it applies the migrations and deploys the Worker.
    Commit the changed `wrangler.jsonc`, so that the next deploy uses the same databases.
 
-5. Open the URL that the deploy prints.
+4. Open the URL that the deploy prints. It looks like
+   `https://misomoon-api.<your-subdomain>.workers.dev`.
+
+`apps/api/wrangler.jsonc` is the template for a self-hosted server. Its database ids are
+placeholders until the first deploy, it deploys to a `workers.dev` address, and `SIGNUPS`
+is `invite`, so only the first account can sign up. It sets no demo or sample site and no
+retention limit, and leaves out misomoon Cloud's plans and billing.
+[Configuration](configuration.md#variables) explains each variable. misomoon Cloud deploys
+from `wrangler.cloud.jsonc` instead, which a self-hosted server doesn't use.
 
 To keep the data in the EU, set `D1_JURISDICTION=eu` on the first deploy. D1 then runs
 and stores the databases only in the EU. Cloudflare sets a database's jurisdiction when

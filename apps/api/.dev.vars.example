@@ -1,1 +1,4 @@
 DEMO_SEED=1
+# Local dev runs like misomoon Cloud: open sign-up, and the seeded demo site opens first.
+SIGNUPS=open
+DEMO_SITE=demo

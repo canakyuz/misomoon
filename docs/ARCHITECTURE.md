@@ -39,7 +39,9 @@ data never lives in one database.
 * **Shard databases** (`SHARD_0` … `SHARD_n`) hold `events`, `sessions` and
   `imported`. Their count is one number: `SHARD_COUNT=<n> pnpm run deploy`
   (`apps/api/scripts/deploy.ts`). Growing creates the missing D1 databases, binds them
-  in `wrangler.jsonc`, migrates every database and deploys; a bound shard registers
+  in the config (`apps/api/wrangler.jsonc`, the self-hosted template, or misomoon Cloud's
+  `wrangler.cloud.jsonc` through `pnpm run deploy:cloud`), migrates every database and
+  deploys; a bound shard registers
   itself in `shards` once its schema is there, and never before. Shrinking marks the
   extra shards `retiring`. Every five minutes the Worker closes their sites' open
   ranges onto other shards, then copies each closed range (settled for two days) to
@@ -438,10 +440,10 @@ to the inviter either way; `SIGNUPS=invite` closes open sign-up.
 
 Plans belong to teams. `teams.plan` holds a plan id from `packages/core/src/plans.ts`, or
 NULL for none. Polar's subscription webhooks set it, and support sets it by hand for a team
-without a subscription. Only `PLANS=on` reads it; misomoon Cloud
-sets that, and the deploy bundle leaves it out. `apps/api/src/plans.ts` resolves a team's
-plan. The site limit is a condition inside the `INSERT` of `createSite` and the `UPDATE`
-of a site transfer, so two requests at once can't both pass it, and only the team's own
+without a subscription. Only `PLANS=on` reads it; misomoon Cloud sets that in
+`wrangler.cloud.jsonc`, and `wrangler.jsonc` and the deploy bundle leave it out.
+`apps/api/src/plans.ts` resolves a team's plan. The site limit is a condition inside the
+`INSERT` of `createSite` and the `UPDATE` of a site transfer, so two requests at once can't both pass it, and only the team's own
 sites count. Retention under a plan is `planRetention` in core: the longest is the smaller
 of `RETENTION_DAYS` and the plan's, and the default the smaller of `RETENTION_DEFAULT_DAYS`
 and that. The PATCH route, `/me`, and the daily cleanup all use it. A team moved to a
