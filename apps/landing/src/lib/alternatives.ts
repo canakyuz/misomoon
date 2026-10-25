@@ -185,7 +185,7 @@ const matomo: Alternative = {
 		'If you only kept a consent banner for Matomo’s cookies, check whether you still need one. This is not legal advice.',
 	],
 	faq: [
-		['Does misomoon need a consent banner like Matomo with cookies?', 'misomoon sets no cookies and stores nothing on the device, the usual reasons for a banner. Whether you need one depends on your country and the rest of your site.'],
+		['Does misomoon need a consent banner like Matomo with cookies?', 'misomoon sets no cookies, the usual reason for a banner, and stores nothing on the device unless a visitor opts out of being counted. Whether you need one depends on your country and the rest of your site.'],
 		['Is misomoon as complete as Matomo?', 'No. Matomo has years of plugins, an audit log and ISO 27001. misomoon covers the reports most sites read, with funnels, revenue and Web Vitals in the free version.'],
 		['Can I move my Matomo history?', 'Not directly. misomoon imports a Google Analytics property, or CSV files in the format on the import page.'],
 	],
@@ -308,7 +308,7 @@ const ga: Alternative = {
 	faq: [
 		['Can I keep my Google Analytics history?', 'Yes. misomoon imports a GA4 property’s history, and the imported numbers show next to the ones misomoon collects.'],
 		['Why are misomoon’s numbers lower than GA4’s?', 'misomoon drops known bots and counts only real requests, with no modeled data.'],
-		['Do I still need a cookie banner?', 'misomoon sets no cookies and stores nothing on the device. Whether you need a banner depends on your country and the rest of your site. This is not legal advice.'],
+		['Do I still need a cookie banner?', 'misomoon sets no cookies and stores nothing on the device unless a visitor opts out of being counted. Whether you need a banner depends on your country and the rest of your site. This is not legal advice.'],
 	],
 }
 
@@ -351,7 +351,7 @@ const fathom: Alternative = {
 			`Yes, at the entry price. misomoon ${START.name} is $${START.price} a month for ${pv(START.events)} events on ${sites(START.sites)}, and Fathom starts at $15 for 100k pageviews. misomoon’s events count custom events as well as pageviews, so a site whose pageviews and custom events pass ${pv(START.events)} a month, or a second site, needs ${GROWTH.name}: $${GROWTH.price} for ${words(GROWTH.events)} events on ${sites(GROWTH.sites)}. Self-hosted misomoon costs what Cloudflare charges for the Workers, D1 and Queues it uses: nothing on the Workers Free plan, which handles about 3,000 events a day, and from $5 a month for the whole account on Workers Paid.`,
 		],
 		['Is my data in the EU?', 'On misomoon Cloud you pick the EU, the US or Asia-Pacific for each site. Self-hosted, the data stays in D1 databases in your Cloudflare account.'],
-		['Does misomoon set cookies?', 'No. It sets no cookies and stores nothing on the visitor’s device.'],
+		['Does misomoon set cookies?', 'No. It sets no cookies and stores nothing on the visitor’s device unless they opt out of being counted.'],
 	],
 }
 
@@ -391,7 +391,7 @@ const simple: Alternative = {
 	],
 	faq: [
 		['Does misomoon keep my history longer?', `Yes. On misomoon Cloud, ${keepSentence()} You can choose a shorter period for a site under Settings. Self-hosted, there is no limit.`],
-		['Is misomoon cookieless too?', 'Yes. It sets no cookies and stores nothing on the visitor’s device.'],
+		['Is misomoon cookieless too?', 'Yes. It sets no cookies and stores nothing on the visitor’s device unless they opt out of being counted.'],
 		['Can misomoon honor Do Not Track?', 'Yes, as an option per site. Global Privacy Control is an option too.'],
 	],
 }
@@ -522,7 +522,7 @@ const pirsch: Alternative = {
 		'Connect your payment provider under Settings > Revenue to see the money behind each source.',
 	],
 	faq: [
-		['Is misomoon cookieless like Pirsch?', 'Yes. Neither sets cookies. misomoon stores nothing on the visitor’s device.'],
+		['Is misomoon cookieless like Pirsch?', 'Yes. Neither sets cookies. misomoon stores nothing on the visitor’s device unless they opt out of being counted.'],
 		[
 			'Which one is cheaper?',
 			`For one site, misomoon. ${START.name} is $${START.price} a month for ${pv(START.events)} events, which count pageviews and custom events together. Pirsch starts at $6 for 10k pageviews. misomoon includes funnels and revenue, which Pirsch puts on its $12 Plus plan or doesn’t have. For more than one site, misomoon ${GROWTH.name} is $${GROWTH.price} for ${pv(GROWTH.events)} events on ${sites(GROWTH.sites)}.`,
@@ -695,7 +695,7 @@ const clarity: Alternative = {
 	],
 	faq: [
 		['Can misomoon replace Clarity?', 'For click maps, scroll depth and form drop-off, yes. For recordings of each visit, no: misomoon doesn’t record sessions.'],
-		['Does misomoon need a consent banner?', 'misomoon sets no cookies and stores nothing on the device, the usual reasons for a banner. Whether you need one depends on your country and the rest of your site.'],
+		['Does misomoon need a consent banner?', 'misomoon sets no cookies, the usual reason for a banner, and stores nothing on the device unless a visitor opts out of being counted. Whether you need one depends on your country and the rest of your site.'],
 		['Can I run both?', 'Yes. Many sites keep a recorder for design reviews and use misomoon for traffic, goals and revenue.'],
 	],
 }

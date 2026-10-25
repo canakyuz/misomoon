@@ -123,7 +123,7 @@
 		],
 		[
 			'Do I still need a cookie banner?',
-			'misomoon sets no cookies, stores nothing on the visitor’s device and never stores IP addresses, which are the usual reasons for one. Whether you need one depends on your country, on the features you turn on, and on what else your site does. This is not legal advice.',
+			'misomoon sets no cookies and never stores IP addresses, which are the usual reasons for one. It stores nothing on the visitor’s device unless they opt out of being counted. Whether you need one depends on your country, on the features you turn on, and on what else your site does. This is not legal advice.',
 		],
 		[
 			'Does misomoon have heatmaps and scroll maps?',
@@ -144,7 +144,7 @@
 		],
 		[
 			'What if a bot floods my site?',
-			'Known bots are dropped before they count. For the rest, set a daily cap per site. Once a day is full, the edge drops the extra events within a minute.',
+			'Known bots are dropped before they count. For the rest, a site can have a daily cap: self-hosted, you set it in your configuration, and on Cloud, support sets it. Once a day is full, the edge drops the extra events within a minute.',
 		],
 		['What happens to my data if I stop?', 'Export any period as a ZIP of CSV files from the dashboard, on any plan. Self-hosted, the data also stays in your own D1 databases.'],
 	]
@@ -303,7 +303,7 @@
 			<div class="aside">
 				<p>
 					See a heatmap of clicks and a scroll map drawn over your own page, with rage clicks and dead clicks marked. Find the form field where
-					people gave up and the JavaScript errors they hit. misomoon never records a session or what anyone types.
+					people gave up and the JavaScript errors they hit. misomoon never records a session or reads what anyone types into a form. Site search keeps the term from the page URL, with emails and ids removed.
 				</p>
 				<div class="facts">
 					<div class="fact v"><b class="display">1.0<small>KB</small></b><span>for every click, rage and dead</span></div>
@@ -461,7 +461,7 @@
 				your numbers questions in plain words. The tools read stats. The only thing they can write is a note on your timeline.
 			</p>
 			<div class="tools-list mono">
-				{#each ['list_sites', 'get_aggregate', 'get_timeseries', 'get_breakdown', 'get_goal_conversions', 'get_realtime', 'get_web_vitals', 'run_funnel'] as t, i (t)}<span
+				{#each ['list_sites', 'list_dimensions', 'get_aggregate', 'get_timeseries', 'get_breakdown', 'get_goal_conversions', 'get_realtime', 'get_web_vitals', 'run_funnel', 'get_journeys', 'get_search_terms', 'get_page_interactions', 'add_annotation'] as t, i (t)}<span
 						style:--r="{((i * 37) % 7) - 3}deg">{t}</span
 					>{/each}
 			</div>
@@ -518,7 +518,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 				</div>
 				<div class="facts" {@attach reveal(180)}>
 					<div class="fact v"><b class="display">&lt;1<small>KB</small></b><span>core tracker, gzipped</span></div>
-					<div class="fact m"><b class="display">0</b><span>cookies or local storage</span></div>
+					<div class="fact m"><b class="display">0</b><span>cookies, on every plan</span></div>
 					<div class="fact c"><b class="display">5</b><span>Web Vitals, from real users</span></div>
 				</div>
 			</div>
@@ -572,7 +572,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 			<div><b>No IP addresses kept.</b> An IP address is used for one hash and never stored. Search terms, error messages and click labels lose emails, ids and tokens before they are saved.</div>
 			<div><b>Forgets daily.</b> Visitor ids use a salt that is replaced every day and deleted after two.</div>
 			<div><b>Your region.</b> On misomoon Cloud, each site keeps its numbers in the European Union, the United States or Asia-Pacific, under our <a href="/dpa">data processing agreement</a>. Self-hosted, they stay in your own Cloudflare account.</div>
-			<div><b>Nothing on the device.</b> No cookies and no local storage, so there is no cookie to accept.</div>
+			<div><b>No cookies.</b> There is no cookie to accept. The device keeps one flag only when a visitor opts out, so they stay uncounted.</div>
 		</div>
 	</div>
 </section>

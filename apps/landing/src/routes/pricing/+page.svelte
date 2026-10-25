@@ -38,7 +38,7 @@
 		['Does a cheaper plan leave features out?', `No. Every plan has the same features. ${DIFFER}`],
 		[
 			'Do I need a cookie banner?',
-			'misomoon sets no cookies, stores nothing on the visitor’s device and never stores IP addresses, which are the usual reasons for one. Whether you need one depends on your country and on the rest of your site. This is not legal advice.',
+			'misomoon sets no cookies and never stores IP addresses, which are the usual reasons for one. It stores nothing on the visitor’s device unless they opt out of being counted. Whether you need one depends on your country and on the rest of your site. This is not legal advice.',
 		],
 		[
 			'Where is my data stored?',
