@@ -146,6 +146,9 @@ Once the import shows in misomoon, remove Matomo's tracking code, the block betw
 - Rows past Matomo's archive limits. With On-Premise's default settings, a day keeps
   1,000 referrers and 500 rows of most other reports. Matomo adds the rest into one
   `Others` row, which misomoon imports as a value of its own.
+- The source and channel of visits from a campaign. `Referrers.getCampaigns` names the
+  campaign only, so those visits count in the day's totals and **UTM campaigns**, but in
+  no source or channel.
 - UTM source and medium. `Referrers.getCampaigns` names the campaign only. The
   MarketingCampaignsReporting plugin, which Matomo Cloud's Business and Enterprise plans
   include, reports more, and this page doesn't map it.
