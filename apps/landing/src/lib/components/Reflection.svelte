@@ -118,7 +118,7 @@
 		<figcaption class="sr">
 			{fmt.format(total)} visitors in the last 30 days:
 			<ul>
-				{#each cols as c (c.t)}<li>{dayFmt.format(c.t)}: {fmt.format(c.visitors)}</li>{/each}
+				{#each days as c (c.t)}<li>{dayFmt.format(c.t)}: {fmt.format(c.visitors)}</li>{/each}
 			</ul>
 		</figcaption>
 	{/if}
