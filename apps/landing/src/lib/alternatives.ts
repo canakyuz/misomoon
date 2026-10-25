@@ -537,12 +537,12 @@ const goatcounter: Alternative = {
 	short: 'GoatCounter',
 	kind: 'self-hosted',
 	answer:
-		'GoatCounter is a small open-source counter, free on its donation-supported service or as one Go binary on your server. It counts pages and events and stops there: we found no funnels, goals, revenue or Google import. misomoon has all four and needs no server.',
+		'GoatCounter is a small open-source counter, free on its donation-supported service or as one Go binary on your server. It counts pages and events and stops there: we found no funnels, goals, revenue or dated Google history. misomoon has all four and needs no server.',
 	description: 'misomoon and GoatCounter compared: funnels, goals, revenue, Google import, self-hosting, price, and tracker size, with sources checked in October 2026.',
 	trackerKb: 3.3,
 	pickUs: [
 		{ text: 'You want funnels, goals and revenue, not only page counts.', src: 'https://www.goatcounter.com/help/faq', checked: C },
-		{ text: 'You want to import your Google Analytics history. GoatCounter imports web server logfiles.', src: 'https://www.goatcounter.com/help/faq', checked: C },
+		{ text: 'You want your Google Analytics history by day. GoatCounter adds Google’s totals to its visitor counter only.', src: 'https://github.com/arp242/goatcounter/blob/master/tpl/settings_export.gohtml', checked: C },
 		{ text: 'You don’t want a server to run, back up and patch.', src: 'https://github.com/arp242/goatcounter', checked: C },
 	],
 	pickThem: [
@@ -557,7 +557,7 @@ const goatcounter: Alternative = {
 		{ label: 'Cookies', us: 'None', them: 'None (their claim)', src: 'https://www.goatcounter.com/privacy', checked: C },
 		{ label: 'Funnels and goals', us: 'Yes', them: 'Not found', edge: 'us', src: 'https://www.goatcounter.com/help/faq', checked: C },
 		{ label: 'Revenue from payments', us: OUR_REVENUE, them: 'Not found', edge: 'us', src: 'https://www.goatcounter.com/help/faq', checked: C },
-		{ label: 'Import from Google', us: 'Yes', them: 'No, web server logfiles', edge: 'us', src: 'https://www.goatcounter.com/help/faq', checked: C },
+		{ label: 'Import from Google', us: 'Yes', them: 'Totals for its visitor counter, no daily history', edge: 'us', src: 'https://github.com/arp242/goatcounter/blob/master/tpl/settings_export.gohtml', checked: C },
 		{ label: 'Official MCP server', us: 'Built in', them: 'Not found', edge: 'us', src: 'https://www.goatcounter.com/api', checked: C },
 		{ label: 'Tracker, gzipped', us: OUR_TRACKER, them: '3.3 KB', edge: 'us', src: MEASURED, checked: C },
 	],

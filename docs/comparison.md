@@ -78,7 +78,7 @@ Checked on 2026-10-25.
 | Revenue from payment providers | Stripe, Polar, Lemon Squeezy, Dodo Payments, your server | Stripe, Lemon Squeezy, Polar, Shopify, WooCommerce, and more | Revenue from your own events; no payment connections found | Not found |
 | Custom events and UTM | Every plan | Yes | Yes | Custom events on Pro; UTM with the Plus add-on |
 | Core Web Vitals | Yes | Not found in its docs | Not on its feature list | Speed Insights, a separate product; all vitals at $10 per project a month |
-| Import from Google | GA4 | No, Plausible only ("Next is Google Analytics") | Universal Analytics (GA3) only | Not found |
+| Import from Google | GA4 | No, Plausible only ("Next is Google Analytics") | Universal Analytics (GA3) only, plus Plausible and Fathom | Not found |
 | Official MCP server | Yes | Yes | No, an unsupported community project | Vercel MCP can query Web Analytics |
 | Open source | MIT | Not found | AGPL-3.0 core library; on-premise on Enterprise | Only the client package (MIT) |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | Not found | Not found | SOC 2 Type 2, ISO 27001:2022 |
@@ -95,10 +95,10 @@ Checked on 2026-10-25.
 | Self-hosted edition limits | None | None stated | No revenue, alerts, feature flags, or experiments (cloud only) |
 | Hosted price | $5/month for 100k events on 1 site, or $14/month for 1M events on unlimited sites, after a 7-day trial | Free, supported by donations | From $19/month; the 14-day trial needs a payment method |
 | Funnels and goals | Yes | Not found | Yes |
-| Revenue | Yes | Not found | Stripe and Paddle, cloud only |
+| Revenue | Yes | Not found | Stripe, Paddle, or its revenue API, cloud only |
 | Core Web Vitals | Yes | Not found | Load timings such as TTFB; no Web Vitals named |
 | Session replay | No | No | Plus plan ($39/month) |
-| Import from Google | GA4 | No, web server logfiles | GA4 |
+| Import from Google | GA4 | Totals for its visitor counter, no daily history | GA4, and also Plausible, Umami, Fathom, and Simple Analytics |
 | Two-factor sign-in | No | Not found | Yes |
 | Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 3.3 KB (measured, `count.js`) | 6.7 KB (measured) |
 | GitHub stars | New | 6.1k | 1.2k |
@@ -116,7 +116,7 @@ experiments and feature flags, which misomoon doesn't. Checked on 2026-10-25.
 | Session replay | No | 10k replays a month free | Yes |
 | Heatmaps | Click maps and scroll depth | Yes | Click, scroll, area, conversion, and attention maps |
 | Funnels | Yes | Yes | Yes |
-| Data retention | Cloud: 2 years on Starter, 3 years on Growth and Scale. Self-hosted: no limit | Not checked | Recordings 30 days, heatmaps 9 months |
+| Data retention | Cloud: 2 years on Starter, 3 years on Growth and Scale. Self-hosted: no limit | 2 years by default; set your own on Enterprise | Recordings 30 days, heatmaps 9 months |
 | Official MCP server | Yes | Yes | Yes, 10 requests a day over the last 3 days of data |
 | Open source | MIT | Only the SDKs (Apache 2.0); the platform is hosted only | Only the tracking script |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | SOC 2 Type II, ISO 27001 and 27701 | Not found |
@@ -294,6 +294,7 @@ Checked on 2026-10-25.
 - Pirsch (2026-10-25): [pricing](https://pirsch.io/pricing), [privacy](https://docs.pirsch.io/privacy),
   [UTM](https://docs.pirsch.io/advanced/referrer-utm),
   [Google import](https://docs.pirsch.io/get-started/ga-import),
+  [Plausible import](https://docs.pirsch.io/get-started/plausible-import),
   [MCP](https://docs.pirsch.io/integrations/mcp),
   [core library](https://github.com/pirsch-analytics/pirsch)
 - Vercel Web Analytics (2026-10-25): [overview](https://vercel.com/docs/analytics),
@@ -305,7 +306,8 @@ Checked on 2026-10-25.
   [compliance](https://vercel.com/docs/security/compliance)
 - GoatCounter (2026-10-25): [home](https://www.goatcounter.com/),
   [FAQ](https://www.goatcounter.com/help/faq), [privacy](https://www.goatcounter.com/privacy),
-  [API](https://www.goatcounter.com/api), [repository](https://github.com/arp242/goatcounter)
+  [API](https://www.goatcounter.com/api), [repository](https://github.com/arp242/goatcounter),
+  [export and import settings](https://github.com/arp242/goatcounter/blob/master/tpl/settings_export.gohtml)
 - Swetrix (2026-10-25): [pricing](https://swetrix.com/pricing),
   [repository](https://github.com/Swetrix/swetrix), [performance](https://swetrix.com/performance),
   [data import](https://swetrix.com/docs/data-import), [security](https://swetrix.com/security),
