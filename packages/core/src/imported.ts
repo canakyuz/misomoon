@@ -1,7 +1,7 @@
 import type { Channel } from './channel'
 import { channelForSource } from './channel'
 import { BUILTIN_EVENTS } from './ingest'
-import { MINUTE } from './time'
+import { fromLocal, type Zone } from './time'
 import type { Stmt } from './queries'
 
 /**
@@ -322,13 +322,22 @@ function normalizeImportedPath(p: string): string {
 
 const COLS = ['site_id', 'import_id', 'ts', 'dim', 'key', ...METRICS] as const
 
-/** Local midnight of a YYYY-MM-DD date, as a UTC instant. */
-export function localMidnight(day: string, offset: number): number {
-	return Date.parse(day + 'T00:00:00Z') - offset * MINUTE
+const midnights = new Map<string, number>()
+
+/** Midnight of a YYYY-MM-DD date in `zone`, with that day's own offset, as a UTC instant. */
+export function localMidnight(day: string, zone: Zone): number {
+	// an import asks for the same few thousand days once per row
+	const k = `${zone} ${day}`
+	let ts = midnights.get(k)
+	if (ts === undefined) {
+		if (midnights.size >= 20_000) midnights.clear()
+		midnights.set(k, (ts = fromLocal(Date.parse(day + 'T00:00:00Z'), zone)))
+	}
+	return ts
 }
 
 /** Insert statements, a few rows each to stay under D1's 100 bound parameters. */
-export function importedInsertStmts(siteId: string, importId: string, rows: ImportedRow[], offset: number): Stmt[] {
+export function importedInsertStmts(siteId: string, importId: string, rows: ImportedRow[], zone: Zone): Stmt[] {
 	const per = Math.floor(100 / COLS.length)
 	const stmts: Stmt[] = []
 	for (let i = 0; i < rows.length; i += per) {
@@ -336,7 +345,7 @@ export function importedInsertStmts(siteId: string, importId: string, rows: Impo
 		stmts.push({
 			sql: `INSERT INTO imported (${COLS.join(', ')}) VALUES ${chunk.map(() => `(${COLS.map(() => '?').join(', ')})`).join(', ')}
 				ON CONFLICT (site_id, dim, ts, key, import_id) DO UPDATE SET ${METRICS.map((m) => `${m} = ${m} + excluded.${m}`).join(', ')}`,
-			params: chunk.flatMap((r) => [siteId, importId, localMidnight(r.day, offset), r.dim, r.key, ...METRICS.map((m) => r[m])]),
+			params: chunk.flatMap((r) => [siteId, importId, localMidnight(r.day, zone), r.dim, r.key, ...METRICS.map((m) => r[m])]),
 		})
 	}
 	return stmts

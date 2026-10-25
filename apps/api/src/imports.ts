@@ -1,4 +1,4 @@
-import { addGoogleRows, addCsvExport, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localMidnight, tzOffset, unzipTexts } from '@misomoon/core'
+import { addGoogleRows, addCsvExport, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localMidnight, unzipTexts } from '@misomoon/core'
 import { getRanges, HttpError, shardDb, writeShard, type Site } from './control'
 import { google, googleConfigured, grantToken } from './google'
 import { moveTargets, moving } from './moves'
@@ -39,10 +39,9 @@ async function begin(env: Env, site: Site, source: 'csv' | 'google', label: stri
 async function persist(env: Env, site: Site, id: string, set: ImportedSet) {
 	// Rows written behind a running shard move would be lost when its old copy is purged.
 	if (await moving(env, site.id)) throw new HttpError(409, 'this site\'s history is being moved between shards; try the import again in a few hours')
-	const offset = tzOffset(site.timezone)
 	const byShard = new Map<string, ReturnType<ImportedSet['list']>>()
 	for (const row of set.list()) {
-		const shard = await writeShard(env, site.id, localMidnight(row.day, offset))
+		const shard = await writeShard(env, site.id, localMidnight(row.day, site.timezone))
 		const list = byShard.get(shard) ?? []
 		list.push(row)
 		byShard.set(shard, list)
@@ -53,7 +52,7 @@ async function persist(env: Env, site: Site, id: string, set: ImportedSet) {
 		for (const [shard, rows] of byShard) {
 			const db = await shardDb(env, shard)
 			written.push(db)
-			const stmts = importedInsertStmts(site.id, id, rows, offset)
+			const stmts = importedInsertStmts(site.id, id, rows, site.timezone)
 			for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100).map((s) => db.prepare(s.sql).bind(...s.params)))
 		}
 	} catch (e) {

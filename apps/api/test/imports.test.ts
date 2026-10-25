@@ -22,6 +22,20 @@ beforeEach(() => invalidate(''))
 afterEach(() => vi.unstubAllGlobals())
 
 describe('CSV imports', () => {
+	it("stores each day at that day's midnight in the site's time zone, across a DST change", async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(Date.UTC(2024, 6, 1))
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com', timezone: 'America/New_York' }), { 'content-type': 'application/json' })
+		const form = new FormData()
+		form.append('file', visitorsCsv(1))
+		expect((await call(env, 'POST', '/api/v1/sites/shop-com/imports', form)).status).toBe(201)
+		vi.useRealTimers()
+		// 2022-01-01 is in EST (UTC-5), though July is EDT (UTC-4)
+		const ts = [...env.SHARD_0.rows('SELECT DISTINCT ts FROM imported'), ...env.SHARD_1.rows('SELECT DISTINCT ts FROM imported')]
+		expect(ts).toEqual([{ ts: Date.UTC(2022, 0, 1, 5) }])
+	})
+
 	it('leaves no rows behind when an import fails part way, so a retry does not count days twice', async () => {
 		const env = fakeEnv()
 		expect((await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })).status).toBe(201)
