@@ -2,7 +2,7 @@
 	import X from '@lucide/svelte/icons/x'
 	import { get, send, setToken, signupLink } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
-	import { otherAccount } from '../lib/invite'
+	import { otherAccount } from '../lib/account'
 	import Logo from './Logo.svelte'
 
 	type Mode = 'signin' | 'signup' | 'forgot' | 'reset' | 'invite'

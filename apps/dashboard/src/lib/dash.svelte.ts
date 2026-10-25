@@ -1,5 +1,6 @@
 import { can } from '@misomoon/core/roles'
 import { createContext, untrack } from 'svelte'
+import { liveDemo } from './account'
 import { demoPath, emailLink, get, signupLink, type Me, type Site } from './api'
 import { filterProblem, readUrlState, serializeFilters, VIEWS, type Filter, type FilterOp, type MetricKey, type View } from './url'
 
@@ -40,7 +41,7 @@ export class Dash {
 	readonly isSample = demoPath
 	sites = $derived(this.isSample ? (this.me?.sites ?? []).filter((s) => s.id === this.me?.sample) : (this.me?.sites ?? []))
 	current = $derived<Site | null>(this.sites.find((s) => s.id === this.site) ?? null)
-	isDemo = $derived(this.me?.kind === 'anonymous')
+	isDemo = $derived(liveDemo(this.me, this.site))
 	/** opened from a shared link: read-only, no settings */
 	isShared = $derived(!!this.me?.share)
 	/** the views this visitor can open, in menu order; read-only dashboards have no settings */
