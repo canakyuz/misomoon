@@ -301,7 +301,7 @@ settings:
 
 | Name | Kind | Required | What it does |
 | --- | --- | --- | --- |
-| `CONTENT` | D1 database | For the blog | Blog posts, pages, and authors (`apps/landing/migrations`). Without it, the blog is empty and the content API answers `503`. |
+| `CONTENT` | D1 database | For the blog | Blog posts, pages, and authors (`apps/landing/migrations`). Without it, the blog is empty, the nav shows no **Blog** link, and the content API answers `503`. |
 | `CONTENT_TOKEN` | Secret | For writes | The bearer token for `PUT` and `DELETE` on the content API, and for reading drafts. Without it, writes answer `503`. |
 | `PUBLIC_APP_URL` | Variable | No | Where the dashboard lives, for **Sign in** and the live demo. `wrangler.jsonc` sets `https://app.misomoon.com`. Unset, the links go to `http://localhost:8787`, the API Worker in `wrangler dev`. |
 | `PUBLIC_DOCS_URL` | Variable | No | Where the docs site lives. Unset, docs links open the Markdown on GitHub. |

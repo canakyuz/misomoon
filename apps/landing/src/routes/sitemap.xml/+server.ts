@@ -16,6 +16,6 @@ export const GET: RequestHandler = async ({ url, platform }) => {
 				return { entries: [], blog: null }
 			})
 		: { entries: [], blog: null }
-	const urls = [...codePages(), ...(fromDb.blog ? [{ path: '/blog', lastmod: fromDb.blog }] : [{ path: '/blog' }]), ...fromDb.entries.map((e) => ({ path: e.path, lastmod: e.updatedAt }))]
+	const urls = [...codePages(), ...(fromDb.blog ? [{ path: '/blog', lastmod: fromDb.blog }] : []), ...fromDb.entries.map((e) => ({ path: e.path, lastmod: e.updatedAt }))]
 	return new Response(sitemap(url.origin, urls), { headers: { 'content-type': 'application/xml; charset=utf-8', 'cache-control': 'public, max-age=3600' } })
 }

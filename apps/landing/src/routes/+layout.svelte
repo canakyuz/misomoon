@@ -12,12 +12,12 @@
 	let scrolled = $state(false)
 	let menu = $state(false)
 
-	const NAV: [string, string][] = [
+	const NAV = $derived<[string, string][]>([
 		['Features', '/features'],
 		['Pricing', '/pricing'],
 		['Compare', '/alternatives'],
-		['Blog', '/blog'],
-	]
+		...(data.blog ? [['Blog', '/blog'] as [string, string]] : []),
+	])
 	const here = (href: string) => page.url.pathname === href || page.url.pathname.startsWith(href + '/')
 
 	// misomoon counts its own landing page. The tracker loads once the page is idle so
@@ -100,7 +100,7 @@
 		</div>
 		<div>
 			<h2 class="mono">Resources</h2>
-			<a href="/blog">Blog</a>
+			{#if data.blog}<a href="/blog">Blog</a>{/if}
 			<a href={docLink(data.docsUrl)}>Docs</a>
 			<a href={docLink(data.docsUrl, 'self-hosting')}>Self-hosting</a>
 			<a href={docLink(data.docsUrl, 'faq')}>FAQ</a>

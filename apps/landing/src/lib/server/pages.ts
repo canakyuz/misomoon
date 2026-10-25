@@ -31,6 +31,16 @@ export function posts(platform: App.Platform | undefined, o: { tag?: string; aut
 	)
 }
 
+/** Whether the blog has a published post, so the nav can link to it. A database error keeps the link: the blog page then says it is resting. */
+export async function hasPosts(platform: App.Platform | undefined): Promise<boolean> {
+	if (!db(platform)) return false
+	try {
+		return (await posts(platform)).items.length > 0
+	} catch {
+		return true
+	}
+}
+
 export function tags(platform: App.Platform | undefined) {
 	const d = db(platform)
 	if (!d) return Promise.resolve([])

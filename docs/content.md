@@ -13,7 +13,8 @@ and left out of the sitemap. None of these pages use this API.
 
 A post appears at `/blog/<slug>`. A page appears at `/<slug>`, and a page slug can have
 up to three segments, such as `/guides/setup`. Each author has a page at
-`/authors/<id>`.
+`/authors/<id>`. The site's nav, footer, and sitemap link to `/blog` only once a post is
+published; until then `/blog` still opens, empty.
 
 ## Set up the database and the token
 

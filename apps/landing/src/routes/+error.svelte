@@ -22,7 +22,7 @@
 			<li><a class="cta primary" href="/">Home <span class="arrow">→</span></a></li>
 			<li><a class="cta ghost" href="/features">Features</a></li>
 			<li><a class="cta ghost" href="/pricing">Pricing</a></li>
-			<li><a class="cta ghost" href="/blog">Blog</a></li>
+			{#if page.data.blog}<li><a class="cta ghost" href="/blog">Blog</a></li>{/if}
 		</ul>
 	</div>
 </section>
