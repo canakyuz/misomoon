@@ -27,7 +27,7 @@
 	import { regionName } from '../lib/places'
 	import Topbar from '../components/Topbar.svelte'
 	import { deployLinks, normalizePrefix, proxiedScriptTag, proxySnippets, type ProxySnippet } from '@misomoon/core/snippets'
-	import { authHeaders, get, send, setToken, type ApiKey, type Goal, type ImportRow, type ReportSub, type Segment, type SharedLink, type TeamMembers, ApiError } from '../lib/api'
+	import { authHeaders, get, getHtml, send, setToken, type ApiKey, type Goal, type ImportRow, type ReportSub, type Segment, type SharedLink, type TeamMembers, ApiError } from '../lib/api'
 	import { can, type TeamRole } from '@misomoon/core/roles'
 	import { DEFAULT_SEARCH_PARAMS, FEATURES, LIGHT_FEATURES, searchParams, siteFeatures, type Feature } from '@misomoon/core/features'
 	import { OPT_OUT_SNIPPET, privacyPolicy, retentionDays } from '@misomoon/core/privacy'
@@ -472,10 +472,19 @@
 			setTimeout(() => (sentTest = false), 2500)
 		})
 	async function previewReport() {
-		const res = await fetch(`/api/v1/sites/${dash.site}/reports/preview?kind=${newReport.kind === 'monthly' ? 'monthly' : 'weekly'}`, { headers: authHeaders() })
-		const url = URL.createObjectURL(new Blob([await res.text()], { type: 'text/html' }))
-		window.open(url, '_blank', 'noopener')
-		setTimeout(() => URL.revokeObjectURL(url), 60_000)
+		if (busy) return
+		busy = 'previewReport'
+		error = null
+		try {
+			const html = await getHtml(`/api/v1/sites/${dash.site}/reports/preview?kind=${newReport.kind === 'monthly' ? 'monthly' : 'weekly'}`)
+			const url = URL.createObjectURL(new Blob([html], { type: 'text/html' }))
+			window.open(url, '_blank', 'noopener')
+			setTimeout(() => URL.revokeObjectURL(url), 60_000)
+		} catch (e) {
+			error = (e as Error).message
+		} finally {
+			busy = null
+		}
 	}
 	const day = (ms: number | null) => (ms ? new Date(ms).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' }) : '')
 </script>
@@ -861,7 +870,7 @@
 					<button class="btn primary" onclick={addReport} disabled={!newReport.email}>Subscribe</button>
 				</div>
 				<div class="inline">
-					<button class="btn ghost" onclick={previewReport}>Preview report</button>
+					<button class="btn ghost" onclick={previewReport} disabled={!!busy}>Preview report</button>
 					<button class="btn ghost" onclick={testReport} disabled={!newReport.email && !reports.data?.subscriptions.length}>{sentTest ? 'Sent' : 'Send a test'}</button>
 				</div>
 			</section>

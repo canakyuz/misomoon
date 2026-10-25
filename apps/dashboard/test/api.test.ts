@@ -5,7 +5,7 @@ vi.hoisted(() => {
 	;(globalThis as { location?: unknown }).location = { pathname: '/', search: '' }
 })
 
-const { ApiError, get } = await import('../src/lib/api')
+const { ApiError, get, getHtml } = await import('../src/lib/api')
 
 afterEach(() => vi.unstubAllGlobals())
 
@@ -15,5 +15,11 @@ describe('error messages (F30)', () => {
 		const e = await get('/api/v1/x', undefined, 0).catch((e) => e)
 		expect(e).toBeInstanceOf(ApiError)
 		expect([e.status, e.message]).toEqual([502, 'request failed (502)'])
+	})
+
+	it('refuses to show an error answer as a report preview', async () => {
+		vi.stubGlobal('fetch', async () => Response.json({ error: 'needs the editor role' }, { status: 403 }))
+		const e = await getHtml('/api/v1/sites/a/reports/preview').catch((e) => e)
+		expect([e instanceof ApiError, e.status, e.message]).toEqual([true, 403, 'needs the editor role'])
 	})
 })

@@ -78,7 +78,7 @@ function headers(json = false): HeadersInit {
 	return h
 }
 
-/** The Authorization header, for requests that bypass `get` and `send` (uploads, previews). */
+/** The Authorization header, for requests that bypass `get` and `send` (uploads). */
 export const authHeaders = () => headers()
 async function failure(res: Response): Promise<ApiError> {
 	const body = await res.json().catch(() => null)
@@ -101,6 +101,13 @@ export async function get<T>(path: string, signal?: AbortSignal, ttl = TTL): Pro
 
 export function peek<T>(path: string): T | null {
 	return (cache.get(path)?.value as T) ?? null
+}
+
+/** Loads a page the API renders, such as an email report preview, uncached. */
+export async function getHtml(path: string): Promise<string> {
+	const res = await fetch(path, { headers: headers() })
+	if (!res.ok) throw await failure(res)
+	return res.text()
 }
 
 export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
