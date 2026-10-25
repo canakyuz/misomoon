@@ -36,7 +36,8 @@ Google serves. An empty **To** ends yesterday.
 
 The import runs on the server, so you can close the page. Its row says **Importing…**
 until it shows the first and last day and the number of rows stored. If it shows
-**Failed:** and an error, delete it and start again at **Connect Google**.
+**Failed:** and an error, delete it and start again at **Connect Google**. A failed import
+keeps none of its rows, so starting again counts no day twice.
 
 ## Upload CSV files
 

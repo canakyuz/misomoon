@@ -47,10 +47,18 @@ async function persist(env: Env, site: Site, id: string, set: ImportedSet) {
 		list.push(row)
 		byShard.set(shard, list)
 	}
-	for (const [shard, rows] of byShard) {
-		const db = await shardDb(env, shard)
-		const stmts = importedInsertStmts(site.id, id, rows, offset)
-		for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100).map((s) => db.prepare(s.sql).bind(...s.params)))
+	// each batch commits on its own, so a failure takes back what earlier batches wrote
+	const written: D1Database[] = []
+	try {
+		for (const [shard, rows] of byShard) {
+			const db = await shardDb(env, shard)
+			written.push(db)
+			const stmts = importedInsertStmts(site.id, id, rows, offset)
+			for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100).map((s) => db.prepare(s.sql).bind(...s.params)))
+		}
+	} catch (e) {
+		for (const db of written) await db.prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(site.id, id).run().catch(() => {})
+		throw e
 	}
 	const days = set.days
 	await env.CONTROL.prepare("UPDATE imports SET status = 'done', rows = ?, from_day = ?, to_day = ? WHERE id = ?")
