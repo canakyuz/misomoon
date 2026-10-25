@@ -75,7 +75,9 @@ folder. misomoon skips files for reports that the table below doesn't list.
 - Commas separate values. A value in double quotes may hold commas and line breaks, and
   `""` inside it is one double quote.
 - Counts are rounded to whole numbers. An empty, negative, or non-numeric count is `0`.
-- Text values are trimmed and cut at 500 characters. An empty value becomes `(none)`.
+- Text values are trimmed and cut at 500 characters. An empty value becomes `(none)`. An
+  empty `country`, `region`, `browser_version`, or `operating_system_version` adds nothing
+  to its report.
 
 The visit columns are `visitors` (unique visitors that day), `visits`, `pageviews`,
 `bounces`, and `visit_duration` (the total length of all visits, in seconds).
