@@ -77,7 +77,9 @@ A plan counts the events of the team's sites per calendar month in UTC, from the
 - At 125%, misomoon stops recording the team's pageviews and custom events until the next
   month starts, or until the team moves to a plan with room. The same people get one
   email when that happens, and the dashboard shows a banner. On Starter the stop is at
-  125,000 events, on Growth at 1,250,000, and on Scale at 6,250,000.
+  125,000 events, on Growth at 1,250,000, and on Scale at 6,250,000. Each server checks
+  the count about once a minute, and events already on their way are still recorded, so a
+  busy month can end a little past 125%.
 - A move to a bigger plan starts recording again within a minute. The emails start over
   for the new plan.
 
@@ -99,7 +101,7 @@ a day fills up ([Daily ingest cap](configuration.md#daily-ingest-cap)).
 Your first team starts with a 7-day trial of every feature, with Growth's limits:
 1,000,000 events a month, stats kept for up to 3 years, and any number of sites. The trial
 needs no card. **Settings** > **Team** shows the days left, and a banner shows in the
-last 2 days.
+last 2 days. misomoon sends no email when the trial ends.
 
 Each person gets one trial. It starts with the first team you create: the one sign-up
 makes, or the one misomoon makes when you add your first site. A team you create after
