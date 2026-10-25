@@ -74,7 +74,8 @@ export function mixpanelHits(text: string): RawHit[] {
 		const time = Number(p.time)
 		// exported with time_in_ms=true, or in seconds
 		const t = time > 1e11 ? time : time * 1000
-		const visitor = (str(p.$device_id) || str(p.distinct_id)).replace(/^\$device:/, '')
+		// the export resolves distinct_id to the user; a signed-in user's $device_id can change on each event
+		const visitor = (str(p.distinct_id) || str(p.$device_id)).replace(/^\$device:/, '')
 		if (!Number.isFinite(t) || !visitor) continue
 		const page = url(p.$current_url)
 		const utm: Partial<Record<UtmTag, string>> = {}

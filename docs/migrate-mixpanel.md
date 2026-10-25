@@ -73,7 +73,7 @@ misomoon reads each line as follows:
 | Mixpanel property | Goes into |
 | --- | --- |
 | `time` | The event's time, in seconds, or in milliseconds when you add `time_in_ms=true`. misomoon files each visit on its day in the site's **Timezone** ([Sites](settings.md#sites)). |
-| `$device_id`, or `distinct_id` without `$device:` | The visitor. Events without either, such as ones your server sent, stay out. |
+| `distinct_id` without `$device:`, or else `$device_id` | The visitor. The export resolves `distinct_id` to the user, so a signed-in user counts once even when each event has a new `$device_id`. Events without either, such as ones your server sent, stay out. |
 | `$mp_web_page_view` events | Page views, with the page from `current_url_path` or the path of `$current_url`, and the site's host from `current_domain` |
 | Other events | Custom events, under their names. Mixpanel's own events, whose names start with `$` or `mp_`, such as `$identify` and `$mp_click`, stay out. |
 | `$referrer`, and `utm_source` to `utm_term` or the tags in `$current_url` | The visit's source, channel, referrer, and UTM tags, from its first page view. `$direct` and a referrer on the site's host count as none. |
@@ -115,9 +115,11 @@ of your cookie banner on those pages. If you keep Mixpanel in your product, leav
 
 Checked on 2026-10-26.
 
-The import was tested on the example lines in Mixpanel's API reference and on a page view
-from a real export that the open-source OpenPanel keeps in its tests. It has not yet read
-a whole real export, because Mixpanel's export needs a project's service account.
+The import was tested on the example lines in Mixpanel's API reference, on a page view
+from a real export that the open-source OpenPanel keeps in its tests, and on ten lines of a
+web app's real export published on GitHub, with its users' ids and its domain replaced.
+It has not yet read a whole real export, because Mixpanel's export needs a project's
+service account.
 
 - Mixpanel: [Raw Event Export API](https://docs.mixpanel.com/reference/raw-event-export),
   [export methods](https://docs.mixpanel.com/docs/export-methods),
@@ -126,3 +128,4 @@ a whole real export, because Mixpanel's export needs a project's service account
   [identifying users](https://docs.mixpanel.com/docs/tracking-methods/id-management/identifying-users),
   [pricing and data retention](https://mixpanel.com/pricing)
 - A real exported page view: [OpenPanel's Mixpanel importer test](https://github.com/Openpanel-dev/openpanel/blob/main/packages/core/src/modules/import/src/providers/mixpanel.test.ts)
+- Ten real exported lines: [a web app's export in GWolf10/bi](https://github.com/GWolf10/bi/blob/main/bi_projects/third_party_project/workspace/temp/bi/third_party_project/json_files/mp_api_raw_20241007.json)
