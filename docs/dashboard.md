@@ -200,7 +200,8 @@ select it in a panel. A chip such as **Browser is Chrome** shows after **Filtere
 2. Pick a dimension. A dot marks one that already has a filter.
 3. Pick **is**, **is not**, **contains**, or **does not contain**.
 4. Select one or more values. Several values match any of them, as in **Browser is Chrome
-   or Safari**. To match text that isn't listed, type it and press `Enter`.
+   or Safari**. The box above the list searches it. To match text that isn't listed,
+   type it with no value selected and press `Enter`.
 5. Select **Apply**.
 
 A `*` is a wildcard, as in `/blog/*`. Each dimension takes one filter, and a new one
