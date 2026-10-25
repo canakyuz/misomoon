@@ -78,7 +78,8 @@ async function sendWithSes(env: Env, to: string, msg: Email) {
 	const aws = new AwsClient({ accessKeyId: env.AWS_SES_ACCESS_KEY_ID!, secretAccessKey: env.AWS_SES_SECRET_ACCESS_KEY!, service: 'ses', region, retries: 0 })
 	const post = () => aws.fetch(`https://email.${region}.amazonaws.com/v2/email/outbound-emails`, {
 		method: 'POST',
-		redirect: 'error',
+		// Workers does not support redirect: 'error'. A redirect is a failed send below.
+		redirect: 'manual',
 		headers: { 'content-type': 'application/json' },
 		body: JSON.stringify({
 			FromEmailAddress: sender(env),

@@ -85,6 +85,8 @@ key is stored in the two `AWS_SES_*` Worker secrets. The domain uses SES DKIM an
 Changing the sender or region also requires updating the IAM policy and verifying the
 identity in that region. SES failures are logged as `email failed`; invitations then
 show a link to copy, and reports stay due for a later attempt.
+An SES redirect is treated as a failed send. The Worker never forwards the signed
+request or its email content to the redirect destination.
 The self-hosted template and deploy bundle leave out misomoon Cloud's email provider,
 sender, and SES region. Set your own provider and credentials to send email there.
 
