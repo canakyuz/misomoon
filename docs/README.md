@@ -54,7 +54,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [PostHog](migrate-posthog.md): build exact history files with PostHog's SQL editor, and keep your event names.
 - [Rybbit](migrate-rybbit.md): bring daily totals from the dashboard export and breakdowns from raw events.
 - [Google Analytics 4](migrate-google-analytics.md): import a GA4 property straight from Google, and keep your event names.
-- [Fathom Analytics](migrate-fathom.md): rename the columns of Fathom's daily exports, and move event values to revenue.
+- [Fathom Analytics](migrate-fathom.md): import your history from Fathom's API, and move event values to revenue.
 - [Simple Analytics](migrate-simple-analytics.md): count the raw export or the Stats API into history files, and keep your event names.
 - [Cloudflare Web Analytics](migrate-cloudflare-web-analytics.md): swap the beacon, and bring six months of history from the GraphQL API.
 - [DataFast](migrate-datafast.md): move goals and revenue attribution, and import your history from DataFast's API.

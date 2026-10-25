@@ -343,6 +343,7 @@ const fathom: Alternative = {
 	],
 	switching: [
 		'Add the misomoon script next to Fathom’s and compare for a billing cycle.',
+		'Import your Fathom history under Settings > Integrations, with the site ID and an API token.',
 		'Recreate your events as goals in misomoon.',
 		'Cancel the plan once the numbers line up.',
 	],

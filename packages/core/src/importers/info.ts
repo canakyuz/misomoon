@@ -67,6 +67,15 @@ export const IMPORTER_INFO: ImporterInfo[] = [
 		guide: 'migrate-datafast',
 		fields: [{ name: 'key', label: 'API key', kind: 'secret', placeholder: 'df_…', help: 'In DataFast, under Website settings > API. It reads this one website.' }],
 	},
+	{
+		id: 'fathom',
+		name: 'Fathom',
+		guide: 'migrate-fathom',
+		fields: [
+			{ name: 'site', label: 'Site ID', kind: 'text', placeholder: 'CDBUGS', help: 'The code in your Fathom embed script, also under Settings > Sites.' },
+			{ name: 'token', label: 'API token', kind: 'secret', help: 'In Fathom, under Settings > API. A read-only token for this site is enough.' },
+		],
+	},
 ]
 
 export const importerInfo = (id: string) => IMPORTER_INFO.find((i) => i.id === id)

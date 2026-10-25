@@ -1,0 +1,122 @@
+{
+	"note": "Fathom API answers as published: the examples in Fathom's API reference, and the answers a site owner printed in a post. No request was made to Fathom.",
+	"site": {
+		"source": "https://usefathom.com/api/llms.txt",
+		"answer": {
+			"id": "CDBUGS",
+			"object": "site",
+			"name": "Bugs Bunny Portfolio",
+			"sharing": "none",
+			"created_at": "2020-07-27 12:01:01",
+			"timezone": "America/New_York"
+		}
+	},
+	"events": {
+		"source": "https://usefathom.com/api/llms.txt",
+		"answer": {
+			"object": "list",
+			"url": "/v1/sites/CDBUGS/events",
+			"has_more": false,
+			"data": [
+				{
+					"id": "IJKLMNOP",
+					"object": "event",
+					"name": "Purchased product",
+					"currency": "pound",
+					"created_at": "2020-08-21 15:24:00"
+				},
+				{
+					"id": "ABCDEFGH",
+					"object": "event",
+					"name": "Signed up to newsletter",
+					"currency": null,
+					"created_at": "2020-08-21 15:24:00"
+				}
+			]
+		}
+	},
+	"aggregation": {
+		"source": "https://usefathom.com/api/llms.txt",
+		"answer": [
+			{
+				"browser": "Chrome",
+				"device_type": "Desktop",
+				"pageviews": "30000"
+			},
+			{
+				"browser": "Chrome",
+				"device_type": "Mobile",
+				"pageviews": "28000"
+			},
+			{
+				"browser": "Chrome",
+				"device_type": "Tablet",
+				"pageviews": "24000"
+			},
+			{
+				"browser": "Firefox",
+				"device_type": "Desktop",
+				"pageviews": "12000"
+			},
+			{
+				"browser": "Firefox",
+				"device_type": "Tablet",
+				"pageviews": "5000"
+			},
+			{
+				"browser": "Firefox",
+				"device_type": "Mobile",
+				"pageviews": "300"
+			}
+		]
+	},
+	"published": {
+		"source": "https://github.com/spences10/scottspence.com/blob/main/posts/adding-real-time-analytics-to-my-sveltekit-site-with-fathom.md",
+		"answer": {
+			"yearly": [
+				{
+					"visits": "99",
+					"uniques": "140",
+					"pageviews": "681",
+					"avg_duration": "55.5731",
+					"bounce_rate": 0.2828282828282828,
+					"date": "2023"
+				},
+				{
+					"visits": "145",
+					"uniques": "202",
+					"pageviews": "492",
+					"avg_duration": "30.7709",
+					"bounce_rate": 0.1310344827586207,
+					"date": "2022"
+				},
+				{
+					"visits": "4",
+					"uniques": "5",
+					"pageviews": "23",
+					"avg_duration": "36.0909",
+					"bounce_rate": 0.75,
+					"date": "2021"
+				}
+			],
+			"monthly_page": [
+				{
+					"visits": "7",
+					"uniques": "16",
+					"pageviews": "192",
+					"avg_duration": "46.9545",
+					"bounce_rate": 0.14285714285714285,
+					"date": "2023-02",
+					"pathname": "/about"
+				}
+			],
+			"content": [
+				{
+					"hostname": "http://localhost",
+					"pathname": "/about",
+					"total": "1"
+				}
+			]
+		}
+	}
+}
