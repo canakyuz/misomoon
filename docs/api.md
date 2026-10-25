@@ -556,7 +556,7 @@ work in every mode.
 | --- | --- | --- |
 | `GET /api/v1/me` | Any | Who you are, and what you can open. |
 | `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
-| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members. |
+| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
 
 `GET /api/v1/me` returns:
 
@@ -593,7 +593,7 @@ work in every mode.
 | `GET /api/v1/teams` | Session | Your teams: `id`, `name`, your `role`, and the number of `members` and `sites`. |
 | `POST /api/v1/teams` | Session | Makes a team with you as owner. Takes `name` (cut to 80 characters, default `My team`). Returns `201` with `id`, `name`, `created_at`, and `role`. With plans on, the team gets the free trial only if it is the first team you create; otherwise it needs a plan before it can add a site. |
 | `PATCH /api/v1/teams/:team` | Session, team owner or admin | Renames the team. Takes `name`. |
-| `DELETE /api/v1/teams/:team` | Session, team owner | Deletes the team. Returns `204`, or `409` while it has sites. |
+| `DELETE /api/v1/teams/:team` | Session, team owner | Deletes the team. Returns `204`, or `409` while it has sites or a paid plan that still renews. |
 | `GET /api/v1/teams/:team/members` | Session, team owner or admin | `{"members": [...], "guests": [...], "invitations": [...]}`. Members have `id`, `email`, `name`, `role`, `created_at`. Guests have `id`, `email`, `name`, `role`, `site_id`. Invitations have `id`, `email`, `role`, `site_id`, `expires_at`, `created_at`. |
 | `PATCH /api/v1/teams/:team/members/:user` | Session, team owner or admin | Changes a member's `role` to `owner`, `admin`, `editor`, `viewer`, or `billing`. |
 | `DELETE /api/v1/teams/:team/members/:user` | Session, team owner or admin, or the member | Removes a member, or leaves the team. Returns `204`. |

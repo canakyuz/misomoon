@@ -131,7 +131,9 @@ before it can add or take in a site. Until it has one, adding a site answers `40
 `plan_required`, and **Settings** > **Team** shows **No plan**.
 
 To delete a team, you need the **Owner** role, and the team must have no sites. Send
-`DELETE /api/v1/teams/:team`. misomoon answers `409` while the team still has sites.
+`DELETE /api/v1/teams/:team`. misomoon answers `409` while the team still has sites, or
+while its paid plan still renews: cancel the plan under **Settings** > **Team** >
+**Manage billing** first. A plan canceled at the end of its period no longer blocks it.
 
 ## Move a site to another team
 
@@ -196,7 +198,10 @@ misomoon deletes the account at once:
   deleted.
 
 If you are the only owner of a team with other members, deleting fails. Make one of them
-an owner ([Change a role](#change-a-role)), or remove them, and try again. On
+an owner ([Change a role](#change-a-role)), or remove them, and try again. Deleting also
+fails while a team where you are the only member has a paid plan that still renews, with
+`cancel the plan of <team> first`; cancel it under **Settings** > **Team** >
+**Manage billing**, then delete the account. On
 app.misomoon.com, backups expire within the time the
 [data processing agreement](dpa.md#12-deletion-and-return) gives.
 

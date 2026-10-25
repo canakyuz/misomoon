@@ -169,6 +169,15 @@ accounts.patch('/me', async (c) => {
  * Deletes your account. Teams only you are in go with their sites and stats; you leave the
  * others. An only owner of a team with other members hands it on first.
  */
+/**
+ * Deleting a team leaves its Polar subscription billing, so a team whose plan still renews
+ * (active or past due, not canceled at the end of its period) can't go until it is canceled.
+ */
+async function refuseWhileRenewing(env: Env, team: { id: string; name: string }) {
+	const renewing = await env.CONTROL.prepare("SELECT 1 FROM polar_subscriptions WHERE team_id = ? AND live = 1 AND plan_status IN ('active', 'past_due') LIMIT 1").bind(team.id).first()
+	if (renewing) throw new HttpError(409, `cancel the plan of ${team.name} first, under Settings > Team > Manage billing; the team can go once it stops renewing`)
+}
+
 accounts.delete('/me', async (c) => {
 	const userId = requireUser(c.get('who'))
 	await limited(c, 'delete')
@@ -184,6 +193,7 @@ accounts.delete('/me', async (c) => {
 		.all<{ id: string; name: string; role: TeamRole; members: number; owners: number }>()
 	const held = teams.find((t) => t.role === 'owner' && t.owners === 1 && t.members > 1)
 	if (held) throw new HttpError(409, `you are the only owner of ${held.name}; make someone else owner or remove its members first`)
+	for (const team of teams.filter((t) => t.members === 1)) await refuseWhileRenewing(c.env, team)
 	for (const team of teams.filter((t) => t.members === 1)) {
 		const { results: sites } = await c.env.CONTROL.prepare('SELECT * FROM sites WHERE team_id = ?').bind(team.id).all<Site>()
 		for (const site of sites) await deleteSite(c.env, site)
@@ -228,6 +238,8 @@ accounts.patch('/teams/:team', async (c) => {
 accounts.delete('/teams/:team', async (c) => {
 	const teamId = c.req.param('team')
 	await requireTeamRole(c.env, c.get('who'), teamId, ['owner'])
+	const team = await c.env.CONTROL.prepare('SELECT id, name FROM teams WHERE id = ?').bind(teamId).first<{ id: string; name: string }>()
+	if (team) await refuseWhileRenewing(c.env, team)
 	const sites = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM sites WHERE team_id = ?').bind(teamId).first<{ n: number }>()
 	if (sites?.n) throw new HttpError(409, 'move or delete the team’s sites first')
 	await c.env.CONTROL.prepare('DELETE FROM teams WHERE id = ?').bind(teamId).run()
