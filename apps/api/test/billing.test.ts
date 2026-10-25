@@ -306,19 +306,25 @@ describe('the Polar webhook: events out of order', () => {
 // ---------------------------------------------------------------- checkout and switch
 
 const CHECKOUT_URL = 'https://polar.sh/checkout/polar_c_test'
+const LIST = 'https://api.polar.sh/v1/subscriptions/?metadata%5Bteam_id%5D=t1&limit=10&status=active&status=trialing&status=past_due'
+const isList = (req: Sent) => req.method === 'GET' && req.url.includes('/v1/subscriptions/?')
+/** Polar where the team pays for nothing yet: the list of its subscriptions is empty, and a checkout opens. */
+const fresh = (req: Sent): [number, unknown] => (isList(req) ? [200, { items: [], pagination: { total_count: 0, max_page: 0 } }] : [201, { id: 'co-1', url: CHECKOUT_URL }])
 
 describe('POST /api/v1/teams/:team/checkout', () => {
 	it('creates a Polar checkout for a team without a subscription: the product, the team in metadata, the email, back to team settings', async () => {
 		const env = billingEnv()
 		env.CONTROL.db.exec("INSERT INTO sites (id, domain, name, team_id, created_at) VALUES ('shop-com', 'shop.com', 'Shop', 't1', 0)")
-		const sent = polar(() => [201, { id: 'co-1', url: CHECKOUT_URL }])
+		const sent = polar(fresh)
 		expect(await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'growth' })).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
-		expect(sent).toHaveLength(1)
-		expect(sent[0]).toMatchObject({ method: 'POST', url: 'https://api.polar.sh/v1/checkouts/' })
-		expect(sent[0].headers.get('authorization')).toBe('Bearer polar_oat_test')
-		expect(sent[0].headers.get('polar-version')).toBe('2026-10')
+		// first whether the team pays already, by the team id in a subscription's metadata
+		expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual([`GET ${LIST}`, 'POST https://api.polar.sh/v1/checkouts/'])
+		for (const req of sent) {
+			expect(req.headers.get('authorization')).toBe('Bearer polar_oat_test')
+			expect(req.headers.get('polar-version')).toBe('2026-10')
+		}
 		const back = 'https://app.test/?site=shop-com&view=settings&tab=team'
-		expect(sent[0].body).toEqual({ products: [PRODUCTS.growth], success_url: `${back}&checkout_id={CHECKOUT_ID}`, return_url: back, metadata: { team_id: 't1' }, customer_email: 'owner@test' })
+		expect(sent[1].body).toEqual({ products: [PRODUCTS.growth], success_url: `${back}&checkout_id={CHECKOUT_ID}`, return_url: back, metadata: { team_id: 't1' }, customer_email: 'owner@test' })
 		// nothing changes until Polar's webhook says the subscription pays
 		expect(team(env).plan).toBeNull()
 	})
@@ -326,11 +332,11 @@ describe('POST /api/v1/teams/:team/checkout', () => {
 	it('uses the sandbox with POLAR_SERVER=sandbox, PUBLIC_URL for the way back, and the customer a team already has', async () => {
 		const env = billingEnv({ POLAR_SERVER: 'sandbox', PUBLIC_URL: 'https://app.misomoon.com' })
 		env.CONTROL.db.exec("UPDATE teams SET polar_customer_id = 'cus-9' WHERE id = 't1'")
-		const sent = polar(() => [201, { url: CHECKOUT_URL }])
+		const sent = polar(fresh)
 		await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })
-		expect(sent[0].url).toBe('https://sandbox-api.polar.sh/v1/checkouts/')
-		expect(sent[0].body).toMatchObject({ customer_id: 'cus-9', return_url: 'https://app.misomoon.com/?view=settings&tab=team' })
-		expect(sent[0].body.customer_email).toBeUndefined()
+		expect(sent.map((r) => r.url)).toEqual([LIST.replace('https://api.', 'https://sandbox-api.'), 'https://sandbox-api.polar.sh/v1/checkouts/'])
+		expect(sent[1].body).toMatchObject({ customer_id: 'cus-9', return_url: 'https://app.misomoon.com/?view=settings&tab=team' })
+		expect(sent[1].body.customer_email).toBeUndefined()
 	})
 
 	it('switches the subscription a team pays for instead of making a second one, and answers the new state', async () => {
@@ -384,11 +390,112 @@ describe('POST /api/v1/teams/:team/checkout', () => {
 	it('checks out anew when the subscription ended without a webhook reaching misomoon', async () => {
 		const env = billingEnv()
 		await deliver(env, 'subscription.created', subscription())
-		const sent = polar((req) => (req.method === 'GET' ? [200, subscription({ status: 'canceled', ended_at: PERIOD_END, modified_at: '2026-11-01T00:00:00.000000Z' })] : [201, { url: CHECKOUT_URL }]))
+		const sent = polar((req) => (req.method === 'GET' && !isList(req) ? [200, subscription({ status: 'canceled', ended_at: PERIOD_END, modified_at: '2026-11-01T00:00:00.000000Z' })] : fresh(req)))
 		expect((await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })).body).toEqual({ url: CHECKOUT_URL })
-		expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual(['GET https://api.polar.sh/v1/subscriptions/sub-1', 'POST https://api.polar.sh/v1/checkouts/'])
-		expect(sent[1].body.customer_id).toBe('cus-1')
+		expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual(['GET https://api.polar.sh/v1/subscriptions/sub-1', `GET ${LIST}`, 'POST https://api.polar.sh/v1/checkouts/'])
+		expect(sent[2].body.customer_id).toBe('cus-1')
 		expect(team(env)).toMatchObject({ plan: null, polar_subscription_id: null })
+	})
+
+	it('switches a subscription whose webhook has not come yet, found by the team id in its metadata, instead of opening a second checkout', async () => {
+		const env = billingEnv()
+		const switched = subscription({ product_id: PRODUCTS.growth, modified_at: '2026-10-08T00:00:00.000000Z' })
+		const sent = polar((req) => (isList(req) ? [200, { items: [subscription()] }] : [200, switched]))
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'growth' })
+		expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual([`GET ${LIST}`, 'PATCH https://api.polar.sh/v1/subscriptions/sub-1'])
+		expect(sent[1].body).toEqual({ product_id: PRODUCTS.growth })
+		expect(res).toEqual({ status: 200, body: { url: null, plan: 'growth', plan_status: 'active', plan_period_end: Date.parse(PERIOD_END), pending: null } })
+		expect(team(env)).toMatchObject({ plan: 'growth', polar_subscription_id: 'sub-1', polar_customer_id: 'cus-1' })
+	})
+
+	it('takes a subscription found that way as the plan when the team picks the plan it pays for already, and changes nothing in Polar', async () => {
+		const env = billingEnv()
+		const sent = polar((req) => (isList(req) ? [200, { items: [subscription({ status: 'canceled', ended_at: T0, id: 'sub-0' }), subscription()] }] : [500, {}]))
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })
+		expect(sent.map((r) => r.method)).toEqual(['GET'])
+		expect(res.body).toMatchObject({ url: null, plan: 'starter', plan_status: 'active' })
+		expect(team(env).polar_subscription_id).toBe('sub-1')
+	})
+
+	it('keeps the id of each checkout it opens, and answers payment_pending while that checkout is taking the payment', async () => {
+		const env = billingEnv()
+		polar(fresh)
+		await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })
+		expect(env.CONTROL.rows("SELECT polar_checkout_id FROM teams WHERE id = 't1'")[0]).toEqual({ polar_checkout_id: 'co-1' })
+		const hourAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString()
+		for (const [status, created, opens] of [
+			['confirmed', hourAgo(1), false],
+			['succeeded', hourAgo(1), false],
+			['open', hourAgo(1), true],
+			['expired', hourAgo(1), true],
+			['failed', hourAgo(1), true],
+			// a checkout that took the card over an hour ago, whose subscription has since ended
+			['succeeded', hourAgo(61), true],
+		] as const) {
+			vi.restoreAllMocks()
+			vi.spyOn(console, 'error').mockImplementation(() => {})
+			env.CONTROL.db.prepare("UPDATE teams SET polar_checkout_id = 'co-1' WHERE id = 't1'").run()
+			const sent = polar((req) => (req.url.endsWith('/v1/checkouts/co-1') ? [200, { id: 'co-1', status, created_at: created }] : fresh(req)))
+			const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'growth' })
+			if (opens) expect(res, `${status} ${created}`).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
+			else {
+				expect(res.status, status).toBe(409)
+				expect(res.body.code).toBe('payment_pending')
+				expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual([`GET ${LIST}`, 'GET https://api.polar.sh/v1/checkouts/co-1'])
+			}
+		}
+	})
+
+	it('stops holding a new checkout back once the subscription that checkout made is recorded, so a team whose subscription ended can pay again at once', async () => {
+		const env = billingEnv()
+		polar(fresh)
+		await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })
+		// a subscription from another checkout leaves the hold in place
+		await deliver(env, 'subscription.created', subscription({ id: 'sub-0', checkout_id: 'co-0', status: 'canceled', ended_at: T0 }))
+		expect(env.CONTROL.rows("SELECT polar_checkout_id FROM teams WHERE id = 't1'")[0]).toEqual({ polar_checkout_id: 'co-1' })
+		// Polar's subscription names the checkout that made it (the checkout's own subscription_id stays null)
+		await deliver(env, 'subscription.created', subscription({ checkout_id: 'co-1' }))
+		await deliver(env, 'subscription.revoked', subscription({ checkout_id: 'co-1', status: 'canceled', ended_at: T0, modified_at: '2026-10-09T00:00:00.000000Z' }))
+		expect(team(env).plan).toBeNull()
+		expect(env.CONTROL.rows("SELECT polar_checkout_id FROM teams WHERE id = 't1'")[0]).toEqual({ polar_checkout_id: null })
+		// paid a minute ago and revoked since: no payment_pending, a new checkout opens without asking about the old one
+		const ended = subscription({ checkout_id: 'co-1', status: 'canceled', ended_at: T0, modified_at: '2026-10-09T00:00:00.000000Z' })
+		const sent = polar((req) => (req.url.endsWith('/v1/subscriptions/sub-1') ? [200, ended] : req.url.endsWith('/v1/checkouts/co-1') ? [200, { id: 'co-1', status: 'succeeded', created_at: new Date(Date.now() - 60_000).toISOString(), subscription_id: null }] : fresh(req)))
+		expect(await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'growth' })).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
+		expect(sent.map((r) => `${r.method} ${r.url}`)).toEqual([`GET ${LIST}`, 'POST https://api.polar.sh/v1/checkouts/'])
+	})
+
+	it('checks out anew when Polar no longer has the team subscription, and forgets it once Polar takes the new checkout', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		const sent = polar((req) => (req.url.endsWith('/v1/subscriptions/sub-1') ? [404, { error: 'ResourceNotFound', detail: 'Not found' }] : fresh(req)))
+		expect(await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
+		expect(sent.map((r) => r.method)).toEqual(['GET', 'GET', 'POST'])
+		expect(sent[2].body.customer_id).toBe('cus-1')
+		expect(team(env)).toMatchObject({ plan: null, plan_status: null, polar_subscription_id: null, polar_customer_id: 'cus-1' })
+		expect(env.CONTROL.rows("SELECT live FROM polar_subscriptions WHERE id = 'sub-1'")).toEqual([{ live: 0 }])
+	})
+
+	it('keeps the subscription when Polar answers 404 for it and refuses the checkout too, as a token for another organization does', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		polar((req) => (req.method === 'POST' ? [422, { error: 'RequestValidationError', detail: 'product does not exist' }] : isList(req) ? fresh(req) : [404, { error: 'ResourceNotFound', detail: 'Not found' }]))
+		expect((await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })).status).toBe(502)
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active', polar_subscription_id: 'sub-1' })
+		expect(env.CONTROL.rows("SELECT live FROM polar_subscriptions WHERE id = 'sub-1'")).toEqual([{ live: 1 }])
+	})
+
+	it('opens the checkout without the email when Polar refuses it, as for a domain that does not exist', async () => {
+		const env = billingEnv()
+		const invalid = { error: 'RequestValidationError', detail: [{ type: 'value_error', loc: ['body', 'customer_email'], msg: 'owner@test is not a valid email address: The domain name test does not exist.' }] }
+		const sent = polar((req) => (isList(req) ? fresh(req) : req.body.customer_email ? [422, invalid] : [201, { id: 'co-1', url: CHECKOUT_URL }]))
+		expect(await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
+		expect(sent.filter((r) => r.method === 'POST').map((r) => r.body.customer_email ?? null)).toEqual(['owner@test', null])
+		// another refusal is still an error
+		vi.restoreAllMocks()
+		vi.spyOn(console, 'error').mockImplementation(() => {})
+		polar((req) => (isList(req) ? fresh(req) : [422, { error: 'RequestValidationError', detail: [{ loc: ['body', 'products'], msg: 'product is archived' }] }]))
+		expect((await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' })).status).toBe(502)
 	})
 
 	it('answers 402 when Polar cannot charge the card for the switch, and changes nothing', async () => {
@@ -419,6 +526,83 @@ describe('POST /api/v1/teams/:team/checkout', () => {
 	})
 })
 
+describe('the daily check of plans whose period ended', () => {
+	const DAY_MS = 86_400_000
+	/** The daily cleanup, as a manual cron runs it, at `ts`. */
+	async function daily(env: Env2, ts: number) {
+		vi.setSystemTime(ts)
+		const ctx = fakeCtx()
+		await worker.scheduled({ cron: 'manual', scheduledTime: ts } as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+	}
+	/** A pageview on shop.com; true when it was stored. */
+	async function pageview(env: Env2, ip: string) {
+		invalidate('')
+		const count = () => [env.SHARD_0, env.SHARD_1].reduce((n, db) => n + (db.rows("SELECT COUNT(*) AS n FROM events WHERE site_id = 'shop-com'")[0] as { n: number }).n, 0)
+		const before = count()
+		const headers = { 'user-agent': 'Mozilla/5.0 (Macintosh) Chrome/141.0.0.0 Safari/537.36', 'cf-connecting-ip': ip }
+		const ctx = fakeCtx()
+		const req = new Request('https://app.test/api/event', { method: 'POST', headers, body: JSON.stringify({ s: 'shop-com', n: 'pageview', u: 'https://shop.com/' }) })
+		expect((await worker.fetch(req, env as unknown as Env, ctx as unknown as ExecutionContext)).status).toBe(202)
+		await ctx.settle()
+		return count() > before
+	}
+	const polarCalls = (sent: Sent[]) => sent.filter((r) => r.url.startsWith('https://api.polar.sh/')).map((r) => `${r.method} ${r.url}`)
+
+	beforeEach(() => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(Date.parse('2026-10-05T00:00:00Z'))
+	})
+	afterEach(() => vi.useRealTimers())
+
+	it("ends a canceled plan whose revoked webhook never came, so the team's beacons stop", async () => {
+		const env = billingEnv()
+		env.CONTROL.db.exec("INSERT INTO sites (id, domain, name, team_id, created_at) VALUES ('shop-com', 'shop.com', 'Shop', 't1', 0)")
+		await deliver(env, 'subscription.canceled', subscription({ cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-04T00:00:00.000000Z' }))
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'canceled' })
+		expect(await pageview(env, '198.51.100.1')).toBe(true)
+		// the period ends; Polar revokes the subscription, and its webhook is lost
+		const sent = polar(() => [200, subscription({ status: 'canceled', cancel_at_period_end: true, ends_at: PERIOD_END, ended_at: PERIOD_END, modified_at: '2026-11-01T00:00:00.000000Z' })])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(polarCalls(sent)).toEqual(['GET https://api.polar.sh/v1/subscriptions/sub-1'])
+		expect(team(env)).toMatchObject({ plan: null, plan_status: null, polar_subscription_id: null, polar_customer_id: 'cus-1' })
+		// t1 has no trial: with no plan it is lapsed, and the edge drops its beacons
+		expect(await pageview(env, '198.51.100.2')).toBe(false)
+	})
+
+	it('moves a renewal whose webhook never came to the new period, and then reads nothing until that one ends', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		const next = '2026-12-01T00:00:00.000000Z'
+		const sent = polar(() => [200, subscription({ current_period_start: PERIOD_END, current_period_end: next, modified_at: '2026-11-01T00:00:02.000000Z' })])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active', plan_period_end: Date.parse(next) })
+		await daily(env, Date.parse(PERIOD_END) + 3 * DAY_MS)
+		expect(polarCalls(sent)).toHaveLength(1)
+	})
+
+	it('waits a day past the period end, and leaves a subscription Polar answers 404 for to support', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		const sent = polar(() => [404, { error: 'ResourceNotFound', detail: 'Not found' }])
+		await daily(env, Date.parse(PERIOD_END) + DAY_MS / 2)
+		expect(polarCalls(sent)).toEqual([])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(polarCalls(sent)).toEqual(['GET https://api.polar.sh/v1/subscriptions/sub-1'])
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active', polar_subscription_id: 'sub-1' })
+		expect(vi.mocked(console.error).mock.calls.some(([line]) => String(line).includes('polar subscription missing'))).toBe(true)
+	})
+
+	it('asks Polar nothing on a server without billing', async () => {
+		const env = { ...fakeEnv(CLOUD) } as Env2
+		env.CONTROL.db.exec("UPDATE teams SET plan = 'starter', polar_subscription_id = 'sub-1', plan_period_end = 1 WHERE id = 't1'")
+		const sent = polar(() => [200, subscription()])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(polarCalls(sent)).toEqual([])
+		expect(team(env).plan).toBe('starter')
+	})
+})
+
 describe('POST /api/v1/teams/:team/portal', () => {
 	it("opens a Polar customer portal session for the team's customer", async () => {
 		const env = billingEnv()
@@ -439,7 +623,7 @@ describe('POST /api/v1/teams/:team/portal', () => {
 describe('who may pay', () => {
 	it('lets owners and billing members, and refuses admins, editors, viewers, outsiders, API keys and signed-out callers', async () => {
 		const env = billingEnv()
-		const sent = polar(() => [201, { url: CHECKOUT_URL, customer_portal_url: 'https://polar.sh/portal' }])
+		const sent = polar((req) => (isList(req) ? fresh(req) : [201, { url: CHECKOUT_URL, customer_portal_url: 'https://polar.sh/portal' }]))
 		const roles = { admin: person(env, 'u-admin', 'admin'), editor: person(env, 'u-editor', 'editor'), viewer: person(env, 'u-viewer', 'viewer'), billing: person(env, 'u-billing', 'billing') }
 		for (const role of ['admin', 'editor', 'viewer'] as const) {
 			expect(await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' }, roles[role])).toEqual({ status: 403, body: { error: `a team ${role} cannot manage billing; ask an owner or a billing member` } })
@@ -448,7 +632,7 @@ describe('who may pay', () => {
 		expect(sent).toEqual([])
 		const billing = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' }, roles.billing)
 		expect(billing).toEqual({ status: 200, body: { url: CHECKOUT_URL } })
-		expect(sent[0].body.customer_email).toBe('u-billing@test')
+		expect(sent.at(-1)!.body.customer_email).toBe('u-billing@test')
 		expect((await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' }, person(env, 'u-out', null))).status).toBe(404)
 		expect((await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'starter' }, {})).status).toBe(401)
 		const key = await call(env, 'POST', '/api/v1/keys', { name: 'ci' })

@@ -14,7 +14,7 @@ import { deleteImport, expireImports, googleProperties, importCsv, listImports, 
 import { runImportJobs, startApiImport } from './jobs'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
 import { expireAttribution, handleWebhook, listSources, removeSource, saveSource } from './revenue'
-import { checkout, polarWebhook, portal, teamBilling, withBilling } from './billing'
+import { checkout, polarWebhook, portal, reconcileBilling, teamBilling, withBilling } from './billing'
 import { handleMcp } from './mcp'
 import { buildReport, emailConfigured, reportPdf, runAlerts, runReports, sendEmail, withPdf } from './reports'
 import { dailyCap } from './usage'
@@ -687,6 +687,8 @@ async function maintenance(env: Env, cleanup: boolean) {
 	await expireImports(env)
 	// with plans on, the monthly event emails of the last 3 months are kept (plan_notices)
 	if (cleanup && plansEnforced(env)) await env.CONTROL.prepare('DELETE FROM plan_notices WHERE month < ?').bind(utcMonth(Date.now()) - 2).run()
+	// with billing, plans whose paid period ended without a webhook saying how, read from Polar
+	if (cleanup) await reconcileBilling(env).catch((e) => console.error(JSON.stringify({ msg: 'polar reconcile failed', error: String(e) })))
 	const limit = shardLimit(env)
 	const all = cleanup ? await listSites(env) : []
 	// with plans on, each team's plan; a team that has none set, on the trial or lapsed, keeps the trial plan's

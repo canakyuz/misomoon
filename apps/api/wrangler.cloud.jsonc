@@ -21,10 +21,10 @@
 		"run_worker_first": true
 	},
 	"d1_databases": [
-		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "6bea2f02-201b-4bc6-a05d-cc133cfab5e7", "migrations_dir": "migrations/control" },
+		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "migrations/control" },
 		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy:cloud` (scripts/deploy.ts).
-		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "3de426b3-9499-4d42-95e2-72c19ea5619d", "migrations_dir": "migrations/shard" },
-		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "a2699c88-401a-42dd-9976-b12bd832d5c4", "migrations_dir": "migrations/shard" }
+		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "00000000-0000-0000-0000-000000000002", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "00000000-0000-0000-0000-000000000003", "migrations_dir": "migrations/shard" }
 	],
 	"queues": {
 		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
@@ -52,12 +52,16 @@
 		"PUBLIC_URL": "https://app.misomoon.com",
 		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). wrangler.jsonc and
 		// the deploy bundle leave PLANS out, so a self-hosted server has no plan limits.
-		"PLANS": "on"
+		"PLANS": "on",
+		// Billing through Polar (docs/billing.md): the products of the live misomoon organization.
+		"POLAR_SERVER": "production",
+		"POLAR_PRODUCT_STARTER": "04574b1d-47c0-463f-ade3-630c3cddc106",
+		"POLAR_PRODUCT_GROWTH": "0b6fbf35-6e09-40a2-a3ae-af5fd01ea83a",
+		"POLAR_PRODUCT_SCALE": "b3387bc0-3b0a-475c-82e4-614ec7bf4054"
 	}
 	// Secrets: AWS_SES_ACCESS_KEY_ID and AWS_SES_SECRET_ACCESS_KEY for Amazon SES (wrangler secret put …, or .dev.vars locally).
 	// Managed proxy (optional, docs/PROXY.md): secret CF_API_TOKEN, vars CF_ZONE_ID and
 	// PROXY_CNAME_TARGET, plus a route for customer hostnames: { "pattern": "*/*", "zone_name": … }.
-	// Billing through Polar (docs/billing.md): secrets POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET,
-	// vars POLAR_PRODUCT_STARTER, POLAR_PRODUCT_GROWTH, POLAR_PRODUCT_SCALE and POLAR_SERVER.
+	// Billing through Polar (docs/billing.md): secrets POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET; the vars above.
 	// wrangler.jsonc and the deploy bundle leave out every POLAR_* var.
 }

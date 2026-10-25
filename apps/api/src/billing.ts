@@ -77,12 +77,13 @@ async function billingUser(env: Env, who: Principal, teamId: string): Promise<st
 
 // ---------------------------------------------------------------- the Polar API
 
-/** An error answer from Polar: its status, and Polar's `error` name and `detail`. */
+/** An error answer from Polar: its status, Polar's `error` name, and its `detail` as text (a list for a validation error). */
 class PolarError extends Error {
 	constructor(
 		public status: number,
 		public error: string | null,
 		message: string,
+		public detailText: string,
 	) {
 		super(message)
 	}
@@ -105,7 +106,7 @@ async function call<T>(polar: Polar, method: 'GET' | 'POST' | 'PATCH', path: str
 	const answer = (await res.json().catch(() => null)) as { error?: unknown; detail?: unknown } | null
 	const detail = typeof answer?.detail === 'string' ? answer.detail : `Polar answered ${res.status}`
 	console.error(JSON.stringify({ msg: 'polar error', method, path, status: res.status, error: answer?.error ?? null, detail: answer?.detail ?? null }))
-	throw new PolarError(res.status, typeof answer?.error === 'string' ? answer.error : null, detail)
+	throw new PolarError(res.status, typeof answer?.error === 'string' ? answer.error : null, detail, JSON.stringify(answer?.detail ?? null))
 }
 
 /** What a route answers for a Polar error. */
@@ -114,6 +115,16 @@ function failed(e: unknown): never {
 	if (e.status === 402) throw new HttpError(402, 'Polar could not charge the card for this change, so nothing changed. Update the card in Manage billing, then try again.', 'payment_failed')
 	if (e.status === 403 || e.status === 404 || e.status === 409) throw new HttpError(409, `Polar refused the change: ${e.message}`)
 	throw new HttpError(502, `Polar refused the request: ${e.message}`)
+}
+
+/** A GET that answers null for Polar's 404, so a missing object is no error. */
+async function find<T>(polar: Polar, path: string): Promise<T | null> {
+	try {
+		return await call<T>(polar, 'GET', path)
+	} catch (e) {
+		if (e instanceof PolarError && e.status === 404) return null
+		throw e
+	}
 }
 
 /** The fields of a Polar Subscription that billing reads. Times are ISO strings. */
@@ -131,6 +142,8 @@ interface Subscription {
 	modified_at: string | null
 	metadata: Record<string, unknown>
 	pending_update: { product_id: string | null; applies_at: string } | null
+	/** the checkout that made it */
+	checkout_id: string | null
 }
 
 const str = (v: unknown) => (typeof v === 'string' && v ? v : null)
@@ -156,6 +169,7 @@ function readSubscription(data: unknown): Subscription | null {
 		modified_at: str(d.modified_at),
 		metadata: d.metadata && typeof d.metadata === 'object' ? (d.metadata as Record<string, unknown>) : {},
 		pending_update: pending && typeof pending === 'object' && str(pending.applies_at) ? { product_id: str(pending.product_id), applies_at: str(pending.applies_at)! } : null,
+		checkout_id: str(d.checkout_id),
 	}
 }
 
@@ -191,6 +205,21 @@ export function standing(sub: Subscription): { live: boolean; status: PlanStatus
 const WEBHOOK_DAYS = 30
 
 /**
+ * Sets the team `?1` from its newest live subscription, or ends a plan a subscription set
+ * when none is left; a plan support set by hand stays. Its customer stays too, for the
+ * portal's invoices, unless `?2` brings one. `guard` limits it further.
+ */
+const follow = (guard = '') =>
+	`WITH cur AS (SELECT id, customer_id, plan, plan_status, period_end FROM polar_subscriptions WHERE team_id = ?1 AND live = 1 ORDER BY started_at DESC, id DESC LIMIT 1)
+	 UPDATE teams SET
+	   plan = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT plan FROM cur) WHEN polar_subscription_id IS NULL THEN plan END,
+	   plan_status = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT plan_status FROM cur) WHEN polar_subscription_id IS NULL THEN plan_status END,
+	   plan_period_end = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT period_end FROM cur) WHEN polar_subscription_id IS NULL THEN plan_period_end END,
+	   polar_subscription_id = (SELECT id FROM cur),
+	   polar_customer_id = COALESCE((SELECT customer_id FROM cur), ?2, polar_customer_id)
+	 WHERE id = ?1${guard}`
+
+/**
  * Stores `sub` in its newest state and sets the team's plan from its newest live
  * subscription, in one batch, so two webhooks for a team can't interleave. With
  * `webhookId`, the batch also records the webhook, and fails as a duplicate when it was
@@ -213,18 +242,9 @@ async function record(env: Env, teamId: string, sub: Subscription, plan: Plan, w
 			)
 			.bind(sub.id, teamId, sub.customer_id, plan.id, sub.status, s.live ? 1 : 0, s.status, s.periodEnd, ms(sub.started_at) ?? ms(sub.created_at) ?? now, modified),
 		// only when the state above is the stored one: a late webhook leaves the team alone
-		db
-			.prepare(
-				`WITH cur AS (SELECT id, customer_id, plan, plan_status, period_end FROM polar_subscriptions WHERE team_id = ?1 AND live = 1 ORDER BY started_at DESC, id DESC LIMIT 1)
-				 UPDATE teams SET
-				   plan = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT plan FROM cur) WHEN polar_subscription_id IS NULL THEN plan END,
-				   plan_status = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT plan_status FROM cur) WHEN polar_subscription_id IS NULL THEN plan_status END,
-				   plan_period_end = CASE WHEN EXISTS (SELECT 1 FROM cur) THEN (SELECT period_end FROM cur) WHEN polar_subscription_id IS NULL THEN plan_period_end END,
-				   polar_subscription_id = (SELECT id FROM cur),
-				   polar_customer_id = COALESCE((SELECT customer_id FROM cur), ?2)
-				 WHERE id = ?1 AND EXISTS (SELECT 1 FROM polar_subscriptions WHERE id = ?3 AND modified_at = ?4)`,
-			)
-			.bind(teamId, sub.customer_id, sub.id, modified),
+		db.prepare(follow(' AND EXISTS (SELECT 1 FROM polar_subscriptions WHERE id = ?3 AND modified_at = ?4)')).bind(teamId, sub.customer_id, sub.id, modified),
+		// the team's last checkout made this subscription, so it no longer holds a new checkout back
+		db.prepare('UPDATE teams SET polar_checkout_id = NULL WHERE id = ? AND polar_checkout_id = ?').bind(teamId, sub.checkout_id),
 	]
 	if (webhookId) {
 		stmts.unshift(db.prepare('INSERT INTO polar_webhooks (id, received_at) VALUES (?, ?)').bind(webhookId, now))
@@ -240,6 +260,57 @@ async function record(env: Env, teamId: string, sub: Subscription, plan: Plan, w
 	const { results } = await db.prepare('SELECT id FROM polar_subscriptions WHERE team_id = ? AND live = 1').bind(teamId).all<{ id: string }>()
 	if (results.length > 1) console.error(JSON.stringify({ msg: 'team pays for more than one subscription', team: teamId, subscriptions: results.map((r) => r.id) }))
 	return 'done'
+}
+
+/** A subscription Polar no longer has: it pays for nothing, and the team follows the rest. */
+async function forget(env: Env, teamId: string, subId: string) {
+	await env.CONTROL.batch([
+		env.CONTROL.prepare('UPDATE polar_subscriptions SET live = 0, plan_status = NULL WHERE id = ?').bind(subId),
+		env.CONTROL.prepare(follow()).bind(teamId, null),
+	])
+	console.error(JSON.stringify({ msg: 'polar subscription gone', team: teamId, subscription: subId }))
+}
+
+/** How long a checkout that took the card holds off a second one while its subscription shows up. */
+const CHECKOUT_HOLD = 3_600_000
+
+/**
+ * The subscription that pays for a team, as Polar has it now, recorded; or null. `gone` is
+ * the team's subscription when Polar answered 404 for it. A new checkout is safe only after
+ * this: it finds a subscription whose webhook hasn't come, by the team id it carries in its
+ * metadata, and answers 409 while the team's last checkout is still taking the payment.
+ */
+async function paying(env: Env, polar: Polar, teamId: string, team: { polar_subscription_id: string | null; polar_checkout_id: string | null }): Promise<{ sub: Subscription | null; gone: string | null }> {
+	let gone: string | null = null
+	if (team.polar_subscription_id) {
+		const sub = readSubscription(await find(polar, `/v1/subscriptions/${encodeURIComponent(team.polar_subscription_id)}`))
+		const plan = sub && planOfProduct(polar, sub.product_id)
+		if (!sub) gone = team.polar_subscription_id
+		else if (plan) {
+			// it may have ended without a webhook reaching us
+			await record(env, teamId, sub, plan)
+			if (standing(sub).live) return { sub, gone }
+		}
+	}
+	const query = new URLSearchParams({ 'metadata[team_id]': teamId, limit: '10' })
+	for (const status of PAYING) query.append('status', status)
+	const list = await call<{ items?: unknown }>(polar, 'GET', `/v1/subscriptions/?${query}`)
+	// newest first, Polar's default order
+	for (const item of Array.isArray(list.items) ? list.items : []) {
+		const sub = readSubscription(item)
+		const plan = sub && sub.id !== gone && standing(sub).live && planOfProduct(polar, sub.product_id)
+		if (!sub || !plan) continue
+		await record(env, teamId, sub, plan)
+		return { sub, gone }
+	}
+	if (team.polar_checkout_id) {
+		const last = await find<{ status?: unknown; created_at?: unknown }>(polar, `/v1/checkouts/${encodeURIComponent(team.polar_checkout_id)}`)
+		const recent = Date.now() - (ms(str(last?.created_at)) ?? 0) < CHECKOUT_HOLD
+		if (recent && (last?.status === 'confirmed' || last?.status === 'succeeded')) {
+			throw new HttpError(409, 'Polar is still taking the payment for this team. The plan shows here within a minute; choose again only if it does not.', 'payment_pending')
+		}
+	}
+	return { sub: null, gone }
 }
 
 /** The team's plan after a change: what POST /checkout answers for a switch. */
@@ -269,53 +340,91 @@ async function settingsUrl(env: Env, origin: string, teamId: string): Promise<st
 // ---------------------------------------------------------------- routes
 
 /**
- * POST /api/v1/teams/:team/checkout. A team without a subscription gets a Polar checkout
- * for the plan's product, with the team id in its metadata and the user's email filled in:
- * `{ url }`, to open. A team with one switches it to the plan's product instead, with the
- * proration the Polar organization sets, so a team never pays twice. A canceled
- * subscription that is still running is resumed first.
+ * POST /api/v1/teams/:team/checkout. A team that pays for a subscription switches it to the
+ * plan's product, with the proration the Polar organization sets; a canceled subscription
+ * that is still running is resumed first. Any other team gets a Polar checkout for the
+ * plan's product, with the team id in its metadata and the user's email filled in:
+ * `{ url }`, to open. paying() looks in Polar first, so a team never pays twice.
  */
 export async function checkout(env: Env, who: Principal, teamId: string, body: unknown, origin: string): Promise<{ url: string } | PlanState> {
 	const polar = requirePolar(env)
 	const userId = await billingUser(env, who, teamId)
 	const plan = planById((body as { plan?: unknown } | null)?.plan)
 	if (!plan) throw new HttpError(400, `plan is ${PLANS.map((p) => p.id).join(', ')}`)
-	const team = await env.CONTROL.prepare('SELECT polar_customer_id, polar_subscription_id FROM teams WHERE id = ?')
+	const row = await env.CONTROL.prepare('SELECT polar_subscription_id, polar_checkout_id FROM teams WHERE id = ?')
 		.bind(teamId)
-		.first<{ polar_customer_id: string | null; polar_subscription_id: string | null }>()
-	if (team?.polar_subscription_id) {
-		const path = `/v1/subscriptions/${encodeURIComponent(team.polar_subscription_id)}`
+		.first<{ polar_subscription_id: string | null; polar_checkout_id: string | null }>()
+	const { sub: live, gone } = await paying(env, polar, teamId, row ?? { polar_subscription_id: null, polar_checkout_id: null }).catch(failed)
+	if (live) {
+		const path = `/v1/subscriptions/${encodeURIComponent(live.id)}`
 		const product = polar.products[plan.id]
 		try {
-			let sub = readSubscription(await call(polar, 'GET', path))
-			if (sub && standing(sub).live) {
-				if (sub.cancel_at_period_end) sub = readSubscription(await call(polar, 'PATCH', path, { cancel_at_period_end: false }))
-				// no proration_behavior: the organization's setting applies, as in the customer portal
-				if (sub && sub.product_id !== product) sub = readSubscription(await call(polar, 'PATCH', path, { product_id: product }))
-				else if (sub?.pending_update) sub = readSubscription(await call(polar, 'PATCH', path, { pending_update: null }))
-				if (!sub) throw new HttpError(502, 'Polar answered without the subscription')
-				const current = planOfProduct(polar, sub.product_id)
-				if (current) await record(env, teamId, sub, current)
-				return stateOf(env, polar, teamId, sub)
-			}
-			// it ended without a webhook reaching us: record that, then check out anew
-			const ended = sub && planOfProduct(polar, sub.product_id)
-			if (sub && ended) await record(env, teamId, sub, ended)
+			let sub: Subscription | null = live
+			if (sub.cancel_at_period_end) sub = readSubscription(await call(polar, 'PATCH', path, { cancel_at_period_end: false }))
+			// no proration_behavior: the organization's setting applies, as in the customer portal
+			if (sub && sub.product_id !== product) sub = readSubscription(await call(polar, 'PATCH', path, { product_id: product }))
+			else if (sub?.pending_update) sub = readSubscription(await call(polar, 'PATCH', path, { pending_update: null }))
+			if (!sub) throw new HttpError(502, 'Polar answered without the subscription')
+			const current = planOfProduct(polar, sub.product_id)
+			if (current) await record(env, teamId, sub, current)
+			return stateOf(env, polar, teamId, sub)
 		} catch (e) {
 			failed(e)
 		}
 	}
+	// read after paying(), which may have recorded the team's customer
+	const team = await env.CONTROL.prepare('SELECT polar_customer_id FROM teams WHERE id = ?').bind(teamId).first<{ polar_customer_id: string | null }>()
 	const user = await env.CONTROL.prepare('SELECT email FROM users WHERE id = ?').bind(userId).first<{ email: string }>()
 	const back = await settingsUrl(env, origin, teamId)
-	const created = await call<{ url?: unknown }>(polar, 'POST', '/v1/checkouts/', {
-		products: [polar.products[plan.id]],
-		success_url: `${back}&checkout_id={CHECKOUT_ID}`,
-		return_url: back,
-		metadata: { team_id: teamId },
-		...(team?.polar_customer_id ? { customer_id: team.polar_customer_id } : { customer_email: user?.email }),
-	}).catch(failed)
+	const open = (who: { customer_id: string } | { customer_email?: string }) =>
+		call<{ id?: unknown; url?: unknown }>(polar, 'POST', '/v1/checkouts/', {
+			products: [polar.products[plan.id]],
+			success_url: `${back}&checkout_id={CHECKOUT_ID}`,
+			return_url: back,
+			metadata: { team_id: teamId },
+			...who,
+		})
+	const created = await (team?.polar_customer_id ? open({ customer_id: team.polar_customer_id }) : open({ customer_email: user?.email }))
+		.catch((e) => {
+			// Polar refuses an email whose domain has no DNS: the checkout asks for one instead
+			if (e instanceof PolarError && e.status === 422 && /customer_email/.test(String(e.detailText))) return open({})
+			throw e
+		})
+		.catch(failed)
 	if (typeof created.url !== 'string') throw new HttpError(502, 'Polar answered without a checkout URL')
+	await env.CONTROL.prepare('UPDATE teams SET polar_checkout_id = ? WHERE id = ?').bind(str(created.id), teamId).run()
+	// Polar took this checkout, so the token and the organization are right: its 404 for the
+	// old subscription means the subscription is gone, not that misomoon asked the wrong place
+	if (gone) await forget(env, teamId, gone)
 	return { url: created.url }
+}
+
+/**
+ * Daily: the teams whose paid period ended more than a day ago, read again from Polar. A
+ * renewal or an end whose webhook never came then reaches the team, so a plan can't
+ * outlive its subscription. A subscription Polar answers 404 for is logged and left for
+ * support: a token for the wrong organization answers 404 too.
+ */
+export async function reconcileBilling(env: Env, now = Date.now()) {
+	const polar = polarConfig(env)
+	if (!polar) return
+	const { results } = await env.CONTROL.prepare('SELECT id, polar_subscription_id FROM teams WHERE polar_subscription_id IS NOT NULL AND plan_period_end < ? ORDER BY plan_period_end LIMIT 50')
+		.bind(now - 86_400_000)
+		.all<{ id: string; polar_subscription_id: string }>()
+	for (const team of results) {
+		try {
+			const sub = readSubscription(await find(polar, `/v1/subscriptions/${encodeURIComponent(team.polar_subscription_id)}`))
+			const plan = sub && planOfProduct(polar, sub.product_id)
+			if (!sub || !plan) {
+				console.error(JSON.stringify({ msg: 'polar subscription missing', team: team.id, subscription: team.polar_subscription_id, product: sub?.product_id ?? null }))
+				continue
+			}
+			await record(env, team.id, sub, plan)
+			console.log(JSON.stringify({ msg: 'polar subscription read again', team: team.id, subscription: sub.id, status: sub.status }))
+		} catch (e) {
+			console.error(JSON.stringify({ msg: 'polar reconcile failed', team: team.id, error: String(e) }))
+		}
+	}
 }
 
 /** POST /api/v1/teams/:team/portal: a Polar customer portal session for the team's customer, `{ url }`. */

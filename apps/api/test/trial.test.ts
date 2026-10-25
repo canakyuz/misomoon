@@ -281,6 +281,20 @@ describe('the monthly event limit', () => {
 		expect(await teamPlan(env, 't1')).toMatchObject({ id: 'growth', stopped: false })
 	})
 
+	it("stops at once when the team moves to a smaller plan whose stop this month's events have passed, and records again on moving back", async () => {
+		const { env } = await cloud()
+		setPlan(env, 't1', 'growth')
+		setUsed(env, 'shop-com', eventStop(starter) + 10)
+		expect(await pageview(env, 'shop-com', '198.51.100.1')).toBe(true)
+		setPlan(env, 't1', 'starter')
+		at(NOW + 61_000)
+		expect(await pageview(env, 'shop-com', '198.51.100.2')).toBe(false)
+		expect(await teamPlan(env, 't1')).toMatchObject({ id: 'starter', stopped: true })
+		setPlan(env, 't1', 'growth')
+		at(NOW + 122_000)
+		expect(await pageview(env, 'shop-com', '198.51.100.3')).toBe(true)
+	})
+
 	it("counts a team on the trial against the trial plan's events", async () => {
 		const { env, mails } = await cloud()
 		setUsed(env, 'shop-com', eventStop(trial) - 1)

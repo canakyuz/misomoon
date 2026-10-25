@@ -637,14 +637,15 @@ they answer `501` and name it ([Billing](configuration.md#billing)).
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
-| `POST /api/v1/teams/:team/checkout` | Session, team owner or billing member | Takes `{"plan": "growth"}`: `starter`, `growth`, or `scale`. For a team without a subscription, it creates a Polar checkout with the team id in its metadata, your email filled in, and **Settings** > **Team** as the way back, and returns `{"url": ...}` to open. For a team that pays for a subscription, it switches that subscription to the plan, resuming it first when it is canceled, and returns the team's new state: `url` (`null`), `plan`, `plan_status`, `plan_period_end`, and `pending` (`plan` and `applies_at` for a switch Polar applies at the next renewal, or `null`). |
+| `POST /api/v1/teams/:team/checkout` | Session, team owner or billing member | Takes `{"plan": "growth"}`: `starter`, `growth`, or `scale`. For a team without a subscription, it first asks Polar for a subscription carrying the team id in its metadata, then creates a Polar checkout with the team id in its metadata, your email filled in, and **Settings** > **Team** as the way back, and returns `{"url": ...}` to open. For a team that pays for a subscription, including one Polar has and whose webhook hasn't come yet, it switches that subscription to the plan, resuming it first when it is canceled, and returns the team's new state: `url` (`null`), `plan`, `plan_status`, `plan_period_end`, and `pending` (`plan` and `applies_at` for a switch Polar applies at the next renewal, or `null`). |
 | `POST /api/v1/teams/:team/portal` | Session, team owner or billing member | Opens a Polar customer portal session for the team's customer, for the card, invoices, and cancelling. Returns `{"url": ...}`. |
 | `POST /api/billing/polar/webhook` | Public, signed by Polar | Takes Polar's `subscription.*` webhooks and sets the team's plan from the subscription. Returns `{"ok": true}`, or `{"ok": true, "duplicate": true}` for a `webhook-id` it handled before. Another event, a product that is none of the plans, or a subscription without a team returns `202` with `{"ok": true, "ignored": true}`. |
 
 An admin, editor, viewer, or API key gets `403`, and a team you are not on `404`. An
 unknown `plan` returns `400`. When Polar can't charge the card for a switch, the checkout
-route returns `402` with the code `payment_failed`, and nothing changes. A change Polar
-refuses, or the portal for a team that has not paid yet, returns `409`. When Polar refuses
+route returns `402` with the code `payment_failed`, and nothing changes. While the team's
+last checkout is still taking the payment, it returns `409` with the code
+`payment_pending` and opens no checkout. A change Polar refuses, or the portal for a team that has not paid yet, returns `409`. When Polar refuses
 a request or does not answer, the routes return `502`.
 
 The webhook returns `401` when the signature does not match or the `webhook-timestamp` is

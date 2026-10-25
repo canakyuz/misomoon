@@ -1087,7 +1087,7 @@
 				{#if atSiteLimit(team.plan)}
 					<p class="muted small">{team.name} has all the sites its plan includes. It keeps them, but can't add or take in another.</p>
 				{/if}
-				<PlanBilling teamId={team.id} plan={team.plan.state === 'plan' ? team.plan.id : null} canManage={teamRole === 'owner' || teamRole === 'billing'} />
+				<PlanBilling teamId={team.id} plan={team.plan.state === 'plan' ? team.plan.id : null} used={team.plan.events_used} canManage={teamRole === 'owner' || teamRole === 'billing'} />
 				<p class="muted small">Every plan has every feature. For help with plans, email <a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a>.</p>
 			</section>
 		{/if}
