@@ -130,6 +130,13 @@ describe('deploy: the self-hosted bundle', () => {
 		expect(selfHostedVars({ ...cloud, ...polar }).SHARD_SOFT_LIMIT_MB).toBe(cloud.SHARD_SOFT_LIMIT_MB)
 	})
 
+	it("leaves misomoon Cloud's SES sender out of the self-hosted template and bundle", () => {
+		expect(cloud).toMatchObject({ EMAIL_PROVIDER: 'ses', EMAIL_FROM: 'misomoon <reports@misomoon.com>', AWS_SES_REGION: 'ap-southeast-2' })
+		for (const vars of [selfHostedVars(cloud), bundle.vars, read('wrangler.jsonc').vars]) {
+			for (const name of ['EMAIL_PROVIDER', 'EMAIL_FROM', 'AWS_SES_REGION']) expect(vars[name]).toBeUndefined()
+		}
+	})
+
 	it('keeps everything until the owner sets a limit, and opens no demo or sample site', () => {
 		for (const vars of [selfHostedVars(cloud), bundle.vars]) {
 			expect(vars).toMatchObject({ SIGNUPS: 'invite', DEMO_SITE: '', SAMPLE_SITE: '', RETENTION_DAYS: '0', RETENTION_DEFAULT_DAYS: '' })

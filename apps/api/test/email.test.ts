@@ -78,6 +78,26 @@ describe('Cloudflare Email Service', () => {
 })
 
 describe('Amazon SES', () => {
+	it('sends on Workers, whose fetch rejects redirect mode error', async () => {
+		vi.stubGlobal('fetch', async (input: string | Request, init?: RequestInit) => {
+			const req = new Request(input, init)
+			if (req.redirect === 'error') throw new TypeError('Workers fetch does not support redirect mode error')
+			return Response.json({ MessageId: 'ses-test' })
+		})
+		expect(await send(fakeEnv(SES))).toBe(true)
+	})
+
+	it('refuses an SES redirect without forwarding the signed request', async () => {
+		const redirects: RequestRedirect[] = []
+		vi.stubGlobal('fetch', async (input: string | Request, init?: RequestInit) => {
+			const req = new Request(input, init)
+			redirects.push(req.redirect)
+			return new Response(null, { status: 302, headers: { location: 'https://another.example/' } })
+		})
+		expect(await send(fakeEnv(SES))).toBe(false)
+		expect(redirects).toEqual(['manual'])
+	})
+
 	it('sends SES v2 SendEmail signed with SigV4 when EMAIL_PROVIDER is ses', async () => {
 		const b = binding()
 		const calls = http()

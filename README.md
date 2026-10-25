@@ -15,7 +15,7 @@
   <a href="docs/self-hosting.md">Deploy</a> ·
   <a href="docs/README.md">Docs</a> ·
   <a href="docs/comparison.md">Compare</a> ·
-  <a href="CONTRIBUTING.md">Contribute</a>
+  <a href="CONTRIBUTING.md">Run locally</a>
 </p>
 
 <p align="center">
@@ -248,11 +248,10 @@ dashboard.
 | `plugins/wordpress` | PHP | The WordPress plugin |
 | `templates` | Workers, Vercel | One-click proxy templates |
 
-## Feedback and contributing
+## Feedback
 
-Ask questions and share ideas in
-[Discussions](https://github.com/jackzard/misomoon/discussions).
-[Report a bug](https://github.com/jackzard/misomoon/issues/new/choose) in the issues.
+[Report a bug or suggest a feature](https://github.com/jackzard/misomoon/issues/new/choose)
+in the issues. misomoon doesn't take pull requests.
 [CONTRIBUTING.md](CONTRIBUTING.md) shows how to run misomoon locally with demo data. To
 report a security issue, follow [SECURITY.md](SECURITY.md).
 

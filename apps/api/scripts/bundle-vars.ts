@@ -28,7 +28,7 @@ export function parseJsonc(text: string) {
 export function selfHostedVars(cloud: Record<string, string>): Record<string, string> {
 	// The Cloud's plans never ship: a self-hosted server has no plan limits (docs/configuration.md#plans).
 	// Nor does its address: email links would lead to misomoon Cloud's dashboard.
-	const { PLANS: _cloudOnly, PUBLIC_URL: _cloudUrl, ...rest } = cloud
+	const { PLANS: _cloudOnly, PUBLIC_URL: _cloudUrl, EMAIL_PROVIDER: _cloudEmailProvider, EMAIL_FROM: _cloudEmailFrom, AWS_SES_REGION: _cloudSesRegion, ...rest } = cloud
 	// Nor does the Cloud's billing: every POLAR_* setting is misomoon Cloud's own Polar (docs/billing.md).
 	const vars = Object.fromEntries(Object.entries(rest).filter(([name]) => !name.startsWith('POLAR_')))
 	return {

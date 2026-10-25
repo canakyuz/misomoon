@@ -50,6 +50,9 @@
 		// Links in emails the cron and the queue send, which have no request to take an origin from.
 		// wrangler.jsonc and the deploy bundle leave it out: a self-hosted server sets its own.
 		"PUBLIC_URL": "https://app.misomoon.com",
+		"EMAIL_PROVIDER": "ses",
+		"EMAIL_FROM": "misomoon <reports@misomoon.com>",
+		"AWS_SES_REGION": "ap-southeast-2",
 		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). wrangler.jsonc and
 		// the deploy bundle leave PLANS out, so a self-hosted server has no plan limits.
 		"PLANS": "on",
