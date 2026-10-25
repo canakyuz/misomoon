@@ -136,10 +136,10 @@ than two shards, or deploy from your own CI.
 | Who holds the data | You | Google | You | You |
 | Cookies | None | `_ga`, for 2 years | None | None |
 | Funnels and revenue | Yes | Yes | Cloud Business plan only | Yes |
-| Built-in MCP server | Yes | Experimental | Third-party only | Yes |
+| Built-in MCP server | Yes | Experimental | Not in its docs | Yes |
 | Tracker, gzipped | 987 bytes core, 1.9 KB Light, 4.8 KB everything | 157 KB | 1.3 KB basic, 2.5 KB current | 2.3 KB |
 
-Checked on 2026-10-24.
+Checked on 2026-10-25.
 [The full comparison](docs/comparison.md) covers DataFast, Mixpanel, Microsoft Clarity,
 Matomo, PostHog, Fathom, Vercel Web Analytics, Simple Analytics, Pirsch, Cloudflare Web
 Analytics, Swetrix, GoatCounter, and Rybbit, with a source for every cell.
