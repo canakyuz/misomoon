@@ -12,7 +12,7 @@ The first public release.
 - Per-site features under Settings: outbound links, downloads, form submits, tagged
   events, payments, Web Vitals, clicks, JavaScript errors, form fields, media, content,
   and site search, plus path rules. A new site has every feature on; the Light preset
-  keeps outbound links, downloads, form submits, and tagged events at 1.8 KB gzipped.
+  keeps outbound links, downloads, form submits, and tagged events at 1.9 KB gzipped.
   `m.js?s=<site>` carries the code for the ticked features only.
 - Privacy settings per site under Settings > Install > Privacy: how long stats and
   payments are kept (30 days to 10 years), IP addresses and ranges that never count, and an option to
