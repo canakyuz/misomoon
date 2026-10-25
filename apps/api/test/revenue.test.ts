@@ -191,6 +191,47 @@ describe('crediting payments to visits, without cookies', () => {
 		expect(await bySource(env)).toEqual({ 'Hacker News': 40 })
 	})
 
+	it('gives the money back when a Stripe refund fails, and counts a redelivered refund no more', async () => {
+		const env = await shop()
+		await stripe(env, 'checkout.session.completed', paid('cs_live_5'))
+		const refund = { id: 're_2', amount: 900, currency: 'usd', payment_intent: 'pi_cs_live_5' }
+		await stripe(env, 'refund.created', { ...refund, status: 'pending' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49, -9])
+		await stripe(env, 'refund.failed', { ...refund, status: 'failed' })
+		expect(payments(env)).toEqual([{ name: 'Payment', visitor: 0, source: null, revenue: 49 }])
+		await stripe(env, 'refund.created', { ...refund, status: 'pending' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
+	})
+
+	it('never counts a refund canceled before its refund.created arrives', async () => {
+		const env = await shop()
+		await stripe(env, 'checkout.session.completed', paid('cs_live_6'))
+		const refund = { id: 're_3', amount: 900, currency: 'usd', payment_intent: 'pi_cs_live_6' }
+		await stripe(env, 'refund.updated', { ...refund, status: 'canceled' })
+		await stripe(env, 'refund.created', { ...refund, status: 'requires_action' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
+	})
+
+	it('gives the money back when a Polar refund fails after it succeeded', async () => {
+		const env = await shop()
+		const secret = `whsec_${Buffer.from('a 32 byte key for standard hooks').toString('base64')}`
+		await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret }, ADMIN)
+		const polar = (type: string, data: Record<string, unknown>) => {
+			const body = JSON.stringify({ type, data })
+			const ts = Math.floor(Date.now() / 1000)
+			const id = `msg_${Math.random()}`
+			const sig = createHmac('sha256', Buffer.from('a 32 byte key for standard hooks')).update(`${id}.${ts}.${body}`).digest('base64')
+			return call(env, 'POST', '/api/webhooks/polar/shop-com', body, { 'webhook-id': id, 'webhook-timestamp': String(ts), 'webhook-signature': `v1,${sig}` })
+		}
+		const now = new Date().toISOString()
+		await polar('order.paid', { id: 'ord-1', total_amount: 4900, currency: 'usd', billing_reason: 'purchase', customer_id: 'cus-1', metadata: {}, created_at: now })
+		const refund = { id: 'rf-1', amount: 900, tax_amount: 0, currency: 'usd', order_id: 'ord-1', created_at: now, modified_at: now }
+		await polar('refund.updated', { ...refund, status: 'succeeded' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49, -9])
+		await polar('refund.updated', { ...refund, status: 'failed', modified_at: new Date(Date.now() + 60_000).toISOString() })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
+	})
+
 	it('reads Lemon Squeezy refunds as the change in the refunded total', async () => {
 		const env = await shop()
 		const { secret } = await (await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/lemonsqueezy', {}, ADMIN)).json()

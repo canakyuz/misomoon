@@ -111,10 +111,14 @@ describe('Stripe events', () => {
 		expect(parsePayments('stripe', invoice('subscription_cycle', { amount_paid: 0 })).payments).toEqual([])
 	})
 
-	it('reads each refund once, keyed by its payment intent and charge', () => {
+	it('reads each refund once, keyed by its payment intent and charge, and marks a failed one', () => {
 		const [r] = parsePayments('stripe', ev('refund.created', { id: 're_1', amount: 500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_1', charge: 'ch_1', created: SEC })).payments
 		expect(r).toEqual({ provider: 'stripe', kind: 'refund', id: 're_1', amount: 5, currency: 'USD', ts: SEC * 1000, keys: ['stripe:pi:pi_1', 'stripe:charge:ch_1'], links: [] })
-		expect(parsePayments('stripe', ev('refund.created', { id: 're_2', amount: 500, currency: 'usd', status: 'failed' })).payments).toEqual([])
+		// a failed refund takes back nothing; refund.updated counts only that
+		expect(parsePayments('stripe', ev('refund.failed', { id: 're_2', amount: 500, currency: 'usd', status: 'failed', payment_intent: 'pi_1', created: SEC })).payments).toEqual([
+			{ provider: 'stripe', kind: 'refund', id: 're_2', amount: 5, currency: 'USD', ts: SEC * 1000, keys: ['stripe:pi:pi_1'], links: [], failed: true },
+		])
+		expect(parsePayments('stripe', ev('refund.updated', { id: 're_1', amount: 500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_1' })).payments).toEqual([])
 	})
 
 	it('flags test-mode events and ignores other types', () => {
@@ -142,10 +146,11 @@ describe('Polar events', () => {
 		})
 	})
 
-	it('counts a succeeded refund with its tax, and skips a pending one', () => {
+	it('counts a succeeded refund with its tax, skips a pending one, and marks a failed one', () => {
 		const refund = (status: string) => ({ type: 'refund.updated', data: { id: 'rf-1', status, amount: 1000, tax_amount: 200, currency: 'usd', order_id: 'ord-uuid-1', modified_at: '2026-10-22T12:00:00Z' } })
 		expect(parsePayments('polar', refund('succeeded')).payments).toEqual([{ provider: 'polar', kind: 'refund', id: 'rf-1', amount: 12, currency: 'USD', ts: NOW, keys: ['polar:order:ord-uuid-1'], links: [] }])
 		expect(parsePayments('polar', refund('pending')).payments).toEqual([])
+		expect(parsePayments('polar', refund('failed')).payments).toEqual([{ provider: 'polar', kind: 'refund', id: 'rf-1', amount: 12, currency: 'USD', ts: NOW, keys: ['polar:order:ord-uuid-1'], links: [], failed: true }])
 	})
 })
 

@@ -26,7 +26,7 @@
 		stripe: {
 			name: 'Stripe',
 			where: 'In Stripe, open Developers → Webhooks and add an endpoint with this URL.',
-			events: ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'invoice.paid', 'refund.created'],
+			events: ['checkout.session.completed', 'checkout.session.async_payment_succeeded', 'invoice.paid', 'refund.created', 'refund.updated', 'refund.failed'],
 			made: false,
 			checkout: `stripe.checkout.sessions.create({
   // …your line items

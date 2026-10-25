@@ -224,6 +224,7 @@ async function claim(env: Env, siteId: string, keys: string[], pass: Pass) {
  * Returns true when this call wrote the payment's event (for a link: stored it).
  */
 export async function applyPayment(env: Env, siteId: string, p: Payment): Promise<boolean> {
+	if (p.failed) return voidRefund(env, siteId, p)
 	const now = Date.now()
 	const cols = 'site_id, provider, id, kind, amount, currency, ts, keys, links, billing, refund_of, created_at'
 	const rest = [p.currency, p.ts, JSON.stringify(p.keys), JSON.stringify(p.links), p.billing ?? null, p.refundedTotalOf ?? null, now]
@@ -239,13 +240,32 @@ export async function applyPayment(env: Env, siteId: string, p: Payment): Promis
 		: env.CONTROL.prepare(`INSERT OR IGNORE INTO payments (${cols}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(siteId, p.provider, p.id, p.kind, p.kind === 'refund' ? -p.amount : p.amount, ...rest)
 	const inserted = !!(await insert.run()).meta.changes
 	const stored = await env.CONTROL.prepare('SELECT * FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<PaymentRow>()
-	// a refund that adds nothing to the refunded total
-	if (!stored) return false
+	// a refund that adds nothing to the refunded total, or one that failed (voidRefund)
+	if (!stored || (p.kind === 'refund' && stored.amount === 0)) return false
 	const written = p.kind === 'link' ? inserted : await writeRow(env, paymentRow(p, siteId, stored.visit ? JSON.parse(stored.visit) : null, Math.abs(stored.amount)))
 	// it waits for every key until one leads to a visit
 	if (!stored.attributed_by) await env.CONTROL.batch(pendingStmts(env, siteId, p, p.keys.length))
 	await settle(env, siteId, stored, newPass())
 	return written
+}
+
+/**
+ * A refund that failed or was canceled: its event goes, and its row stays with no money,
+ * so a refund.created that comes again, or late, counts nothing. Returns false: it writes
+ * no event.
+ */
+async function voidRefund(env: Env, siteId: string, p: Payment): Promise<false> {
+	const prior = await env.CONTROL.prepare('SELECT ts FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<{ ts: number }>()
+	await env.CONTROL.batch([
+		env.CONTROL.prepare(
+			`INSERT INTO payments (site_id, provider, id, kind, amount, currency, ts, keys, links, created_at) VALUES (?, ?, ?, 'refund', 0, ?, ?, ?, '[]', ?)
+				ON CONFLICT (site_id, provider, id) DO UPDATE SET amount = 0`,
+		).bind(siteId, p.provider, p.id, p.currency, p.ts, JSON.stringify(p.keys), Date.now()),
+		env.CONTROL.prepare('DELETE FROM payment_keys WHERE site_id = ? AND provider = ? AND payment_id = ?').bind(siteId, p.provider, p.id),
+	])
+	const db = prior && (await readShard(env, siteId, prior.ts))
+	if (db) await db.prepare('DELETE FROM events WHERE site_id = ? AND event_id = ?').bind(siteId, paymentRow(p, siteId, null).event_id).run()
+	return false
 }
 
 /** POST /api/webhooks/:provider/:site */

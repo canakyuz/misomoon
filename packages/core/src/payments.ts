@@ -37,6 +37,8 @@ export interface Payment {
 	billing?: 'one_time' | 'new' | 'renewal'
 	/** set when `amount` is the payment's refunded total so far, not this refund alone */
 	refundedTotalOf?: string
+	/** a refund that failed or was canceled: it takes back nothing, even one counted before */
+	failed?: true
 }
 
 export interface Parsed {
@@ -146,12 +148,17 @@ function stripe(e: Json, now: number): Parsed {
 				],
 			}
 		}
-		case 'refund.created': {
+		// a refund counts from refund.created; it can still fail up to 30 days later
+		case 'refund.created':
+		case 'refund.updated':
+		case 'refund.failed': {
 			const id = str(o.id)
-			if (!id || o.status === 'failed' || o.status === 'canceled') return { test, payments: [] }
+			const failed = o.status === 'failed' || o.status === 'canceled'
+			if (!id || (!failed && e.type !== 'refund.created')) return { test, payments: [] }
 			const m = money('stripe', o.amount, o.currency)
 			if (!m) return { test, payments: [] }
-			return { test, payments: [{ provider: 'stripe', kind: 'refund', id, ...m, ts: at, keys: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge)), links: [] }] }
+			const refund: Payment = { provider: 'stripe', kind: 'refund', id, ...m, ts: at, keys: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge)), links: [] }
+			return { test, payments: [failed ? { ...refund, failed: true } : refund] }
 		}
 	}
 	return { test, payments: [] }
@@ -187,10 +194,12 @@ function polar(e: Json, now: number): Parsed {
 			],
 		}
 	}
-	if ((e.type === 'refund.created' || e.type === 'refund.updated') && o.status === 'succeeded') {
+	const failed = o.status === 'failed' || o.status === 'canceled'
+	if ((e.type === 'refund.created' || e.type === 'refund.updated') && (o.status === 'succeeded' || failed)) {
 		const m = money('polar', (int(o.amount) ?? 0) + (int(o.tax_amount) ?? 0), o.currency)
 		if (!m) return { test: false, payments: [] }
-		return { test: false, payments: [{ provider: 'polar', kind: 'refund', id, ...m, ts: time(o.modified_at, at), keys: keys(link('polar', 'order', o.order_id), sub, cus), links: [] }] }
+		const refund: Payment = { provider: 'polar', kind: 'refund', id, ...m, ts: time(o.modified_at, at), keys: keys(link('polar', 'order', o.order_id), sub, cus), links: [] }
+		return { test: false, payments: [failed ? { ...refund, failed: true } : refund] }
 	}
 	return { test: false, payments: [] }
 }
