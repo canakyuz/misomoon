@@ -16,6 +16,7 @@
 	const GUIDES = PLATFORMS.filter((g) => ['WordPress', 'Shopify', 'Webflow', 'Framer', 'Wix', 'Squarespace', 'Next.js', 'Google Tag Manager'].includes(g.label))
 	const tag = $derived(`<script defer src="${location.origin}/m.js?s=${dash.site}"><\/script>`)
 	let copied = $state(false)
+	let copyFailed = $state(false)
 	let seen = $state(false)
 
 	$effect(() => {
@@ -41,7 +42,12 @@
 	})
 
 	async function copy() {
-		await navigator.clipboard.writeText(tag)
+		try {
+			await navigator.clipboard.writeText(tag)
+		} catch {
+			copyFailed = true
+			return
+		}
 		copied = true
 		setTimeout(() => (copied = false), 1500)
 	}
@@ -56,6 +62,7 @@
 			{#if copied}<Check size={14} /> Copied{:else}<Copy size={14} /> Copy{/if}
 		</button>
 	</div>
+	{#if copyFailed}<p class="error-text">Could not copy; select the text and copy it by hand.</p>{/if}
 	<p class="muted small">It sets no cookies and stores nothing on the visitor's device. On a site builder or a framework, its guide shows where the tag goes:</p>
 	<ul class="guides">
 		{#each GUIDES as g (g.label)}
