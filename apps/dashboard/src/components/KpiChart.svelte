@@ -75,8 +75,10 @@
 	let noting = $state(false)
 	let note = $state('')
 	let noteError = $state<string | null>(null)
+	let noteBusy = false
 	async function addNote() {
-		if (!note.trim()) return
+		if (!note.trim() || noteBusy) return
+		noteBusy = true
 		noteError = null
 		try {
 			await send('POST', `/api/v1/sites/${dash.site}/annotations`, { text: note.trim() })
@@ -85,6 +87,8 @@
 			dash.tick++
 		} catch (e) {
 			noteError = (e as Error).message
+		} finally {
+			noteBusy = false
 		}
 	}
 

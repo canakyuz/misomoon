@@ -32,8 +32,10 @@
 
 	let shareSeg = $state(false)
 
+	let segSaving = false
 	async function saveSegment() {
-		if (!dash.site || !segName.trim() || !dash.filters.length) return
+		if (!dash.site || !segName.trim() || !dash.filters.length || segSaving) return
+		segSaving = true
 		segError = null
 		try {
 			await send('POST', `/api/v1/sites/${dash.site}/segments`, { name: segName.trim(), filters: current, personal: !(dash.canEdit && shareSeg) })
@@ -41,6 +43,8 @@
 			dash.tick++
 		} catch (e) {
 			segError = (e as Error).message
+		} finally {
+			segSaving = false
 		}
 	}
 
