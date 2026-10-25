@@ -34,8 +34,7 @@
 	<span class="eyebrow"><b>{count}</b> Features</span>
 	<h1 class="display">Every feature.<br /><em>On every plan.</em></h1>
 	<p class="lede">
-		Funnels, revenue, and email reports usually wait behind the top plan. On misomoon Cloud every plan has all of them, and so does the open-source
-		version. Every part is listed here with the docs page that explains it.
+		Funnels, revenue, and email reports come on every misomoon Cloud plan, and in the open-source version. Every part is listed here with the docs page that explains it.
 	</p>
 	<ol class="index mono" aria-label="Groups">
 		{#each FEATURES as g, i (g.id)}

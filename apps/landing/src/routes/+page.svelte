@@ -232,8 +232,8 @@
 			<span class="eyebrow"><b>★</b> The whole kit</span>
 			<h2 class="display">Six tools.<br /><em>One script tag.</em></h2>
 			<p>
-				Most analytics stops at pageviews. Revenue, heatmaps, form analytics, error tracking and speed checks then cost a subscription each.
-				misomoon does all six, and you tick only the parts you use.
+				Traffic is where it starts. misomoon adds revenue, heatmaps, form analytics, error tracking and speed checks to the same script, and you
+				tick only the parts you use.
 			</p>
 		</header>
 		<ol class="kit">
@@ -479,7 +479,7 @@
 			</div>
 			<div class="aside">
 				<p>
-					The essentials every analytics tool counts, and the ones that explain them: how long people really read, how far they scroll, how fast the
+					The essentials you’d expect, and the ones that explain them: how long people really read, how far they scroll, how fast the
 					page felt, and which AI assistant sent them. Here is everything a single pageview leaves behind.
 				</p>
 			</div>
@@ -536,7 +536,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 			</div>
 			<div class="aside">
 				<p>
-					Funnels, revenue, and reports usually wait behind the top plan. On misomoon, the smallest plan has the same features as the largest. {DIFFER} The
+					Funnels, revenue, and reports come on every plan: the smallest has the same features as the largest. {DIFFER} The
 					open-source version has all of it too.
 				</p>
 				<p class="more"><a href="/pricing">Compare the plans →</a></p>
