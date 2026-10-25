@@ -199,6 +199,26 @@ describe('API imports', () => {
 		expect([imports(env), jobs(env)]).toEqual([[], []])
 	})
 
+	it('keeps none of the days a run reads after its import is deleted part way', async () => {
+		const env = await site()
+		const asked = fakeTool()
+		const tool = fetch
+		let deleted = false
+		vi.stubGlobal('fetch', async (url: string) => {
+			// the person deletes the import while the run reads 1 June, after it wrote 9 June back to 3 June
+			if (!deleted && url.includes('/stats') && new URL(url).searchParams.get('startAt') === String(Date.UTC(2024, 5, 1))) {
+				deleted = true
+				const [{ id }] = env.CONTROL.rows('SELECT id FROM imports') as { id: string }[]
+				expect((await call(env, 'DELETE', `/api/v1/sites/shop-com/imports/${id}`)).status).toBe(204)
+			}
+			return tool(url)
+		})
+		await start(env, { from: '2024-05-20' })
+		expect(deleted).toBe(true)
+		expect(asked).not.toContain('2024-05-20')
+		expect([imports(env), jobs(env), totals(env)]).toEqual([[], [], {}])
+	})
+
 	it(`imports a real day of ${IMPORTERS.matomo.name}'s public demo, as it answered`, async () => {
 		const env = await site()
 		vi.setSystemTime(Date.UTC(2026, 9, 21, 12))

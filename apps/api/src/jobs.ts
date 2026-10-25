@@ -177,7 +177,7 @@ export async function runJob(env: Env, id: string, deadline: number) {
 				done++
 			}
 			await writeDays(env, site, id, read, set)
-			await env.CONTROL.batch([
+			const [written] = await env.CONTROL.batch([
 				env.CONTROL.prepare('UPDATE import_jobs SET next_day = ?, days_done = ?, retries = 0, updated_at = ? WHERE import_id = ?').bind(next, done, Date.now(), id),
 				env.CONTROL.prepare(
 					`UPDATE imports SET rows = rows + ?, skipped_days = skipped_days + ?,
@@ -186,6 +186,8 @@ export async function runJob(env: Env, id: string, deadline: number) {
 					WHERE id = ?`,
 				).bind(set.list().length, skipped, set.days?.from ?? null, set.days?.from ?? null, set.days?.from ?? null, set.days?.to ?? null, set.days?.to ?? null, set.days?.to ?? null, id),
 			])
+			// the import was deleted while this run read: the days it wrote since go too
+			if (!written.meta.changes) return dropRows(env, site.id, id)
 			skipped = 0
 		}
 		if (next >= job.from_day) return release(env, id, 0, 0)

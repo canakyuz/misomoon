@@ -182,8 +182,9 @@ The visit columns are `visitors` (unique visitors that day), `visits`, `pageview
 ## Delete an import
 
 Each import is separate. To import the same days again, delete the old import first, or
-the new one skips them ([Days that count once](#days-that-count-once)). If an import says **Importing…**, wait until it finishes or
-fails. Rows that a running import writes after you delete it stay in your reports.
+the new one skips them ([Days that count once](#days-that-count-once)). If a Google import says **Importing…**, wait until it finishes or
+fails: rows it writes after you delete it stay in your reports. An import from another
+tool stops when you delete it and keeps none of its rows.
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Delete import** on the import's row.
