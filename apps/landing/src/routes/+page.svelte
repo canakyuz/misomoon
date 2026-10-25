@@ -211,6 +211,7 @@
 					<a class="cta ghost" href="/demo">Open the live demo</a>
 				</div>
 				<p class="assure mono">{TRIAL_DAYS}-day free trial · No card needed · Open source</p>
+				<a class="watch mono" href="#film">▶ Watch the 30-second film</a>
 			</div>
 		</div>
 	</div>
@@ -228,6 +229,21 @@
 					: 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
 		</div>
 		<HeroProduct {live} demo="{data.appUrl}/demo" bind:ready={demoReady} />
+	</div>
+</section>
+
+<!-- ───────────────────────────── the film -->
+<section class="chapter" id="film">
+	<div class="wrap">
+		<header class="head center" {@attach reveal()}>
+			<span class="eyebrow"><b>▶</b> The film · 30 seconds</span>
+			<h2 class="display">Where did<br /><em>the $29 come from?</em></h2>
+			<p>A post goes viral and a $29 payment lands the same night. misomoon follows the buyer back to the visit that brought them: a Reddit comment, not the post.</p>
+		</header>
+		<div class="film print" {@attach reveal(80)}>
+			<!-- svelte-ignore a11y_media_has_caption: the film's words are on screen; its sound is music -->
+			<video src="/film/misomoon-film.mp4" poster="/film/poster.webp" width="1920" height="1080" controls playsinline preload="none"></video>
+		</div>
 	</div>
 </section>
 
@@ -2271,6 +2287,32 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--text-2);
+	}
+	.watch {
+		margin-top: 10px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-decoration: underline;
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 4px;
+	}
+	.watch:hover {
+		color: var(--miso);
+	}
+
+	/* ── the film */
+	.film {
+		max-width: 1080px;
+		margin: 48px auto 0;
+		aspect-ratio: 16 / 9;
+		background: var(--block);
+	}
+	.film video {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 
 	@media (max-width: 1060px) {

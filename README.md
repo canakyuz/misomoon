@@ -37,6 +37,11 @@ built-in MCP server. You have no server to run and nothing to patch.
   <img src="docs/images/overview-light.png" alt="The misomoon dashboard: visitors, visits, pageviews, bounce rate, and visit duration over 30 days, with top sources and pages">
 </picture>
 
+A $29 payment lands the night a post goes viral. The 30-second film shows how misomoon
+traces it back to the visit that brought the buyer.
+
+<a href="https://misomoon.com/film/misomoon-film.mp4"><img src="docs/images/film-poster.jpg" alt="Watch the 30-second misomoon film: where did the $29 come from?" width="640"></a>
+
 ## Set it up in about 5 minutes
 
 You need a Cloudflare account and a GitHub or GitLab account. You don't need a server,
