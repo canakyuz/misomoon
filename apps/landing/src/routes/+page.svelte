@@ -269,7 +269,7 @@
 				the visit that brought the buyer. A renewal a year later still counts toward that first visit, and none of it needs a cookie.
 			</p>
 			<ul class="chips mono">
-				{#each ['Stripe', 'Polar', 'Lemon Squeezy', 'Dodo Payments', 'Your server'] as p (p)}<li>{p}</li>{/each}
+				{#each ['Stripe', 'Polar', 'Lemon Squeezy', 'Dodo Payments', 'Custom'] as p (p)}<li>{p}</li>{/each}
 			</ul>
 		</header>
 		<div class="ledger-col">
