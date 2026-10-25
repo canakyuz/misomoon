@@ -1,4 +1,4 @@
-import { channelForSource, sourceName } from '../channel'
+import { channelForSource, referrerHost, sourceName } from '../channel'
 import { normalizeImportedPath, type ImportedSet } from '../imported'
 import type { Zone } from '../time'
 import { importerInfo } from './info'
@@ -8,8 +8,8 @@ import { count, prevDay, required, tz } from './util'
 /**
  * Fathom's API (v1) aggregations, a day at a time in the site's time zone. Totals and
  * events are read 90 days at a time with `date_grouping=day`, the breakdowns one day per
- * request. Built from Fathom's API reference and answers others published, not yet run
- * against a real site. https://usefathom.com/api
+ * request. Built from Fathom's API reference and the answers others published, and checked
+ * against the rows of real public dashboards, which read the same data. https://usefathom.com/api
  */
 
 const BASE = 'https://api.usefathom.com/v1'
@@ -32,20 +32,19 @@ const SPAN = 90
 /** rows a grouped request returns, the most the API allows; it has no further pages */
 const LIMIT = 1000
 
-const OS: Record<string, string> = { 'Mac OS': 'macOS', 'Mac OS X': 'macOS', 'Chrome OS': 'ChromeOS', 'GNU/Linux': 'Linux' }
-const DEVICES: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet' }
+const OS: Record<string, string> = { 'OS X': 'macOS', 'Mac OS': 'macOS', 'Mac OS X': 'macOS', AndroidOS: 'Android', 'Chrome OS': 'ChromeOS', Ubuntu: 'Linux', 'GNU/Linux': 'Linux' }
+/** Fathom's dashboards say Phone; its API reference's example says Mobile */
+const DEVICES: Record<string, string> = { desktop: 'Desktop', phone: 'Mobile', mobile: 'Mobile', tablet: 'Tablet' }
 const UTM = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_content', 'utm_term'] as const
 
 const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 
-/** Fathom writes hostnames with their scheme, such as `https://www.google.com`. */
-function host(v: string): string {
-	try {
-		return new URL(/^[a-z]+:\/\//i.test(v) ? v : `https://${v}`).hostname.toLowerCase().replace(/^www\./, '')
-	} catch {
-		return ''
-	}
-}
+/**
+ * A referrer host as the tracker names it. Fathom writes hosts with or without a scheme, such
+ * as `https://www.google.com` or `www.google.com`, and an Android app as
+ * `android-app://com.linkedin.android`, which names the app's site.
+ */
+const host = (v: string) => (v ? (referrerHost(/^[a-z][a-z0-9+.-]*:\/\//i.test(v) ? v : `https://${v}`) ?? '').toLowerCase() : '')
 
 /** A bounce rate as a fraction. Fathom answers one, such as 0.28; a value above 1 is a percent. */
 const rate = (v: unknown) => (count(v) > 1 ? count(v) / 100 : count(v))

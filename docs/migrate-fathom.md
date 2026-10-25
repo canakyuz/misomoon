@@ -82,10 +82,10 @@ Every request goes to `GET /v1/aggregations` with `timezone` set to the misomoon
 | `date_grouping=day` with `visits`, `pageviews`, `bounce_rate`, and `avg_duration` | Visitors, visits, page views, bounces, and visit duration for the day. Fathom counts a visitor once a day, so the day's visits are its visitors. Bounces are visits times `bounce_rate`, and visit duration is visits times `avg_duration` in seconds. |
 | `field_grouping=pathname` | Page views and visitors per page, without a trailing slash or query, as misomoon stores paths |
 | `field_grouping=entry_page`, `exit_page` | Entry pages with their bounces and time, and exit pages |
-| `field_grouping=referrer_hostname` | Sources, referrers, and channels. A known site gets misomoon's name, such as `Google` for `google.com`. Visits without a referrer count as `Direct`. |
+| `field_grouping=referrer_hostname` | Sources, referrers, and channels. A known site gets misomoon's name, such as `Google` for `google.com`. An Android app such as `android-app://com.linkedin.android` counts as its site, `linkedin.com`, as misomoon's tracker counts it. Visits without a referrer count as `Direct`. |
 | `field_grouping` with the five UTM fields | Each UTM tag on its own. A row holds all five tags, so a tag's visits are the sum of its rows. |
 | `field_grouping=country_code`, `city` | Countries and cities |
-| `field_grouping=browser,operating_system,device_type` | Browsers, operating systems, and devices, with misomoon's names: `Mac OS` becomes `macOS` |
+| `field_grouping=browser,operating_system,device_type` | Browsers, operating systems, and devices, with misomoon's names: `OS X` becomes `macOS`, `AndroidOS` becomes `Android`, `Ubuntu` becomes `Linux`, and `Phone` becomes `Mobile` |
 | `entity=event` for each event name | Custom events: completions and the visitors who completed each |
 
 A grouped request returns at most 1,000 rows, and Fathom's API has no further pages. On a
@@ -121,9 +121,10 @@ Once the import shows in misomoon, remove Fathom's script tag and its `fathom` c
 
 Checked on 2026-10-26.
 
-The import was built from Fathom's API reference and tested on the answers in it and on
-answers a Fathom user published. It has not yet been run on a real Fathom site, because
-Fathom's API needs a token and has no public demo.
+The import was built from Fathom's API reference and tested on the answers in it, on
+answers a Fathom user published, and on a real day of a public Fathom dashboard. A
+dashboard reads the same rows as the API under other names, so the test asks for the
+API's names. The import has not yet run against the API itself, which needs a token.
 
 - Fathom: [export your data](https://usefathom.com/docs/features/exporting),
   [API](https://usefathom.com/api),
@@ -135,3 +136,5 @@ Fathom's API needs a token and has no public demo.
   [features](https://usefathom.com/features),
   [pricing](https://usefathom.com/pricing)
 - Published API answers: [a Fathom user's post with aggregation answers](https://github.com/spences10/scottspence.com/blob/main/posts/adding-real-time-analytics-to-my-sveltekit-site-with-fathom.md)
+- Real data: [the public dashboard of dylanbeattie.net](https://app.usefathom.com/share/qygedclj/dylanbeattie.net), read for 2026-09-28,
+  and [Fathom's shared dashboards](https://usefathom.com/docs/features/shared-dashboards)

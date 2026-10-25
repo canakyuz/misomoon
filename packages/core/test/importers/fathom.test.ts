@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import { ImportedSet, type ImportedRow } from '../../src/imported'
 import { fathom } from '../../src/importers/fathom'
 import { ImportError, type CallInit } from '../../src/importers/types'
+import dashboard from './fixtures/fathom-dashboard.json'
 import published from './fixtures/fathom-published.json'
 
 const DAY = '2023-02-21'
@@ -151,5 +152,65 @@ describe("the Fathom importer, on the answers Fathom's API reference and its use
 		await expect(fathom.open({ site: 'CDBUGS', token: '' }, api().call, ZONE)).rejects.toThrow(new ImportError('API token is required'))
 		await expect(fathom.open({ site: '', token: 't' }, api().call, ZONE)).rejects.toThrow(new ImportError('Site ID is required'))
 		await expect(fathom.open({ site: 'https://app.usefathom.com', token: 't' }, api().call, ZONE)).rejects.toThrow(/the code in your Fathom embed script/)
+	})
+})
+
+/**
+ * A real day of a public Fathom dashboard. The dashboard reads the same rows as the API
+ * under other names: its `visitors` is the API's `uniques`, and a visit is a visitor's day,
+ * so also its `visits`; its bounce rate is a percent where the API answers a fraction. The
+ * API's answers here are those rows under the API's names, with counts as strings.
+ */
+describe('the Fathom importer, on a real day of a public Fathom dashboard', () => {
+	const REAL_DAY = '2026-09-28'
+	const { breakdowns } = dashboard
+	const v1 = (r: Row): Row => {
+		const out: Row = {}
+		for (const [k, v] of Object.entries(r)) {
+			if (k === 'visitors') out.visits = out.uniques = String(v)
+			else if (k === 'bounce_rate') out.bounce_rate = Number(v) / 100
+			else out[k] = typeof v === 'number' ? String(v) : v
+		}
+		return out
+	}
+	const call = async (url: string) => {
+		const u = new URL(url)
+		const path = u.pathname.slice('/v1/'.length)
+		const group = u.searchParams.get('field_grouping')
+		if (path === 'sites/QYGEDCLJ') return { id: dashboard.site.id, object: 'site', name: dashboard.site.name, created_at: dashboard.site.created_at_utc, timezone: dashboard.site.timezone }
+		if (path === 'sites/QYGEDCLJ/events') return { object: 'list', has_more: false, data: [] }
+		if (path === 'aggregations' && !group) return dashboard.days.map(v1)
+		if (path === 'aggregations' && group && group in breakdowns) return breakdowns[group as keyof typeof breakdowns].map(v1)
+		throw new Error(`no answer for ${url}`)
+	}
+	async function readReal() {
+		const { state } = await fathom.open({ site: 'qygedclj', token: 't' }, call, 'UTC')
+		const set = new ImportedSet()
+		await fathom.day(state, REAL_DAY, 'UTC', call, set)
+		return set.list()
+	}
+	const sum = (list: ImportedRow[], d: string) => list.filter((r) => r.dim === d).reduce((n, r) => n + r.visits, 0)
+
+	it("stores the day's 65 visitors, and files each under one source, channel, place and device", async () => {
+		const list = await readReal()
+		expect(dim(list, '')['']).toMatchObject({ visitors: 65, visits: 65, pageviews: 91, bounces: Math.round(65 * 0.8307692307692308), duration: Math.round(65 * 153.87179487179486) })
+		for (const d of ['source', 'channel', 'entry_page', 'exit_page', 'country', 'city', 'browser', 'os', 'device']) expect([d, sum(list, d)]).toEqual([d, 65])
+		expect(list.filter((r) => r.dim === 'page').reduce((n, r) => n + r.pageviews, 0)).toBe(91)
+	})
+
+	it("names Fathom's Phone a mobile, and its systems as misomoon's tracker names them", async () => {
+		const list = await readReal()
+		expect(visits(list, 'device')).toEqual({ Desktop: 47, Mobile: 18 })
+		expect(visits(list, 'os')).toEqual({ Linux: 16, Windows: 23, Android: 9, macOS: 7, iOS: 9, ChromeOS: 1 })
+		expect(visits(list, 'browser')).toEqual({ Chrome: 44, Edge: 5, Firefox: 11, Safari: 4, Opera: 1 })
+	})
+
+	it('reads an Android app referrer as the site the app belongs to', async () => {
+		const list = await readReal()
+		const sources = visits(list, 'source')
+		// www.google.com, www.google.de and the Google app
+		expect([sources.Google, sources.Direct, sources.Bing, sources.LinkedIn, sources['Hacker News']]).toEqual([32, 24, 3, 1, 1])
+		expect(visits(list, 'referrer')).toMatchObject({ 'google.com': 31, 'linkedin.com': 1, 'google.de': 1 })
+		expect(Object.keys(visits(list, 'referrer')).filter((k) => !k.includes('.') || k.startsWith('com.'))).toEqual([])
 	})
 })
