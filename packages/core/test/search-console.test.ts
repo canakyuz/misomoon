@@ -11,6 +11,12 @@ describe('Search Console search terms', () => {
 		expect(q).not.toHaveProperty('dimensionFilterGroups')
 	})
 
+	it('asks for the row past a full 1000-row page, so the API can say there are more', () => {
+		const w = { from: day, to: day + 86_400_000 }
+		expect(searchConsoleQuery(w, 0, [], { limit: 1001 }).rowLimit).toBe(1001)
+		expect(searchConsoleQuery(w, 0, [], { limit: 30_000 }).rowLimit).toBe(25_000)
+	})
+
 	it('maps the filters Google understands and ignores Google-only ones', () => {
 		const q = searchConsoleQuery(
 			{ from: day, to: day + 86_400_000 },
