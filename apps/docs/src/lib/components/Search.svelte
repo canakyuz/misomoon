@@ -1,14 +1,6 @@
 <script lang="ts">
 	import { goto } from '$app/navigation'
-
-	interface Entry {
-		slug: string
-		page: string
-		section: string
-		heading: string
-		id: string
-		text: string
-	}
+	import { rank, snippet, type Entry } from '#lib/search.ts'
 
 	let { open = $bindable(false) }: { open?: boolean } = $props()
 	let dialog = $state<HTMLDialogElement>()
@@ -16,6 +8,15 @@
 	let query = $state('')
 	let active = $state(0)
 	let index = $state<Entry[] | null>(null)
+	let failed = $state(false)
+
+	function load() {
+		failed = false
+		fetch('/search.json')
+			.then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+			.then((d: Entry[]) => (index = d))
+			.catch(() => (failed = true))
+	}
 
 	$effect(() => {
 		if (!dialog) return
@@ -24,44 +25,11 @@
 			query = ''
 			active = 0
 			input?.focus()
-			index ??= []
-			fetch('/search.json')
-				.then((r) => r.json())
-				.then((d: Entry[]) => (index = d))
-				.catch(() => (index = []))
+			if (!index) load()
 		} else if (!open && dialog.open) dialog.close()
 	})
 
-	// Every word must appear somewhere in the entry; titles and headings weigh more than text.
-	const results = $derived.by(() => {
-		const words = query.toLowerCase().split(/\s+/).filter(Boolean)
-		if (!words.length || !index) return []
-		const scored: { e: Entry; score: number }[] = []
-		for (const e of index) {
-			const page = e.page.toLowerCase()
-			const heading = e.heading.toLowerCase()
-			const text = e.text.toLowerCase()
-			let score = 0
-			for (const w of words) {
-				const s = (page.includes(w) ? 4 : 0) + (heading.includes(w) ? 6 : 0) + (text.includes(w) ? 1 : 0)
-				if (!s) {
-					score = 0
-					break
-				}
-				score += s
-			}
-			if (score) scored.push({ e, score: score + (e.id ? 0 : 2) })
-		}
-		return scored.sort((a, b) => b.score - a.score).slice(0, 12).map((s) => s.e)
-	})
-
-	function snippet(e: Entry): string {
-		const w = query.toLowerCase().split(/\s+/).find((x) => e.text.toLowerCase().includes(x))
-		if (!w) return e.text.slice(0, 120)
-		const i = e.text.toLowerCase().indexOf(w)
-		const start = Math.max(0, i - 40)
-		return (start ? '…' : '') + e.text.slice(start, start + 140) + (start + 140 < e.text.length ? '…' : '')
-	}
+	const results = $derived(index ? rank(index, query) : [])
 
 	function go(e: Entry) {
 		open = false
@@ -87,24 +55,49 @@
 		<label class="field">
 			<span class="sr">Search the docs</span>
 			<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
-			<input bind:this={input} bind:value={query} oninput={() => (active = 0)} {onkeydown} placeholder="Search the docs" autocomplete="off" spellcheck="false" />
+			<input
+				bind:this={input}
+				bind:value={query}
+				oninput={() => (active = 0)}
+				{onkeydown}
+				role="combobox"
+				aria-expanded={results.length > 0}
+				aria-controls="search-results"
+				aria-autocomplete="list"
+				aria-activedescendant={results[active] ? `result-${active}` : undefined}
+				placeholder="Search the docs"
+				autocomplete="off"
+				spellcheck="false"
+			/>
 			<kbd>esc</kbd>
 		</label>
 		{#if query.trim()}
 			{#if results.length}
-				<ul role="listbox" aria-label="Results">
+				<!-- the input keeps focus; arrows move aria-activedescendant through these options -->
+				<ul id="search-results" role="listbox" aria-label="Results">
 					{#each results as r, i (r.slug + r.id)}
-						<li role="option" aria-selected={i === active}>
-							<a href="/{r.slug}{r.id ? `#${r.id}` : ''}" class:on={i === active} onclick={(ev) => (ev.preventDefault(), go(r))} onmouseenter={() => (active = i)}>
+						<li role="presentation">
+							<a
+								id="result-{i}"
+								role="option"
+								aria-selected={i === active}
+								tabindex="-1"
+								href="/{r.slug}{r.id ? `#${r.id}` : ''}"
+								class:on={i === active}
+								onclick={(ev) => (ev.preventDefault(), go(r))}
+								onmouseenter={() => (active = i)}
+							>
 								<span class="where mono">{r.section} · {r.page}</span>
 								<b>{r.heading}</b>
-								<span class="text">{snippet(r)}</span>
+								<span class="text">{snippet(r.text, query)}</span>
 							</a>
 						</li>
 					{/each}
 				</ul>
-			{:else if index && index.length}
+			{:else if index}
 				<p class="empty">Nothing matches “{query.trim()}”. Try a feature name, a setting, or an error message.</p>
+			{:else if failed}
+				<p class="empty" role="alert">The search index didn't load. <button type="button" class="retry" onclick={load}>Try again</button></p>
 			{:else}
 				<p class="empty">Loading the index…</p>
 			{/if}
@@ -201,5 +194,15 @@
 		padding: 18px 16px;
 		color: var(--text-2);
 		font-size: 14.5px;
+	}
+	.retry {
+		padding: 0;
+		border: 0;
+		background: none;
+		color: var(--text);
+		font: inherit;
+		font-weight: 600;
+		text-decoration: underline;
+		cursor: pointer;
 	}
 </style>
