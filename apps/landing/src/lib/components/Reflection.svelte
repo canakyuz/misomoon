@@ -214,6 +214,8 @@
 	}
 	.tip {
 		position: absolute;
+		/* above the hero headline, which is drawn over the moon */
+		z-index: 2;
 		top: -38px;
 		translate: -50% 0;
 		padding: 5px 9px;
