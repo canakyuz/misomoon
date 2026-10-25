@@ -46,6 +46,25 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Import and Search Console](import.md): Google Analytics, CSV files, and search terms.
 - [AI tools (MCP)](mcp.md): ask Claude, Cursor, or another MCP client about traffic.
 
+## Switch from another tool
+
+- [Plausible](migrate-plausible.md): upload Plausible's CSV export without the overlap days, and keep your event calls.
+- [Umami](migrate-umami.md): build the history files from Umami's API or database, and move event data to props.
+- [Matomo](migrate-matomo.md): turn Reporting API answers into history files, and rename event categories and actions.
+- [PostHog](migrate-posthog.md): build exact history files with PostHog's SQL editor, and keep your event names.
+- [Rybbit](migrate-rybbit.md): bring daily totals from the dashboard export and breakdowns from raw events.
+- [Google Analytics 4](migrate-google-analytics.md): import a GA4 property straight from Google, and keep your event names.
+- [Fathom Analytics](migrate-fathom.md): rename the columns of Fathom's daily exports, and move event values to revenue.
+- [Simple Analytics](migrate-simple-analytics.md): count the raw export or the Stats API into history files, and keep your event names.
+- [Cloudflare Web Analytics](migrate-cloudflare-web-analytics.md): swap the beacon, and bring six months of history from the GraphQL API.
+- [DataFast](migrate-datafast.md): move goals and revenue attribution, and bring daily totals from DataFast's API.
+- [Pirsch](migrate-pirsch.md): bring daily totals and breakdowns from Pirsch's API, and keep your event calls.
+- [GoatCounter](migrate-goatcounter.md): write history files from the CSV or JSON export, and swap click attributes.
+- [Swetrix](migrate-swetrix.md): bring history from the Statistics API, and keep your event calls.
+- [Vercel Web Analytics](migrate-vercel-web-analytics.md): swap the React component, and bring the reporting window from the API.
+- [Microsoft Clarity](migrate-microsoft-clarity.md): move click maps, scroll depth, and errors to Behavior. Recordings stay behind.
+- [Mixpanel](migrate-mixpanel.md): replace website analytics, and add up the Raw Event Export into history files.
+
 ## Dashboard
 
 - [Use the dashboard](dashboard.md): views, periods, filters, and shortcuts.

@@ -1,5 +1,6 @@
-// AGENTS.md: other products' names appear only in alternatives.ts, docs/comparison.md and
-// the README's comparison table, and every claim names its source and the day it was checked.
+// AGENTS.md: other products' names appear only in alternatives.ts, docs/comparison.md, the
+// guides to switching from one (docs/migrate-*.md), and the README's comparison table, and
+// every claim names its source and the day it was checked.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -9,6 +10,8 @@ import { PLANS, keptByPlan, short } from './pricing.ts'
 
 const root = fileURLToPath(new URL('../../../../', import.meta.url))
 const DATE = /^\d{4}-\d{2}-\d{2}$/
+/** a guide to switching from another product, which may name it */
+const MIGRATE = /^docs\/migrate-[a-z0-9-]+\.md$/
 
 function files(dir: string, out: string[] = []): string[] {
 	for (const name of readdirSync(dir)) {
@@ -80,10 +83,25 @@ describe('the alternatives data', () => {
 		const found: string[] = []
 		for (const p of scan) {
 			const rel = relative(root, p)
-			if (allowed.has(rel)) continue
-			const text = readFileSync(p, 'utf8')
+			if (allowed.has(rel) || MIGRATE.test(rel)) continue
+			let text = readFileSync(p, 'utf8')
+			// the docs sidebar names each guide on the line that links to it
+			if (rel === 'docs/README.md') text = text.replace(/^- \[[^\]]+\]\(migrate-[a-z0-9-]+\.md\):.*$/gm, '')
 			for (const n of names) if (text.includes(n)) found.push(`${rel}: ${n}`)
 		}
 		expect(found).toEqual([])
+	})
+
+	it('has a guide to switching from each product, and every guide cites its sources and the day it checked them', () => {
+		const guides = readdirSync(join(root, 'docs')).filter((f) => MIGRATE.test(`docs/${f}`))
+		expect(guides.sort()).toEqual(ALTERNATIVES.map((a) => `migrate-${a.slug}.md`).sort())
+		const bad: string[] = []
+		for (const f of guides) {
+			const sources = readFileSync(join(root, 'docs', f), 'utf8').split(/^## Sources$/m)[1] ?? ''
+			const checked = sources.match(/^Checked on (\d{4}-\d{2}-\d{2})\.$/m)?.[1]
+			if (!checked || Number.isNaN(Date.parse(checked))) bad.push(`${f}: no "Checked on YYYY-MM-DD." under ## Sources`)
+			if (!/\]\(https:\/\/[^\s)]+\)/.test(sources)) bad.push(`${f}: no https source under ## Sources`)
+		}
+		expect(bad).toEqual([])
 	})
 })
