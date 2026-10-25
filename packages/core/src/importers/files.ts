@@ -26,7 +26,8 @@ export function addExportFiles(set: ImportedSet, files: { name: string; text: st
 		if (raw) {
 			size += f.text.length
 			if (size > RAW_MAX) throw new Error(`these raw event exports are larger than ${RAW_MAX / 1_000_000} MB unzipped; upload fewer days at a time`)
-			hits.push(...raw.hits(f.text))
+			// one push at a time: spreading a file's hits as arguments overflows the stack past about 100,000
+			for (const h of raw.hits(f.text)) hits.push(h)
 		} else rows += isGoatCounterCsv(f.text) ? addGoatCounterCsv(set, f.text, zone) : addCsvExport(set, f.name, f.text)
 	}
 	return rows + (hits.length ? addRawHits(set, hits, zone) : 0)

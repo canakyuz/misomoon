@@ -98,6 +98,14 @@ describe("the Simple Analytics raw export, on a real day of Simple Analytics' pu
 		expect(home.scroll_n).toBe(rows.filter((v) => v.scrolled_percentage !== '').length)
 	})
 
+	it('reads an export of 200,000 page views, well under the size it takes', () => {
+		const lines = ['added_iso,path,session_id,is_unique']
+		for (let i = 0; i < 200_000; i++) lines.push(`2026-10-20T10:${String(i % 60).padStart(2, '0')}:00.000Z,/,session-${i},true`)
+		const { list, n } = read([{ name: 'pageviews.csv', text: lines.join('\n') }])
+		expect(n).toBe(200_000)
+		expect(dim(list, '')['']).toMatchObject({ visitors: 200_000, visits: 200_000, pageviews: 200_000 })
+	})
+
 	it('asks for session_id when the export has none', () => {
 		const text = 'added_iso,path,is_unique\n2026-10-20T10:00:00.000Z,/,true\n'
 		expect(() => simpleAnalyticsHits(text)).toThrow('this Simple Analytics export has no session_id column; export it again with session_id among the fields')
