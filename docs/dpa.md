@@ -24,8 +24,10 @@ If the Customer itself processes the data for someone else, such as an agency fo
 client, the Customer is the processor and the Provider is its sub-processor, under the
 same terms.
 
-For account data (the names and emails of the Customer's users, sign-ins, and billing),
-the Provider is the controller, and its privacy policy covers it, not this agreement.
+For account data (the names and emails of the Customer's users, sign-ins, and the team's
+plan), the Provider is the controller, and its privacy policy covers it, not this
+agreement. Polar Software, Inc. sells the plans as merchant of record and is the
+controller of the payment details it collects.
 
 ## 2. Terms
 
@@ -188,7 +190,7 @@ tokens, links' query strings, and long numbers are removed.
 
 | Collected | Always, or with which feature | Data |
 | --- | --- | --- |
-| Pageviews and visits | Always | Page path (emails and tokens in it masked), referrer without its query, UTM tags, country, region, city, continent, timezone, network operator (ASN organization), browser, operating system, device type, screen size class, language, and a visitor id: a hash of a daily salt, the site, the IP address, and the user agent, which can't be followed from one day to the next |
+| Pageviews and visits | Always | Page path (emails and tokens in it masked), referrer without its query, UTM tags, country, region, city, continent, timezone, network operator (ASN organization), browser, operating system, device type, screen size class, language, and a visitor id: a hash of a daily salt, the site, the IP address, and the user agent, which can't be followed from one day to the next, except that a visit still open at 00:00 UTC keeps both days' ids |
 | Engagement | Always | Time the page was in view and had focus, and how far it was scrolled |
 | Custom events | Always | Event names, properties, and revenue amounts that the Customer's site sends |
 | Outbound links, downloads, form submits, tagged events | Each its own feature | The link's address without its query string, the form's id or name, and the tagged element's properties |
@@ -237,6 +239,10 @@ Google receives nothing from the service unless the Customer connects Search Con
 imports a Google Analytics property, and then only the requests for the Customer's own
 Google data. Payment providers send webhooks to the service on the Customer's behalf and
 are the Customer's own processors.
+
+Polar Software, Inc. sells misomoon Cloud plans as merchant of record. It receives
+account data only (a buyer's email and the team's id), never Customer data, so it is not
+a sub-processor.
 
 ### Changes to the sub-processors
 

@@ -26,10 +26,13 @@ email [privacy@misomoon.com](mailto:privacy@misomoon.com).
 | Invitations: the invited email address, the role, and who invited | To add someone to a team | Legitimate interest of the team that invites (6(1)(f)) | Until accepted or withdrawn; the link works for 7 days |
 | Password reset links, stored as hashes | To let you back in | Contract | One hour |
 | Email addresses that receive reports and alerts | To send them | Contract | Until the report is removed |
-| Tokens for Google Search Console or Google Analytics, and payment provider webhook secrets, when you connect them | To import your own data | Contract | Until you disconnect, or delete the site |
+| Tokens for Google Search Console, and payment provider webhook secrets, when you connect them | To show and import your own data | Contract | Until you disconnect, or delete the site. A Google Analytics token for an import is deleted when the import ends, and within a day if it never starts |
 | Your IP address, when you sign in, sign up, or reset a password | To slow down password guessing | Legitimate interest in security | Not stored: it is a key for a one-minute rate limit |
 | Emails you send us | To answer you | Legitimate interest | [retention] |
-| [Billing details: name, address, VAT number, invoices] | [To bill you] | [Contract and legal obligation (6(1)(c))] | [As tax law requires] |
+| Your team's plan, its status and paid period, Polar's customer and subscription ids, and when your free trial started | To run the plan you pay for, and to give each person one trial | Contract | Until you delete the team; the trial date until you delete your account |
+
+Polar sells the plans as merchant of record and collects your payment and tax details
+itself, under its own privacy policy.
 
 We don't sell your data, use it for advertising, or use it to train AI models.
 
@@ -54,7 +57,7 @@ nothing to a font service.
 | Cloudflare, Inc. | Hosting, databases, and email | Your account data in the EU; each site's stats in the region you pick for it; requests at the data center nearest you |
 | [Amazon Web Services EMEA SARL] | [Email, if we send it through Amazon SES] | [EU region] |
 | Google | Only when you connect Search Console or Google Analytics, to fetch your own data | Google's servers |
-| [Payment processor] | [Billing] | [Where] |
+| Polar Software, Inc., merchant of record | Sells and bills misomoon Cloud plans. At checkout it gets your email address and your team's id | United States |
 
 Where data leaves the European Economic Area, the transfer relies on the European
 Commission's standard contractual clauses or an adequacy decision.
