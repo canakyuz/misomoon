@@ -137,7 +137,7 @@ than two shards, or deploy from your own CI.
 | Cookies | None | `_ga`, for 2 years | None | None |
 | Funnels and revenue | Yes | Yes | Cloud Business plan only | Yes |
 | Built-in MCP server | Yes | Experimental | Third-party only | Yes |
-| Tracker, gzipped | 998 bytes core, 1.8 KB Light, 4.8 KB everything | 157 KB | 1.3 KB basic, 2.5 KB current | 2.3 KB |
+| Tracker, gzipped | 987 bytes core, 1.9 KB Light, 4.8 KB everything | 157 KB | 1.3 KB basic, 2.5 KB current | 2.3 KB |
 
 Checked on 2026-10-24.
 [The full comparison](docs/comparison.md) covers DataFast, Mixpanel, Microsoft Clarity,

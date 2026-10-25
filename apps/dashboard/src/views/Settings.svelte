@@ -193,7 +193,7 @@
 	// presets tick the boxes; Save still applies them
 	const PRESETS: { label: string; hint: string; features: readonly Feature[] }[] = [
 		{ label: 'Everything', hint: 'Every feature, 4.8 KB gzipped; new sites start here', features: FEATURES },
-		{ label: 'Light', hint: 'Outbound links, downloads, form submits and tagged events, 1.8 KB gzipped', features: LIGHT_FEATURES },
+		{ label: 'Light', hint: 'Outbound links, downloads, form submits and tagged events, 1.9 KB gzipped', features: LIGHT_FEATURES },
 		{ label: 'Pageviews only', hint: 'The core script alone, under 1 KB', features: [] },
 	]
 	const saveFeatures = () =>
