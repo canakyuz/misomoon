@@ -32,6 +32,11 @@ export default {
 				'user-agent': request.headers.get('user-agent') ?? '',
 				'x-misomoon-ip': request.headers.get('cf-connecting-ip') ?? '',
 			})
+			// the browser's privacy signals and language, which misomoon reads as the visitor's
+			for (const k of ['sec-gpc', 'dnt', 'accept-language']) {
+				const v = request.headers.get(k)
+				if (v) headers.set(k, v)
+			}
 			const geo = { country: cf.country, region: cf.region, city: cf.city, continent: cf.continent, timezone: cf.timezone, 'as-org': cf.asOrganization }
 			for (const [k, v] of Object.entries(geo)) if (v) headers.set('x-misomoon-' + k, encodeURIComponent(v))
 			return fetch(upstream + '/api/event', { method: 'POST', headers, body: request.body })
