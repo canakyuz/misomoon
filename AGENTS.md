@@ -63,9 +63,11 @@ Write the docs as plain Markdown that also reads well on GitHub:
   `.claude/skills/unslop`.
 - Competitor names appear in three places only: `docs/comparison.md`, the README's
   comparison table, and the landing's alternatives data file,
-  `apps/landing/src/lib/alternatives.ts`, which the alternatives pages render. Every claim
-  about a competitor there needs a source URL and the date it was checked. Nowhere else:
-  not in other code, UI copy, tests, or other docs.
+  `apps/landing/src/lib/alternatives.ts`. Every claim about a competitor there needs a
+  source URL and the date it was checked. Landing code may print names and slugs read
+  from that file (the alternatives pages, the footer's comparison links, `/llms.txt`),
+  but never type a name itself. Nowhere else: not in other code, UI copy, tests, or other
+  docs.
 - The Deploy to Cloudflare button can't build a pnpm workspace, so `pnpm bundle`
   (`apps/api/scripts/bundle.ts`) builds a self-contained `deploy/` folder, and CI
   publishes it to the `deploy` branch. A new binding, var or migration must still work
