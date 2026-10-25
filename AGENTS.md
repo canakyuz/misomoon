@@ -59,7 +59,11 @@ Write the docs as plain Markdown that also reads well on GitHub:
 - Unique counts must stay additive across shards: never compute a ratio per shard and
   average it; merge numerators and denominators.
 - Run `pnpm test` and `pnpm check` before committing.
-- Cloudflare and Svelte skills are vendored in `.claude/skills/`.
+- Cloudflare, Svelte and Polar skills are vendored in `.claude/skills/`. For misomoon Cloud
+  billing (`apps/api/src/billing.ts`, `docs/billing.md`), use `polar-testing` for the
+  sandbox, test cards and `polar webhook listen`, and `polar-integration` for the API's
+  fields. billing.ts calls Polar's REST API with `fetch`, not `@polar-sh/sdk`, so take the
+  fields from those recipes, not the SDK calls.
 - Docs, the README and commit messages follow `.claude/skills/technical-writing` and
   `.claude/skills/unslop`.
 - Competitor names appear in five places only: `docs/comparison.md`, the guides to
