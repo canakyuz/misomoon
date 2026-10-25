@@ -469,6 +469,8 @@
 	let newReport = $state<{ email: string; kind: ReportSub['kind']; threshold: number }>({ email: '', kind: 'weekly', threshold: 0 })
 	let sentTest = $state(false)
 	const KIND: Record<ReportSub['kind'], string> = { weekly: 'Weekly report', monthly: 'Monthly report', spike: 'Traffic spike', drop: 'No traffic' }
+	/** what the server uses when an alert has no threshold (api reports.ts) */
+	const THRESHOLD: Partial<Record<ReportSub['kind'], number>> = { spike: 10, drop: 12 }
 	const addReport = () =>
 		run('addReport', async () => {
 			await send('POST', `/api/v1/sites/${dash.site}/reports`, { ...newReport, threshold: newReport.kind === 'spike' || newReport.kind === 'drop' ? newReport.threshold || undefined : undefined })
@@ -862,7 +864,7 @@
 							<span class="pill {r.kind === 'spike' || r.kind === 'drop' ? 'page' : 'event'}">{r.kind}</span>
 							<strong class="grow">{r.email}</strong>
 							<span class="muted small">
-								{#if r.kind === 'spike'}{r.threshold ?? 10}+ online{:else if r.kind === 'drop'}no pageviews for {r.threshold ?? 12}h{/if}
+								{#if r.kind === 'spike'}{r.threshold ?? THRESHOLD.spike}+ online{:else if r.kind === 'drop'}no pageviews for {r.threshold ?? THRESHOLD.drop}h{/if}
 								{r.last_sent_at ? ` · sent ${day(r.last_sent_at)}` : ''}
 							</span>
 							<button class="btn ghost icon" onclick={() => removeReport(r.id)} aria-label="Unsubscribe"><Trash size={14} /></button>
@@ -873,7 +875,7 @@
 				</ul>
 				<div class="inline">
 					<input class="input grow" type="email" placeholder="you@example.com" bind:value={newReport.email} />
-					<Select label="Kind" bind:value={() => newReport.kind, (kind) => (newReport = { ...newReport, kind, threshold: 0 })} options={(Object.entries(KIND) as [ReportSub['kind'], string][]).map(([k, l]) => ({ value: k, label: l }))} />
+					<Select label="Kind" bind:value={() => newReport.kind, (kind) => (newReport = { ...newReport, kind, threshold: THRESHOLD[kind] ?? 0 })} options={(Object.entries(KIND) as [ReportSub['kind'], string][]).map(([k, l]) => ({ value: k, label: l }))} />
 					{#if newReport.kind === 'spike' || newReport.kind === 'drop'}
 						<input class="input narrow" type="number" min="1" max={newReport.kind === 'drop' ? 168 : undefined} placeholder={newReport.kind === 'spike' ? 'Visitors' : 'Hours'} aria-label={newReport.kind === 'spike' ? 'Visitors online' : 'Hours without a pageview'} bind:value={newReport.threshold} />
 					{/if}
