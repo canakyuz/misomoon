@@ -54,7 +54,7 @@
 </script>
 
 <Seo
-	title={`Pricing: misomoon Cloud from $${FROM} a month, every feature in`}
+	title={`Pricing: misomoon Cloud from $${FROM} a month, all features`}
 	description={`Try misomoon Cloud free for ${TRIAL_DAYS} days, no card needed. Plans from $${FROM} a month, with heatmaps, revenue, funnels and Web Vitals on every plan.`}
 	path="/pricing"
 	schema={[

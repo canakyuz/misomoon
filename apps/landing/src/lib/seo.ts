@@ -146,5 +146,25 @@ export const jsonLd = (things: Thing[]) => JSON.stringify({ '@context': 'https:/
 /** "25 October 2026", in UTC, the way every date on the site is printed. */
 export const day = (iso: string) => new Intl.DateTimeFormat('en-GB', { day: 'numeric', month: 'long', year: 'numeric', timeZone: 'UTC' }).format(new Date(iso))
 
+/**
+ * The title of a list of posts. An older page (one with a cursor) is named by the date of
+ * its newest post, so no two pages of the list share a title.
+ */
+export function listTitle(first: string, base: string, cursor: string | null, posts: { publishedAt: string | null }[]): string {
+	const at = posts[0]?.publishedAt
+	return cursor && at ? `${base}: posts from ${day(at)} and before` : first
+}
+
+const ABOUT = 'the misomoon blog about cookieless analytics, privacy and Cloudflare.'
+
+/** An author page's description, 70 to 160 characters, from the bio when there is one. */
+export function authorDescription(name: string, bio: string): string {
+	if (!bio) return `Posts by ${name} on ${ABOUT.replace(' about', ', about')}`
+	const d = `${name}: ${bio}`
+	if (d.length < 70) return `${d} Posts on ${ABOUT}`
+	if (d.length <= 160) return d
+	return `${d.slice(0, 159).replace(/\s+\S*$/, '')}…`
+}
+
 /** Minutes to read at 230 words a minute, at least 1. */
 export const minutes = (words: number) => Math.max(1, Math.round(words / 230))

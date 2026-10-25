@@ -2,7 +2,7 @@
 	import Crumbs from '#lib/components/Crumbs.svelte'
 	import PostIndex from '#lib/components/PostIndex.svelte'
 	import Seo from '#lib/components/Seo.svelte'
-	import { breadcrumbs, person, webpage } from '#lib/seo.ts'
+	import { authorDescription, breadcrumbs, listTitle, person, webpage } from '#lib/seo.ts'
 	import { page } from '$app/state'
 
 	let { data } = $props()
@@ -17,8 +17,8 @@
 
 <!-- the author page backs the byline of every post: who wrote it, and where else they are -->
 <Seo
-	title="{a.name}, author"
-	description={a.bio || `Posts by ${a.name} on the misomoon blog.`}
+	title={listTitle(`${a.name}, author`, a.name, data.cursor, data.posts)}
+	description={authorDescription(a.name, a.bio)}
 	{path}
 	image={a.avatar}
 	noindex={!data.posts.length}

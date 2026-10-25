@@ -3,7 +3,7 @@
 	import PostIndex from '#lib/components/PostIndex.svelte'
 	import Seo from '#lib/components/Seo.svelte'
 	import { docLink } from '#lib/links.ts'
-	import { breadcrumbs, itemList, webpage } from '#lib/seo.ts'
+	import { breadcrumbs, itemList, listTitle, webpage } from '#lib/seo.ts'
 	import { page } from '$app/state'
 
 	let { data } = $props()
@@ -14,7 +14,7 @@
 </script>
 
 <Seo
-	title={data.cursor ? 'Blog: older posts' : 'Blog: notes on privacy-first analytics'}
+	title={listTitle('Blog: notes on privacy-first analytics', 'Blog', data.cursor, data.posts)}
 	description="Notes from the people building misomoon: cookieless counting, Cloudflare, analytics for AI tools, and what the numbers mean."
 	{canonical}
 	schema={[

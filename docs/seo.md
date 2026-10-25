@@ -115,6 +115,12 @@ title, the description, the canonical URL, and the Open Graph tags.
 Structured data describes what the page already shows. A question in `FAQPage` is a
 question printed on the page, with the same answer.
 
+A list of posts (the blog, a topic, an author) shows 12 posts a page. Each older page keeps
+its own canonical URL (`?cursor=`) and a title of its own, named by the date of its newest
+post, such as "Blog: posts from 4 March 2026 and before". A cursor the site never handed
+out answers `404`. An author page's description is the bio, cut or padded to 70 to 160
+characters.
+
 ## The sitemap prints only true dates
 
 `/sitemap.xml` lists the pages built from code, then every published entry that is
