@@ -110,6 +110,5 @@ it isn't lost.
 
 ## Still stuck
 
-Open a [discussion](https://github.com/jackzard/misomoon/discussions), or
-[report a bug](https://github.com/jackzard/misomoon/issues/new/choose). Include the
+[Open an issue](https://github.com/jackzard/misomoon/issues/new/choose). Include the
 version, how you deployed, and the error. Remove API keys and other secrets first.

@@ -1,10 +1,11 @@
 # Contributing to misomoon
 
-Thank you for helping. This guide covers how to run misomoon locally, how the code is
-organized, and what a pull request needs.
+misomoon takes bug reports and ideas as
+[issues](https://github.com/jackzard/misomoon/issues/new/choose). It doesn't take pull
+requests.
 
-Before you start a large change, open an issue or a discussion. Then we can agree on the
-approach before you write the code.
+This guide covers how to run misomoon locally and how the code is organized, for anyone
+who changes their own copy.
 
 ## Run it locally
 
@@ -107,9 +108,9 @@ or sharding. Read [docs/BRAND.md](docs/BRAND.md) before you change the UI.
   pnpm --filter @misomoon/tracker build && gzip -c packages/tracker/dist/m.min.js | wc -c
   ```
 
-## Before you open a pull request
+## Check a change
 
-Run both checks. CI runs them too.
+Run both checks. CI runs them on every push to `main`.
 
 ```sh
 pnpm test
@@ -152,10 +153,9 @@ The docs are in `docs/`. They follow the writing rules in
 step, sentence-case headings, and code font for names.
 
 A change that adds something a user sees or sets, such as a route, a setting, or an env
-var, documents it in the same pull request. `pnpm test` reads these from the code and
+var, documents it in the same change. `pnpm test` reads these from the code and
 fails with a list of what the docs miss.
 
 ## License
 
-By contributing, you agree that your contributions are licensed under the
-[MIT License](LICENSE).
+misomoon is licensed under the [MIT License](LICENSE).

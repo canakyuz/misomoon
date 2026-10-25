@@ -2,7 +2,7 @@
 // what the Deploy to Cloudflare button needs. It holds the bundled Worker, the built
 // dashboard, the migrations, a wrangler.jsonc, and a package.json whose `deploy` script
 // migrates every bound database by binding name and then deploys. CI pushes this folder
-// to the `deploy` branch (.github/workflows/deploy-branch.yml).  pnpm bundle
+// to the `deploy` branch (.github/workflows/ci.yml).  pnpm bundle
 import { execFileSync } from 'node:child_process'
 import { cpSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
 import { bundleConfig, bundleSource } from './bundle-vars.ts'

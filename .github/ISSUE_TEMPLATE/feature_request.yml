@@ -14,9 +14,3 @@ body:
     attributes:
       label: Your idea
       description: How could misomoon solve it? Screenshots from other tools help.
-  - type: checkboxes
-    id: help
-    attributes:
-      label: Contribution
-      options:
-        - label: I can open a pull request for this.
