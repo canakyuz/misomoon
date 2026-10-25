@@ -191,6 +191,8 @@ export class Resource<T> {
 			ctrl?.abort()
 			if (!u) {
 				this.data = null
+				this.error = null
+				this.loading = false
 				return
 			}
 			const mine = (ctrl = new AbortController())
