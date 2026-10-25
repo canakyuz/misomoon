@@ -1,11 +1,9 @@
 # Switch from Pirsch
 
-Pirsch's event calls keep their shape: `pirsch('Signup', { meta })` becomes
-`misomoon('Signup', { props })`. Pirsch doesn't document the columns of its dashboard CSV
-export, so history comes from Pirsch's API, which returns daily visitors, visits, page
-views, and bounces, plus pages, entry and exit pages, referrers, countries, devices,
-browsers, operating systems, and events. UTM history, conversion goals, funnels, and
-revenue stay behind.
+misomoon imports your Pirsch history from Pirsch's API: pick Pirsch under **Settings** >
+**Integrations**, and give it an oAuth client's ID and secret. Pirsch's event calls keep
+their shape: `pirsch('Signup', { meta })` becomes `misomoon('Signup', { props })`.
+Conversion goals, funnels, revenue, and event metadata stay behind.
 
 ## Add misomoon next to Pirsch
 
@@ -44,46 +42,55 @@ the events misomoon already collected, so you can add them at any time.
 
 ## Bring your history
 
-Pirsch's statistics routes under `https://api.pirsch.io/api/v1/statistics/` return JSON.
-`/visitor` and `/duration/session` return one row per day with `scale=day`. The other
-routes return totals for the period you ask for, so call them once per day, with `from` and
-`to` on the same day. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for days up to
-today, or stop the day before you added misomoon to make fewer calls.
+1. In Pirsch, open the dashboard's **Settings** > **Developer**, and add a client of type
+   **oAuth**. Turn off its write scopes if you like, since the import only reads. An
+   **Access Key** client, whose secret starts with `pa_`, can only send data and can't be
+   used.
+2. In misomoon, open **Settings** > **Integrations**, and in the **Import history** card,
+   pick Pirsch in **Import from another tool**.
+3. Fill in **Client ID** and **Client secret**. A client made on the dashboard reads that
+   dashboard. A client made on Pirsch's account settings page can read every dashboard you
+   have, so also set **Domain** to the one to import, such as `example.com`.
+4. Leave **From** and **To** empty to import every day from the day you added the
+   dashboard in Pirsch to the day before misomoon started counting. Set them to import less.
+5. Click **Import**.
 
-1. In Pirsch, create an API client and get an access token, as Pirsch's API guide shows.
-2. For each day you want, call the routes in the table below. Set `tz` to
-   the time zone of your misomoon site. A call returns up to 100 rows, so page through
-   longer lists with `offset`.
-3. Write the rows into the files that the table names, with a header line of column
-   names. Then zip the files.
-4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
-   the ZIP file.
+misomoon signs in while you wait. A wrong ID or secret stops the import there, with
+Pirsch's answer. Then the import runs on the server, from the newest day back, so you can
+close the page. Its row shows **Importing…** and the days read so far
+([Import from another tool](import.md#import-from-another-tool)). misomoon deletes the
+secret when the import ends.
 
-| Pirsch route and field | misomoon file and column |
+Pirsch counts each day in the time zone of your misomoon site, which misomoon sends with
+each request, so the days match misomoon's own. misomoon reads the visitors of 90 days in
+one request and skips the days without any. A day with visitors takes about 25 requests,
+and misomoon makes at most 10 a second, so a year takes about half an hour. misomoon
+skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+
+For each day, it reads:
+
+| Pirsch route | Goes into |
 | --- | --- |
-| `/visitor` with `scale=day`: `day`, `visitors`, `sessions`, `views`, `bounces` | `date`, `visitors`, `visits`, `pageviews`, and `bounces` in `imported_visitors.csv` |
-| `/duration/session` with `scale=day`: `average_time_spent_seconds` | `visit_duration` in `imported_visitors.csv`, which is the average times `sessions` |
-| `/page` with `include_avg_time_on_page=true`: `path`, `visitors`, `sessions`, `views`, and the average time on page | `page`, `visitors`, `visits`, and `pageviews` in `imported_pages.csv`. `total_time_on_page` is the average times `sessions`, and `total_time_on_page_visits` is `sessions`. |
-| `/page/entry`: `path`, `entries`, `visitors`, `average_time_spent_seconds` | `entry_page`, `entrances`, and `visitors` in `imported_entry_pages.csv`. `visit_duration` is the average times `entries`. |
-| `/page/exit`: `path`, `exits`, `visitors` | `exit_page`, `exits`, and `visitors` in `imported_exit_pages.csv` |
-| `/referrer`: `referrer`, `referrer_name`, `visitors`, `sessions`, `bounces` | `referrer`, `source`, `visitors`, `visits`, and `bounces` in `imported_sources.csv`. In `source`, write the name misomoon gives a known host, such as `Google` ([Sources and referrers](metrics.md#sources-and-referrers)). An empty `source` counts as Direct. |
-| `/country`: `country_code`, `visitors` | `country` and `visitors` in `imported_locations.csv`. Pirsch writes the code in lowercase, such as `jp`, and misomoon stores it in uppercase. |
-| `/platform`: `platform_desktop`, `platform_mobile` | Two rows per day in `imported_devices.csv`: `device` `Desktop` with `platform_desktop` as `visitors`, and `Mobile` with `platform_mobile`. Pirsch has no tablet count, and its unknown platforms have no misomoon device. |
-| `/browser`, `/browser/version`, `/os`, `/os/version` | `browser`, `browser_version`, and `visitors` in `imported_browsers.csv`, and `operating_system`, `operating_system_version`, and `visitors` in `imported_operating_systems.csv` |
-| `/events`: `name`, `count`, `visitors` | `name`, `events`, and `visitors` in `imported_custom_events.csv`. Rename `Outbound Link Click` to `Outbound Link: Click`, which misomoon imports as `Outbound link`. misomoon already imports `File Download` as `Download`. |
+| `/statistics/total` and `/statistics/duration/session` | Visitors, visits, page views, and bounces for the day. Visit duration is the day's average visit time times its visits. |
+| `/statistics/page` with the average time on page | Pages, with time on page. Paths lose a trailing slash, as misomoon stores them. |
+| `/statistics/page/entry` and `/statistics/page/exit` | Entry pages and exit pages |
+| `/statistics/referrer` | Sources and referrers. A known site gets misomoon's name, such as `Google` for `www.google.com`. A visit without a referrer is `Direct`, unless a `ref` parameter named its source. |
+| `/statistics/channel` | Channels. Pirsch's `AI` is `AI Assistants`, `Paid Other` is `Paid Search`, and `Audio`, `SMS`, and `Mobile Push Notifications` are `Referral`, as misomoon's tracker files the same visits. |
+| `/statistics/country`, `/browser`, `/os`, `/platform` | Countries, browsers, operating systems, and devices. `Mac` becomes `macOS`. `platform_desktop` is `Desktop` and `platform_mobile` is `Mobile`. |
+| `/statistics/events` | Custom events, with the visitors who sent each. `Outbound Link Click` becomes `Outbound link` and `File Download` becomes `Download`, the names of misomoon's own events. |
+| `/statistics/utm/source` and the other four UTM routes | Each UTM tag on its own. Pirsch reports each tag apart, so the tags don't add to sources. |
 
-Leave out the `/utm` routes. Every row of `imported_sources.csv` also counts toward
-`source` and `channel`, with an empty source as Direct, so UTM rows next to the referrer
-rows would count those visitors twice.
-
-No route fills `bounces` and `pageviews` in `imported_entry_pages.csv`, so imported pages
-have no bounce rate. The visit columns other than `visitors` stay empty in the location,
-device, browser, and operating system files, and so do `region` and the scroll depth
-columns. Imported days appear only in reports without filters
+Pirsch gives countries, browsers, operating systems, devices, and UTM tags as visitors
+only, so imported days add visitors there but no visits or bounces. Entry pages have no
+bounces either. Imported days appear only in reports without filters
 ([What imported data fills](import.md#what-imported-data-fills)).
 
-If you uploaded the wrong file, [delete the import](import.md#delete-an-import) and upload
-again.
+### Without the importer
+
+Pirsch's dashboard exports a ZIP of CSV files under **Export**, but Pirsch doesn't document
+their columns. To pick the numbers yourself, call the routes in the table with `from` and
+`to` on the same day, write them as [CSV files](import.md#csv-format), and upload the zip
+under **Upload CSV or zip** in the **Import history** card.
 
 ## Remove Pirsch
 
@@ -94,15 +101,15 @@ calls.
 
 - Revenue history and custom metrics. misomoon imports no revenue.
 - Conversion goals and funnels. Add them again in misomoon.
-- UTM history, for the reason in [Bring your history](#bring-your-history).
-- Event metadata. misomoon's import has no column for it, so imported events have no
-  property breakdown.
-- Regions, cities, languages, and screen sizes.
-- Tablets. Pirsch's platform counts have no tablet.
+- Event metadata. Imported events have no property breakdown.
+- Browser and operating system versions, regions, cities, languages, and screen sizes.
+- Tablets, and visits on an unknown platform. Pirsch's platform counts have no tablet.
 
 ## Sources
 
 Checked on 2026-10-25.
+
+The importer was tested on one day of Pirsch's own public dashboard, read on 2026-10-26.
 
 - Pirsch: [website integration](https://docs.pirsch.io/get-started/frontend-integration),
   [events](https://docs.pirsch.io/advanced/events),

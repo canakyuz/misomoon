@@ -204,7 +204,8 @@ function referrerKey(r: string): string {
 
 // ---------------------------------------------------------------- Google
 
-const GA_CHANNELS: Record<string, Channel> = {
+/** Google's default channel groups, as misomoon's channels. Other tools use them too. */
+export const GA_CHANNELS: Record<string, Channel> = {
 	'Organic Search': 'Organic Search',
 	'Paid Search': 'Paid Search',
 	'Organic Social': 'Organic Social',

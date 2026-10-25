@@ -519,6 +519,7 @@ const pirsch: Alternative = {
 	],
 	switching: [
 		'Start a misomoon trial and add its script next to Pirsch’s for a billing cycle.',
+		'Import your Pirsch history under Settings > Integrations, with an oAuth client’s ID and secret.',
 		'Recreate your conversion goals and funnels in misomoon.',
 		'Connect your payment provider under Settings > Revenue to see the money behind each source.',
 	],

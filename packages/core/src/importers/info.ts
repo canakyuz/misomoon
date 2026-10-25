@@ -51,6 +51,16 @@ export const IMPORTER_INFO: ImporterInfo[] = [
 			{ name: 'token', label: 'Auth token', kind: 'secret', help: 'In Matomo, under Personal > Security > Auth tokens, for a user who can view the site.' },
 		],
 	},
+	{
+		id: 'pirsch',
+		name: 'Pirsch',
+		guide: 'migrate-pirsch',
+		fields: [
+			{ name: 'client', label: 'Client ID', kind: 'text', help: 'In Pirsch, under Settings > Developer, add an oAuth client. An access key can only send data.' },
+			{ name: 'secret', label: 'Client secret', kind: 'secret' },
+			{ name: 'domain', label: 'Domain', kind: 'text', optional: true, placeholder: 'example.com', help: 'Only for a client that reads more than one dashboard.' },
+		],
+	},
 ]
 
 export const importerInfo = (id: string) => IMPORTER_INFO.find((i) => i.id === id)
