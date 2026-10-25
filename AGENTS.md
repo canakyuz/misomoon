@@ -62,15 +62,17 @@ Write the docs as plain Markdown that also reads well on GitHub:
 - Cloudflare and Svelte skills are vendored in `.claude/skills/`.
 - Docs, the README and commit messages follow `.claude/skills/technical-writing` and
   `.claude/skills/unslop`.
-- Competitor names appear in four places only: `docs/comparison.md`, the guides to
+- Competitor names appear in five places only: `docs/comparison.md`, the guides to
   switching from each competitor (`docs/migrate-<slug>.md`, one per entry in the
-  alternatives file, and the `docs/README.md` line that links to each), the README's comparison table, and the landing's alternatives data
-  file, `apps/landing/src/lib/alternatives.ts`. Every claim about a competitor there needs
-  a source URL and the date it was checked. A guide lists them under `## Sources`, after
-  `Checked on YYYY-MM-DD.` Landing code may print names and slugs read
-  from that file (the alternatives pages, the footer's comparison links, `/llms.txt`),
-  but never type a name itself. Nowhere else: not in other code, UI copy, tests, or other
-  docs.
+  alternatives file, and the `docs/README.md` line that links to each), the importers that
+  read their history (`packages/core/src/importers/` and `packages/core/test/importers/`),
+  the README's comparison table, and the landing's alternatives data file,
+  `apps/landing/src/lib/alternatives.ts`. Every claim about a competitor there needs a
+  source URL and the date it was checked. A guide lists them under `## Sources`, after
+  `Checked on YYYY-MM-DD.` Landing code may print names and slugs read from that file (the
+  alternatives pages, the footer's comparison links, `/llms.txt`), and the dashboard, the
+  API and their tests may print names read from `IMPORTER_INFO`, but never type a name
+  themselves. Nowhere else: not in other code, UI copy, tests, or other docs.
 - The Deploy to Cloudflare button can't build a pnpm workspace, so `pnpm bundle`
   (`apps/api/scripts/bundle.ts`) builds a self-contained `deploy/` folder, and CI
   publishes it to the `deploy` branch. A new binding, var or migration must still work

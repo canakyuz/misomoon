@@ -1,5 +1,6 @@
 // AGENTS.md: other products' names appear only in alternatives.ts, docs/comparison.md, the
-// guides to switching from one (docs/migrate-*.md), and the README's comparison table, and
+// guides to switching from one (docs/migrate-*.md), the importers that read their history
+// (packages/core/src/importers/ and their tests), and the README's comparison table, and
 // every claim names its source and the day it was checked.
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -12,6 +13,8 @@ const root = fileURLToPath(new URL('../../../../', import.meta.url))
 const DATE = /^\d{4}-\d{2}-\d{2}$/
 /** a guide to switching from another product, which may name it */
 const MIGRATE = /^docs\/migrate-[a-z0-9-]+\.md$/
+/** the importers, whose registry the dashboard reads names from */
+const IMPORTERS = /^packages\/core\/(src|test)\/importers\//
 
 function files(dir: string, out: string[] = []): string[] {
 	for (const name of readdirSync(dir)) {
@@ -83,7 +86,7 @@ describe('the alternatives data', () => {
 		const found: string[] = []
 		for (const p of scan) {
 			const rel = relative(root, p)
-			if (allowed.has(rel) || MIGRATE.test(rel)) continue
+			if (allowed.has(rel) || MIGRATE.test(rel) || IMPORTERS.test(rel)) continue
 			let text = readFileSync(p, 'utf8')
 			// the docs sidebar names each guide on the line that links to it
 			if (rel === 'docs/README.md') text = text.replace(/^- \[[^\]]+\]\(migrate-[a-z0-9-]+\.md\):.*$/gm, '')
