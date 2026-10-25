@@ -1,8 +1,7 @@
 # Switch from Umami
 
-Umami has no export in the layout that misomoon's [CSV import](import.md#csv-format)
-reads, so you build the daily files yourself: from Umami's API, or on a self-hosted Umami,
-from its database. Your tracking calls keep their names, and the event data moves under
+misomoon imports your Umami history from Umami's API: pick Umami under **Settings** >
+**Integrations**, and give it the website ID and an API key or a sign-in. Your tracking calls keep their names, and the event data moves under
 `props`: `umami.track('Signup', { plan })` becomes `misomoon('Signup', { props: { plan } })`.
 Revenue history and event data stay behind.
 
@@ -40,78 +39,56 @@ the events misomoon already collected, so you can add it at any time.
 
 ## Bring your history
 
-The **Export** button on Umami's dashboard doesn't help here. Its ZIP file holds one
-total per value for the whole period, with no dates, bounces, or visit durations. Build
-one `imported_<report>.csv` file per report instead, with a `date` column and one row
-per day and value.
+misomoon reads your history from Umami's API, a day at a time, on Umami Cloud and on your
+own server alike.
 
-misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Count each day in the time
-zone of the misomoon site's **Timezone** ([Sites](settings.md#sites)), because misomoon
-stores an imported day under the same date.
+1. In misomoon, open **Settings** > **Integrations**.
+2. In the **Import history** card, pick **Umami** in **Import from another tool**.
+3. Fill in the form:
+   - **Server address**: leave it empty for Umami Cloud. For your own server, type its
+     address, such as `https://umami.example.com`.
+   - **Website ID**: in Umami, under **Settings** > **Websites** > **Edit**.
+   - On Umami Cloud, **API key**: create one under **Settings** > **API keys**
+     ([Umami's API key page](https://docs.umami.is/docs/cloud/api-key)).
+   - On your own server, **Username** and **Password** of a user who can view the
+     website. A user with two-factor sign-in can't be used. Make a user for the import.
+4. Leave **From** and **To** empty to import every day from the day you added the website
+   in Umami to the day before misomoon started counting. Set them to import less.
+5. Click **Import**.
 
-Write each value the way misomoon names it ([Dimensions](metrics.md#dimensions)), or it
-sits on a row of its own next to misomoon's. Umami stores browsers as keys such as
-`chrome`, so write `Chrome`. For a source, write the name misomoon gives a known site,
-such as `Google` for `google.com`, and the domain for any other site
-([Sources and referrers](metrics.md#sources-and-referrers)). Write devices as `Desktop`,
-`Mobile`, or `Tablet`.
+misomoon signs in while you wait. A wrong key, a wrong password, or a website the user
+can't read stops the import there, with Umami's answer, such as
+`Umami answered 401: check the key or the sign-in, and that it can read this site`. Then
+the import runs on the server, from the newest day back, so you can close the page. Its row
+shows **Importing…** and the days read so far, such as `120 of 365 days`.
 
-### Umami Cloud
+Umami Cloud allows 50 calls every 15 seconds per API key, and a day with visits takes 15
+calls, so a year takes about half an hour of calls. misomoon reads for a few minutes at a
+time and goes on every five minutes, so a year takes about an hour. When Umami
+asks it to slow down or doesn't answer, the import waits and tries again. After six failed
+tries in a row, it fails and keeps none of its rows. misomoon deletes the API key or the
+password when the import ends ([Import from another tool](import.md#import-from-another-tool)).
 
-Umami Cloud's **Settings** > **Data** > **Export** emails gzip-compressed CSV files of
-raw page views, events, and sessions. Umami doesn't document their columns, and misomoon
-reads neither `.gz` files nor raw events, so use the API instead.
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+For each day, it reads:
 
-1. Create an API key in Umami Cloud ([Umami's API key page](https://docs.umami.is/docs/cloud/api-key)).
-2. For each day you want, call the endpoints in the table below under
-   `https://api.umami.is/v1/websites/<website id>/`. Set `startAt` and `endAt` to the
-   start and the end of the day, in milliseconds.
-3. Write each answer into the file and columns that the table names, with the day in
-   `date`.
+| Umami call | Goes into |
+| --- | --- |
+| `/stats` | Visitors, visits, page views, bounces, and visit duration for the day |
+| `/metrics/expanded?type=path`, `entry`, `exit` | Pages, entry pages, and exit pages |
+| `/metrics/expanded?type=referrer` | Sources, referrers, and channels. A known site gets misomoon's name, such as `Google` for `google.com`. Visits without a referrer, or from your own site, count as `Direct`. |
+| `/metrics/expanded?type=country`, `browser`, `os`, `device` | Countries, browsers, operating systems, and devices, with misomoon's names: `chrome` becomes `Chrome`, `Mac OS` becomes `macOS`, and `Windows 10` becomes `Windows` 10/11 |
+| `/metrics/expanded?type=event` | Custom events, with the visitors who sent each |
+| `/metrics/expanded?type=utmSource` and the other four UTM tags | Each UTM tag on its own. Umami reports each tag apart, so the tags don't add to sources. |
 
-Umami Cloud allows 50 calls every 15 seconds per API key. A day takes about a dozen
-calls, so a year of history takes about 4,500 calls and 25 minutes.
+### From the database
 
-The field names come from Umami 3.4.1's code, because Umami's API pages don't list them.
-Each `/metrics/expanded` row has `name`, `pageviews`, `visitors`, `visits`, `bounces`, and
-`totaltime`, the total length of the visits in seconds.
-
-| misomoon file | Umami call | Columns |
-| --- | --- | --- |
-| `imported_visitors.csv` | `/stats` | `visitors`, `visits`, `pageviews`, and `bounces` as they are, and `totaltime` as `visit_duration` |
-| `imported_pages.csv` | `/metrics/expanded?type=path` | `name` as `page`, and `pageviews`, `visitors`, and `visits` |
-| `imported_entry_pages.csv` | `/metrics/expanded?type=entry` | `name` as `entry_page`, `visits` as `entrances`, `totaltime` as `visit_duration`, and `visitors`, `pageviews`, and `bounces` |
-| `imported_exit_pages.csv` | `/metrics/expanded?type=exit` | `name` as `exit_page`, `visits` as `exits`, `totaltime` as `visit_duration`, and `visitors`, `pageviews`, and `bounces` |
-| `imported_sources.csv` | `/metrics/expanded?type=referrer` | `name` as `referrer`, the source's name as `source`, `totaltime` as `visit_duration`, and the other visit columns |
-| `imported_locations.csv` | `/metrics/expanded?type=country` and `?type=region` | `name` as `country` on one set of rows, and as `region` on another, with the visit columns |
-| `imported_browsers.csv` | `/metrics/expanded?type=browser` | `name` as `browser`, with the visit columns |
-| `imported_operating_systems.csv` | `/metrics/expanded?type=os` | `name` as `operating_system`, with the visit columns |
-| `imported_devices.csv` | `/metrics/expanded?type=device` | `name` as `device`, with the visit columns |
-| `imported_custom_events.csv` | `/metrics/expanded?type=event` and `/metrics?type=event` | The event name as `name`, `visitors` from the first call, and the count from the second as `events` |
-
-A row with an empty `country` adds nothing to countries, and one with an empty `region`
-adds nothing to regions, so the two sets of location rows don't count twice.
-`/metrics` and `/metrics/expanded` return 500 rows unless you raise their limit
-([Umami's API docs](https://docs.umami.is/docs/api)).
-
-These misomoon columns have no source in the API and stay empty:
-
-- The five `utm_*` columns of `imported_sources.csv`. Umami reports each UTM tag on its
-  own, and rows that split a day's visits by tag would count them again under `source`.
-- `browser_version` and `operating_system_version`. Umami stores no browser version, and
-  its OS name carries the version, such as `Windows 10`.
-- `total_time_on_page`, `total_time_on_page_visits`, `total_scroll_depth`, and
-  `total_scroll_depth_visits` in `imported_pages.csv`.
-
-### Self-hosted Umami
-
-Call the same endpoints on your own server, under
-`https://<your Umami>/api/websites/<website id>/`, with a login token
-([Umami's API docs](https://docs.umami.is/docs/api)).
-
-Or read the database. The table says where each file comes from in the `website_event`
-and `session` tables of Umami 3.4.1. In `website_event`, an `event_type` of `1` is a page
-view and `2` is a custom event.
+On your own server you can also read Umami's database and upload the files yourself, to
+bring what the API can't, such as UTM tags together with their source. The table says
+where each file comes from in the `website_event` and `session` tables of Umami 3.4.1. In
+`website_event`, an `event_type` of `1` is a page view and `2` is a custom event. Count
+each day in the time zone of the misomoon site's **Timezone** ([Sites](settings.md#sites)),
+and write values the way misomoon names them ([Dimensions](metrics.md#dimensions)).
 
 | misomoon file | Umami tables and columns |
 | --- | --- |
@@ -119,28 +96,17 @@ view and `2` is a custom event.
 | `imported_sources.csv` | Each visit's first event: `referrer_domain` as `referrer`, the source's name as `source`, and the `utm_*` columns. Write one row per combination of the six values. |
 | `imported_pages.csv` | Page view rows by `url_path`: their count as `pageviews`, distinct `session_id` as `visitors`, and distinct `visit_id` as `visits` |
 | `imported_entry_pages.csv`, `imported_exit_pages.csv` | The first and the last page view of each visit, by `url_path` |
-| `imported_locations.csv` | `session.country` and `session.region` |
+| `imported_locations.csv` | `session.country` |
 | `imported_browsers.csv`, `imported_operating_systems.csv`, `imported_devices.csv` | `session.browser`, `session.os`, and `session.device` |
 | `imported_custom_events.csv` | Custom event rows by `event_name`: their count as `events`, and distinct `session_id` as `visitors` |
 
 Umami's session id changes once a month by default, so distinct `session_id` per day
-counts each visitor once that day.
+counts each visitor once that day. Zip the files and upload them under **Settings** >
+**Integrations** > **Upload CSV or zip** ([Upload CSV files](import.md#upload-csv-files)).
 
-### Upload the files
-
-1. Zip the files:
-
-   ```sh
-   zip umami-history.zip imported_*.csv
-   ```
-
-2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and
-   pick `umami-history.zip`.
-
-Include `imported_visitors.csv`, the only file that fills the top-line numbers and the
-chart. Imported days appear only in reports without filters
-([What imported data fills](import.md#what-imported-data-fills)). If you uploaded the
-wrong files, [delete the import](import.md#delete-an-import) and upload again.
+Imported days appear only in reports without filters
+([What imported data fills](import.md#what-imported-data-fills)). To start again,
+[delete the import](import.md#delete-an-import).
 
 ## Remove Umami
 
@@ -151,14 +117,10 @@ calls.
 
 - Revenue history. Umami keeps revenue in its `revenue` table, and misomoon imports none.
 - Event data. misomoon imports event counts without properties.
-- Browser versions, UTM tags on the API path, time on page, and scroll depth, as listed
-  above.
-- Cities. misomoon's CSV import doesn't read them.
-- Region names. Umami stores region codes, such as `US-CA`, and misomoon's own data names
-  the region, such as California. The two sit on separate rows in **Regions**.
-- Operating systems. Umami's `Windows 10` sits on its own row next to misomoon's
-  `Windows`.
-- User ids from `umami.identify()`.
+- Browser versions, time on page, and scroll depth. Umami's API has none of them.
+- UTM tags by source. The API reports each tag on its own.
+- Regions and cities. Umami stores region codes, such as `US-CA`, and misomoon names the
+  region, such as California, so misomoon leaves them out.
 
 ## Sources
 

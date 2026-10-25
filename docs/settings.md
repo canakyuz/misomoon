@@ -107,6 +107,9 @@ the old secret stop working. See [Ask AI tools about your traffic](mcp.md).
 - **Upload CSV or zip** takes a CSV export, as a zip or as its CSV files.
 - **Connect Google** signs in to Google. Pick a **Google property**, optionally the dates,
   and select **Import**. Without dates, the import takes every day Google has.
+- **Import from another tool** reads another analytics tool's history from its API. Pick
+  the tool, fill in the fields it asks for, and select **Import**
+  ([Import from another tool](import.md#import-from-another-tool)).
 
 An import keeps only the days before misomoon started counting and the days no earlier
 import covers ([Days that count once](import.md#days-that-count-once)). The list shows each

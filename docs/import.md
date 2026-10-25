@@ -71,6 +71,43 @@ keeps none of its rows, so starting again counts no day twice. An import still
 misomoon deletes the Google sign-in it got for the import when the import ends, and within
 a day if you never start one.
 
+## Import from another tool
+
+misomoon reads the history of some analytics tools straight from their APIs. The
+**Import from another tool** list in the **Import history** card shows them, and each
+tool's [switching guide](README.md#switch-from-another-tool) lists what it brings.
+
+1. Open **Settings** > **Integrations**.
+2. In the **Import history** card, pick the tool in **Import from another tool**.
+3. Fill in the fields the tool asks for, such as its server address, the site's ID in
+   the tool, and an API key. **Switching guide** at the top of the form says where to find
+   them.
+4. Optionally, set **From** and **To**.
+5. Click **Import**.
+
+misomoon checks the fields and signs in to the tool while you wait. A wrong key or an
+address it can't reach stops the import there, with the tool's answer, and stores nothing.
+The server address must be a public `https://` address without a port.
+
+Both dates are included. An empty **From** starts on the first day the tool has, when the
+tool says which day that is. Otherwise the form asks you to set **From**. An empty **To**,
+or one on or after the first day misomoon counted, ends the day before that day. Days an
+earlier import covers are skipped ([Days that count once](#days-that-count-once)).
+
+The import runs on the server, from the newest day back, so you can close the page. It
+reads for a few minutes at a time, then goes on every five minutes. Its row shows
+**Importing…** and the days read so far, such as `120 of 365 days`, and each finished day
+shows in your reports as soon as it's read.
+
+- When the tool asks misomoon to slow down, misomoon waits as long as the tool asks.
+- When the tool doesn't answer, or answers with a server error, misomoon tries again five
+  minutes later, up to six runs in a row. Then the import fails.
+- When the tool refuses the key part way, the import fails.
+
+A failed import keeps none of its rows and shows **Failed:** with the tool's answer.
+misomoon keeps the API key or password while the import runs and deletes it when the
+import finishes, fails, or is deleted. A running import stops when you delete it.
+
 ## Upload CSV files
 
 misomoon reads a CSV export as one ZIP file or as the CSV files from it.
@@ -251,8 +288,10 @@ other secrets.
 | Time to finish a Google sign-in | 1 hour from the click on **Connect Google** or **Connect Search Console** |
 | Google import dates | `YYYY-MM-DD`. Another form falls back to the default. A **From** after the day before misomoon's first counted day fails with `misomoon has counted this site since 2026-10-12, so the import must start before it`. |
 | Import name, import error, and CSV text value | 120, 500, and 500 characters |
+| A field of an import from another tool | 500 characters. More fails with `<field> must be text of at most 500 characters`. |
+| Requests an import from another tool makes in one run | 2,000, and no more than the tool allows |
 | Search terms per page | 1,000 from the breakdown, 100 from the MCP tool |
-| Imports while the site's data moves between shards | Fail with `this site's history is being moved between shards; try the import again in a few hours` |
+| Imports while the site's data moves between shards | CSV and Google imports fail with `this site's history is being moved between shards; try the import again in a few hours`. An import from another tool waits an hour and goes on. |
 
 ### Roles
 

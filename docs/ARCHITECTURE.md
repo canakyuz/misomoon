@@ -365,7 +365,7 @@ the dashboard number.
   previous) page after a path, with `(exit)` and `(entrance)` for visit ends. Reloads fold.
 * `POST /api/v2/query`: Stats API v2 (metrics, dimensions, filters,
   date_range, order_by, pagination).
-* `.../imports` (CSV upload, Google OAuth import), `.../shared` (shared links),
+* `.../imports` (CSV upload, Google OAuth import, imports from another tool's API), `.../shared` (shared links),
   `.../reports` (email reports and alerts), `.../annotations` (chart notes; any
   non-shared API key may post, so CI can mark deploys).
 * Stats endpoints are rate limited per API key, or per IP without one (`STATS_LIMIT`).
@@ -376,6 +376,13 @@ CSV exports and Google reports land in each shard's `imported` table, one row pe
 local day, dimension and key. Rows route to shards by
 day like events, so the window fan-out stays the same. They are added only to unfiltered
 reports (filters can't be applied to pre-aggregated rows) and `imported=0` hides them.
+
+An import from another tool's API (`packages/core/src/importers`, run by
+`apps/api/src/jobs.ts`) is a row in the control database's `import_jobs`, which holds the
+form's fields until it ends. It reads one day at a time from the newest back, in the
+request that starts it for 20 seconds and then in each five-minute cron run, and writes
+seven days at a time. Each day's rows are deleted before they are written, so a run cut
+off before saving its place counts a day once. A lease keeps two runs off one job.
 
 ### Google Search Console
 

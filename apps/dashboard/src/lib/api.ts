@@ -272,7 +272,8 @@ export interface ContentReport {
 
 export interface ImportRow {
 	id: string
-	source: 'csv' | 'google'
+	/** csv, google, or an importer id (IMPORTER_INFO in @misomoon/core/importers) */
+	source: string
 	label: string
 	from_day: string | null
 	to_day: string | null
@@ -282,6 +283,9 @@ export interface ImportRow {
 	/** days left out because misomoon or an earlier import counted them already */
 	skipped_days: number
 	created_at: number
+	/** while an import from another tool runs: the days read so far, and all it will read */
+	days_done: number | null
+	days_total: number | null
 }
 
 export interface SharedLink {

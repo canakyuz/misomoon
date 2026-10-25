@@ -11,6 +11,7 @@ import { fillSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
 import { deleteImport, expireImports, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
+import { runImportJobs, startApiImport } from './jobs'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
 import { expireAttribution, handleWebhook, listSources, removeSource, saveSource } from './revenue'
 import { checkout, polarWebhook, portal, teamBilling, withBilling } from './billing'
@@ -391,6 +392,10 @@ app.delete('/api/v1/sites/:id/imports/:import', async (c) => {
 	await deleteImport(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.param('import'))
 	return c.body(null, 204)
 })
+app.post('/api/v1/sites/:id/imports/api', async (c) => {
+	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
+	return c.json(await startApiImport(c.env, c.executionCtx as ExecutionContext, site, await c.req.json()), 202)
+})
 app.post('/api/v1/sites/:id/imports/google/connect', async (c) => {
 	return googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.raw, 'import')
 })
@@ -732,10 +737,11 @@ export default {
 		}
 	},
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-		// every 5 minutes: spike alerts, moving data off retiring shards, the sample site's
-		// traffic; hourly: maintenance, email reports, quiet alerts; daily: retention cleanup
+		// every 5 minutes: spike alerts, moving data off retiring shards, API imports, the
+		// sample site's traffic; hourly: maintenance, email reports, quiet alerts; daily: retention cleanup
 		ctx.waitUntil(runAlerts(env))
 		ctx.waitUntil(retireShards(env))
+		ctx.waitUntil(runImportJobs(env).catch((e) => console.error(JSON.stringify({ msg: 'import jobs failed', error: String(e) }))))
 		ctx.waitUntil(fillSample(env).catch((e) => console.error(JSON.stringify({ msg: 'sample traffic failed', error: String(e) }))))
 		// a cron other than the five-minute one (a test, or a manual trigger) runs everything
 		const other = controller.cron !== '*/5 * * * *'

@@ -1,0 +1,46 @@
+/**
+ * The tools misomoon imports history from through their APIs, and the fields each asks
+ * for. The dashboard reads this file to draw the import form, so it imports nothing.
+ *
+ * AGENTS.md: this folder may name other products. Code elsewhere prints the names it
+ * reads from here and never types one.
+ */
+
+export interface ImportField {
+	name: string
+	label: string
+	/** `secret` fields are sent once and kept only while the import runs */
+	kind: 'text' | 'url' | 'secret'
+	placeholder?: string
+	/** shown under the field */
+	help?: string
+	optional?: boolean
+	/** shown only while another field is empty (`set: false`) or filled in (`set: true`) */
+	when?: { field: string; set: boolean }
+}
+
+export interface ImporterInfo {
+	id: string
+	/** the product's name, printed on the import form and the import's row */
+	name: string
+	fields: ImportField[]
+	/** the docs page that walks through the switch, without `.md` */
+	guide: string
+}
+
+export const IMPORTER_INFO: ImporterInfo[] = [
+	{
+		id: 'umami',
+		name: 'Umami',
+		guide: 'migrate-umami',
+		fields: [
+			{ name: 'url', label: 'Server address', kind: 'url', optional: true, placeholder: 'https://umami.example.com', help: 'Leave empty for Umami Cloud.' },
+			{ name: 'website', label: 'Website ID', kind: 'text', placeholder: '94db1cb1-74f4-4a40-ad6c-962362670409', help: 'In Umami, under Settings > Websites > Edit.' },
+			{ name: 'key', label: 'API key', kind: 'secret', help: 'In Umami Cloud, under Settings > API keys.', when: { field: 'url', set: false } },
+			{ name: 'username', label: 'Username', kind: 'text', help: 'A user on your server who can view the website.', when: { field: 'url', set: true } },
+			{ name: 'password', label: 'Password', kind: 'secret', when: { field: 'url', set: true } },
+		],
+	},
+]
+
+export const importerInfo = (id: string) => IMPORTER_INFO.find((i) => i.id === id)

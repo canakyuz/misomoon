@@ -12,7 +12,8 @@ import { moveTargets, moving } from './moves'
 export interface ImportRow {
 	id: string
 	site_id: string
-	source: 'csv' | 'google'
+	/** csv, google, or an importer id (packages/core/src/importers) */
+	source: string
 	label: string
 	from_day: string | null
 	to_day: string | null
@@ -22,14 +23,21 @@ export interface ImportRow {
 	/** days left out because misomoon or an earlier import counted them already */
 	skipped_days: number
 	created_at: number
+	/** while an API import runs: the days read so far, and all it will read */
+	days_done: number | null
+	days_total: number | null
 }
 
 export async function listImports(env: Env, siteId: string): Promise<ImportRow[]> {
-	const { results } = await env.CONTROL.prepare('SELECT * FROM imports WHERE site_id = ? ORDER BY created_at DESC').bind(siteId).all<ImportRow>()
+	const { results } = await env.CONTROL.prepare(
+		'SELECT i.*, j.days_done, j.days_total FROM imports i LEFT JOIN import_jobs j ON j.import_id = i.id WHERE i.site_id = ? ORDER BY i.created_at DESC',
+	)
+		.bind(siteId)
+		.all<ImportRow>()
 	return results
 }
 
-async function begin(env: Env, site: Site, source: 'csv' | 'google', label: string): Promise<string> {
+export async function begin(env: Env, site: Site, source: string, label: string): Promise<string> {
 	const id = crypto.randomUUID()
 	await env.CONTROL.prepare('INSERT INTO imports (id, site_id, source, label, status, created_at) VALUES (?, ?, ?, ?, ?, ?)')
 		.bind(id, site.id, source, label.slice(0, 120), 'importing', Date.now())
@@ -38,7 +46,7 @@ async function begin(env: Env, site: Site, source: 'csv' | 'google', label: stri
 }
 
 /** The first local day misomoon counted on the site, or null before its first event. */
-async function firstCountedDay(env: Env, site: Site): Promise<string | null> {
+export async function firstCountedDay(env: Env, site: Site): Promise<string | null> {
 	let first: number | null = null
 	for (const shard of new Set((await getRanges(env, site.id)).map((r) => r.shard))) {
 		const t = await (await shardDb(env, shard)).prepare('SELECT MIN(ts) AS t FROM events WHERE site_id = ?').bind(site.id).first<number | null>('t')
@@ -47,7 +55,13 @@ async function firstCountedDay(env: Env, site: Site): Promise<string | null> {
 	return first == null ? null : localDay(first, site.timezone)
 }
 
-const dayBefore = (day: string) => new Date(Date.parse(day + 'T00:00:00Z') - 86_400_000).toISOString().slice(0, 10)
+export const dayBefore = (day: string) => new Date(Date.parse(day + 'T00:00:00Z') - 86_400_000).toISOString().slice(0, 10)
+
+/** The day ranges of the site's other imports, finished or running, which a new import leaves alone. */
+export async function takenDays(env: Env, siteId: string, id = ''): Promise<{ from_day: string; to_day: string }[]> {
+	const { results } = await env.CONTROL.prepare("SELECT from_day, to_day FROM imports WHERE site_id = ? AND status != 'failed' AND id != ? AND from_day IS NOT NULL").bind(siteId, id).all<{ from_day: string; to_day: string }>()
+	return results
+}
 
 /**
  * Keeps only the days nothing has counted yet: those before misomoon's first day on the
@@ -57,7 +71,7 @@ const dayBefore = (day: string) => new Date(Date.parse(day + 'T00:00:00Z') - 86_
 async function keepNew(env: Env, site: Site, set: ImportedSet, id?: string): Promise<number> {
 	if (!set.days) throw new HttpError(400, 'no row has a date as YYYY-MM-DD, so there is nothing to add')
 	const first = await firstCountedDay(env, site)
-	const { results: taken } = await env.CONTROL.prepare("SELECT from_day, to_day FROM imports WHERE site_id = ? AND status = 'done' AND id != ? AND from_day IS NOT NULL").bind(site.id, id ?? '').all<{ from_day: string; to_day: string }>()
+	const taken = await takenDays(env, site.id, id)
 	let covered = false
 	const skipped = set.drop((day) => {
 		if (first != null && day >= first) return true
@@ -101,7 +115,7 @@ async function persist(env: Env, site: Site, id: string, set: ImportedSet, skipp
 		.run()
 }
 
-async function fail(env: Env, id: string, e: unknown) {
+export async function fail(env: Env, id: string, e: unknown) {
 	await env.CONTROL.prepare("UPDATE imports SET status = 'failed', error = ? WHERE id = ?").bind(String((e as Error)?.message ?? e).slice(0, 500), id).run()
 }
 
@@ -129,7 +143,7 @@ export async function importCsv(env: Env, site: Site, files: File[]): Promise<Im
 }
 
 /** Deletes an import's rows from every shard that may hold them. */
-async function dropRows(env: Env, siteId: string, id: string) {
+export async function dropRows(env: Env, siteId: string, id: string) {
 	const shards = new Set([...(await getRanges(env, siteId)).map((r) => r.shard), ...(await moveTargets(env, siteId))])
 	for (const shard of shards) {
 		await (await shardDb(env, shard)).prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(siteId, id).run()
@@ -137,17 +151,21 @@ async function dropRows(env: Env, siteId: string, id: string) {
 }
 
 export async function deleteImport(env: Env, site: Site, id: string) {
+	// a running API import stops before its rows go, so it writes no more
+	await env.CONTROL.prepare('DELETE FROM import_jobs WHERE import_id = ? AND site_id = ?').bind(id, site.id).run()
 	await dropRows(env, site.id, id)
 	await env.CONTROL.prepare('DELETE FROM imports WHERE id = ? AND site_id = ?').bind(id, site.id).run()
 }
 
 /**
  * Hourly: a Google import runs as background work, which the Worker can stop part way, so
- * one still importing after an hour failed. It keeps none of its rows. Google grants
- * nobody used within a day go too.
+ * one still importing after an hour failed. It keeps none of its rows. API imports run as
+ * jobs (jobs.ts), which end themselves. Google grants nobody used within a day go too.
  */
 export async function expireImports(env: Env, now = Date.now()) {
-	const { results } = await env.CONTROL.prepare("SELECT id, site_id FROM imports WHERE status = 'importing' AND created_at < ?").bind(now - 3_600_000).all<{ id: string; site_id: string }>()
+	const { results } = await env.CONTROL.prepare("SELECT id, site_id FROM imports WHERE status = 'importing' AND created_at < ? AND id NOT IN (SELECT import_id FROM import_jobs)")
+		.bind(now - 3_600_000)
+		.all<{ id: string; site_id: string }>()
 	for (const r of results) {
 		await dropRows(env, r.site_id, r.id)
 		await fail(env, r.id, 'The import stopped before it finished. Delete it and start again.')
