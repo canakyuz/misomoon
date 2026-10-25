@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
+import { classify, referrerHost } from '../../src/channel'
 import { ImportedSet, type ImportedRow } from '../../src/imported'
 import { addRawHits, browserVersion, osVersion, type RawHit } from '../../src/importers/raw'
 
@@ -102,6 +103,20 @@ describe('addRawHits', () => {
 		expect(row(list, 'event', 'Signup')).toMatchObject({ visitors: 1, events: 2 })
 		// a page view after them starts the next visit
 		expect(row(count([hit(0), hit(31, { event: 'Signup' }), hit(35, { path: '/b' })]).list, '')).toMatchObject({ visits: 2, pageviews: 2 })
+	})
+
+	it("reads an app's android-app:// referrer as the tracker does", () => {
+		const { list } = count([hit(0, { referrer: 'android-app://com.google.android.gm/' }), hit(0, { visitor: 'b', referrer: 'https://m.facebook.com/' })])
+		const tracker = (ref: string) => classify(referrerHost(ref), { utm_source: null, utm_medium: null, utm_campaign: null, utm_term: null, utm_content: null }, 'example.com')
+		const [app, mobile] = [tracker('android-app://com.google.android.gm/'), tracker('https://m.facebook.com/')]
+		expect(keys(list, 'referrer')).toEqual({ [app.referrer_host!]: 1, [mobile.referrer_host!]: 1 })
+		expect(keys(list, 'channel')).toEqual({ [app.channel]: 1, [mobile.channel]: 1 })
+		expect(app.channel).toBe('Email')
+	})
+
+	it('marks a visit paid by the ad click id in its first page, as the tracker does', () => {
+		const { list } = count([hit(0, { referrer: 'https://www.google.com/', click: 'Google' }), hit(0, { visitor: 'b', referrer: 'https://www.google.com/' })])
+		expect(keys(list, 'channel')).toEqual({ 'Paid Search': 1, 'Organic Search': 1 })
 	})
 })
 

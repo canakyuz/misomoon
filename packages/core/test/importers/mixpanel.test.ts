@@ -115,6 +115,18 @@ describe("Mixpanel's Raw Event Export, on the lines Mixpanel and its users publi
 		expect(() => mixpanelHits(`${line('$mp_web_page_view', 1)}\n{oops\n`)).toThrow("line 2 of this Mixpanel export isn't JSON")
 	})
 
+	it("reads an ad click id and the ref and source tags in the page's URL, as the tracker does", () => {
+		const t = 1_746_097_970
+		const { list } = read(
+			[
+				line('$mp_web_page_view', t, { $current_url: 'https://domain.com/?gclid=abc', $referrer: 'https://www.google.com/' }),
+				line('$mp_web_page_view', t, { $device_id: 'b', distinct_id: 'b', $current_url: 'https://domain.com/?ref=newsletter' }),
+			].join('\n'),
+		)
+		expect(keys(list, 'channel')).toEqual({ 'Paid Search': 1, Referral: 1 })
+		expect(keys(list, 'utm_source')).toEqual({ newsletter: 1 })
+	})
+
 	it("counts a signed-in user once, though each page view has a new device id, and the app's events not at all", () => {
 		const hits = mixpanelHits(APP)
 		// six app events have no distinct_id; four page views do

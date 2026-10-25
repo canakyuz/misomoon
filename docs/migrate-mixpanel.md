@@ -76,7 +76,7 @@ misomoon reads each line as follows:
 | `distinct_id` without `$device:`, or else `$device_id` | The visitor. The export resolves `distinct_id` to the user, so a signed-in user counts once even when each event has a new `$device_id`. Events without either, such as ones your server sent, stay out. |
 | `$mp_web_page_view` events | Page views, with the page from `current_url_path` or the path of `$current_url`, and the site's host from `current_domain` |
 | Other events | Custom events, under their names. Mixpanel's own events, whose names start with `$` or `mp_`, such as `$identify` and `$mp_click`, stay out. |
-| `$referrer`, and `utm_source` to `utm_term` or the tags in `$current_url` | The visit's source, channel, referrer, and UTM tags, from its first page view. `$direct` and a referrer on the site's host count as none. |
+| `$referrer`, and `utm_source` to `utm_term` or the tags in `$current_url` | The visit's source, channel, referrer, and UTM tags, from its first page view, read as the tracker reads them: `ref` or `source` in the URL stands for `utm_source`, and a `gclid`, `msclkid`, or `twclid` marks the visit paid. `$direct` and a referrer on the site's host count as none. |
 | `mp_country_code`, `$region`, `$city` | Countries, regions, and cities |
 | `$browser`, `$browser_version`, `$os` | Browsers with their major version, and operating systems, with misomoon's names: `Mobile Safari` becomes `Safari`, and `Mac OS X` becomes `macOS` |
 | `$screen_width` | Devices: `Mobile` under 576 px, `Tablet` under 992, and `Desktop` above. Without it, an iPad is a tablet, another `$device` a phone, and Windows, macOS, Linux, and ChromeOS desktops. |

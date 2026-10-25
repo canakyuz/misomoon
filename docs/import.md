@@ -141,7 +141,8 @@ counts them as its tracker counts visits:
 - A visitor's visit ends after 30 minutes without an event, unless the export has its own
   visit id ([A visit ends after 30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity)).
 - A visit takes its source, UTM tags, place, browser, operating system, and device from its
-  first event. A referrer on the site's own host counts as none.
+  first event. A referrer on the site's own host counts as none, and an app's
+  `android-app://` referrer names the app's site, as the tracker reads it.
 - A visit with one page view and no other event is a bounce
   ([A bounce is a visit with one pageview and no interaction](metrics.md#a-bounce-is-a-visit-with-one-pageview-and-no-interaction)).
 - A visit counts on the day it starts in the site's **Timezone**, and a custom event on

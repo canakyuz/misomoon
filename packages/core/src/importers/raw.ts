@@ -1,4 +1,4 @@
-import { classify } from '../channel'
+import { classify, referrerHost } from '../channel'
 import { normalizeImportedPath, type ImportedSet } from '../imported'
 import { localDay, type Zone } from '../time'
 
@@ -26,6 +26,8 @@ export interface RawHit {
 	/** a URL, a host, or a source's name such as `google` */
 	referrer?: string
 	utm?: Partial<Record<UtmTag, string>>
+	/** the ad network of a click id in the page's URL, such as `Google` for gclid (adClick in channel.ts) */
+	click?: string | null
 	country?: string
 	region?: string
 	city?: string
@@ -77,11 +79,11 @@ interface Tally {
 
 const blank = (): Tally => ({ visitors: new Set(), visits: 0, pageviews: 0, bounces: 0, duration: 0, time_s: 0, time_n: 0, scroll: 0, scroll_n: 0, events: 0 })
 
-/** A referrer as a host, or as a name when it has no dot, such as `google`. */
+/** A referrer as a host, read from a URL as the tracker reads it, or as a name when it has no dot, such as `google`. */
 function referrerOf(ref: string): { host: string | null; name: string | null } {
 	ref = ref.trim()
 	if (!ref) return { host: null, name: null }
-	const host = ref.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').split(/[/?#]/)[0].toLowerCase().replace(/:\d+$/, '').replace(/^www\./, '')
+	const host = (/^[a-z][a-z0-9+.-]*:\/\//i.test(ref) ? (referrerHost(ref) ?? '') : ref.split(/[/?#]/)[0].replace(/:\d+$/, '').replace(/^www\./, '').replace(/^m\./, '')).toLowerCase()
 	if (host.includes('.')) return { host, name: null }
 	return { host: null, name: host || null }
 }
@@ -131,7 +133,7 @@ export function addRawHits(set: ImportedSet, hits: RawHit[], zone: Zone): number
 		const ref = referrerOf(f.referrer ?? '')
 		const utm = { utm_source: null, utm_medium: null, utm_campaign: null, utm_term: null, utm_content: null, ...f.utm } as Record<UtmTag, string | null>
 		const self = (f.host ?? '').toLowerCase().replace(/^www\./, '')
-		const acq = classify(ref.host, ref.name && !utm.utm_source ? { ...utm, utm_source: ref.name } : utm, self)
+		const acq = classify(ref.host, ref.name && !utm.utm_source ? { ...utm, utm_source: ref.name } : utm, self, f.click ?? null)
 		const dims: [string, string | null | undefined][] = [
 			['', ''],
 			['entry_page', v.pages[0].path],

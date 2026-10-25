@@ -1,3 +1,4 @@
+import { adClick, readUTM } from '../channel'
 import type { RawHit, UtmTag } from './raw'
 import { UTM_TAGS } from './raw'
 
@@ -78,9 +79,11 @@ export function mixpanelHits(text: string): RawHit[] {
 		const visitor = (str(p.distinct_id) || str(p.$device_id)).replace(/^\$device:/, '')
 		if (!Number.isFinite(t) || !visitor) continue
 		const page = url(p.$current_url)
+		// the page's tags as the tracker reads them, with ref and source for utm_source
+		const tags = page ? readUTM(page) : null
 		const utm: Partial<Record<UtmTag, string>> = {}
 		for (const tag of UTM_TAGS) {
-			const v = str(p[tag]) || page?.searchParams.get(tag)?.trim()
+			const v = str(p[tag]) || tags?.[tag]
 			if (v) utm[tag] = v
 		}
 		const browser = str(p.$browser)
@@ -94,6 +97,7 @@ export function mixpanelHits(text: string): RawHit[] {
 			host: str(p.current_domain) || page?.hostname,
 			referrer: ref && ref !== '$direct' ? ref : str(p.$referring_domain).replace(/^\$direct$/, ''),
 			utm,
+			click: page && adClick(page),
 			country: str(p.mp_country_code),
 			region: str(p.$region),
 			city: str(p.$city),
