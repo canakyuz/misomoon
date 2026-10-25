@@ -41,8 +41,8 @@ export const FEATURE_PAGES: FeaturePage[] = [
 			'misomoon’s heatmap counts the clicks on every element of a page and draws them over the page itself, with rage clicks and dead clicks marked. It sets no cookies and records no sessions: the tracker sends which element was clicked, never what anyone typed. It is on every misomoon Cloud plan and in the open-source version.',
 		shows: [
 			{ name: 'Clicks per element', what: 'Each clicked element, with its clicks, the visitors who clicked it, and a bar sized against the most-clicked element.' },
-			{ name: 'Rage clicks', what: 'The third click on one element within a second, counted for each element.' },
-			{ name: 'Dead clicks', what: 'A click on something that looks clickable, after which nothing on the page changed for a second.' },
+			{ name: 'Rage clicks', what: 'The third click on one element within a second and 30 pixels of the first two, counted for each element.' },
+			{ name: 'Dead clicks', what: 'A click on something that looks clickable, other than a link or a form field, after which nothing on the page changed for a second.' },
 			{ name: 'On your page', what: '**Show on your site** opens the page in a new tab and draws a box on each clicked element, darker the more clicks it got.' },
 		],
 		steps: [

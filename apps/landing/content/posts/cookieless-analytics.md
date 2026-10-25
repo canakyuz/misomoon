@@ -1,5 +1,5 @@
 ---
-title: Cookieless analytics: how it counts visitors and what you lose
+title: Cookieless analytics: how it counts and what you lose
 description: Cookieless analytics counts unique visitors by hashing the IP address and user agent with a salt that changes daily. Here is what you gain and what you lose.
 tags: privacy, guides
 status: draft
@@ -32,7 +32,7 @@ Here is how misomoon computes a visitor id, as the [architecture docs](https://d
 In code, the formula is one line:
 
 ```ts
-visitor_id = sha256(daily_salt + site + ip + user_agent).slice(0, 16)
+visitor_id = sha256(`${daily_salt}|${site}|${ip}|${user_agent}`).slice(0, 16)
 ```
 
 ### Each input in the hash has a job
@@ -147,7 +147,7 @@ To turn a feature off on one page, such as checkout, add `data-disable` to the s
 
 Open **Settings** > **Install** > **Privacy**:
 
-1. Set **Keep stats for** to the retention you need. A daily cleanup deletes older visits and events. On misomoon Cloud, a site keeps what its plan allows until you set less: 2 years on Starter, 3 years on Growth and Scale.
+1. Set **Keep stats for** to the retention you need. A daily cleanup deletes older visits and events. On misomoon Cloud, a new site keeps 25 months, or 2 years on Starter. You can set up to 3 years on Growth and Scale, which goes past the CNIL's 25 months.
 2. Add your office or your servers to **Never count these IP addresses**. misomoon drops their beacons before it stores or counts them.
 3. Tick **Respect Global Privacy Control and Do Not Track** to drop every beacon from a browser that sends `Sec-GPC: 1` or `DNT: 1`.
 4. Copy **Text for your privacy policy** into your policy. It lists the features you ticked, your retention, and where the data is kept, so copy it again after a change.

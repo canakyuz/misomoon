@@ -1,11 +1,11 @@
 ---
-title: Rage clicks and dead clicks: what they mean and how to fix them
+title: Rage clicks and dead clicks: what they mean, how to fix them
 description: A rage click is fast repeated clicking on one element. A dead click is a click that changes nothing. Learn the causes, the fixes, and how to find both.
 tags: behavior, how-to
 status: draft
 ---
 
-A rage click is a burst of clicks on one element in a short time, from someone who clicked, saw nothing happen, and clicked again. A dead click is a click on something that looks clickable that changes nothing on the page. In misomoon, a rage click is the third click on one element within a second, and a dead click is a click on something that looks clickable after which nothing on the page changed for a second.
+A rage click is a burst of clicks on one element in a short time, from someone who clicked, saw nothing happen, and clicked again. A dead click is a click on something that looks clickable that changes nothing on the page. In misomoon, a rage click is the third click on one element within a second and 30 pixels of the first two, and a dead click is a click on a button or other control, not a link or a form field, after which nothing on the page changed for a second.
 
 This guide covers what each signal means, what usually causes it, how to fix it, and how to find both on your own pages without recording anyone's session.
 
@@ -13,7 +13,7 @@ This guide covers what each signal means, what usually causes it, how to fix it,
 
 People click again when the first click seemed to do nothing. Three or more fast clicks on one spot usually mean the person expected a result and didn't see one, so they tried harder.
 
-There is no standard definition of a rage click, so tools count them in different ways. Before you compare a number from one tool with a number from another, check how each one counts. In misomoon, the third click on one element within one second counts as one rage click. A double click is two clicks, so it never counts.
+There is no standard definition of a rage click, so tools count them in different ways. Before you compare a number from one tool with a number from another, check how each one counts. In misomoon, the third click on one element within a second and 30 pixels of the first two counts as one rage click. A double click is two clicks, so it never counts.
 
 A rage click doesn't always mean the element is broken. A button that works but takes two seconds to show a result collects rage clicks too.
 
@@ -26,7 +26,7 @@ Two parts make up the definition:
 - **The element looks clickable.** Native controls such as links and buttons look clickable. So does any element that shows the pointing-hand cursor. The CSS `cursor` property sets the cursor shown over an element, and [MDN describes the `pointer` value](https://developer.mozilla.org/en-US/docs/Web/CSS/cursor) as "a pointer that indicates a link". A click on plain body text is not a dead click, because nobody expected it to do anything.
 - **Nothing on the page changed.** No new content, no class change, no navigation, within a set time. A script can watch for this with a [`MutationObserver`](https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver), which, in MDN's words, "provides the ability to watch for changes being made to the DOM tree".
 
-misomoon waits one second. If nothing on the page changed in that second, the click counts as dead.
+misomoon waits one second. If nothing on the page changed in that second, the address stayed the same, and the tab is still in view, the click counts as dead. Clicks on links, form fields, and labels never count as dead, because they often do their work without changing the page: a field takes focus, and a link may open a new tab.
 
 ## The two signals point at different problems
 
@@ -160,11 +160,11 @@ Clicks collect more than pageviews do, so the feature adds to what your privacy 
 
 ### How many clicks make a rage click?
 
-There is no standard number, and tools count in different ways. In misomoon, the third click on one element within one second counts as a rage click.
+There is no standard number, and tools count in different ways. In misomoon, the third click on one element within a second and 30 pixels of the first two counts as a rage click.
 
 ### Is a double click a rage click?
 
-Not in misomoon. A double click is two clicks, and a rage click needs a third click on the same element within a second. Controls that people click many times on purpose, such as a quantity stepper, can still collect rage clicks, so judge those by their dead clicks instead.
+Not in misomoon. A double click is two clicks, and a rage click needs a third click on the same element within a second and 30 pixels of the first two. Controls that people click many times on purpose, such as a quantity stepper, can still collect rage clicks, so judge those by their dead clicks instead.
 
 ### Do I need session recordings to fix these problems?
 

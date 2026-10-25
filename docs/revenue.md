@@ -176,7 +176,7 @@ reason, and a bad signature returns `401`.
 ## Read revenue on the dashboard
 
 Payments are events named `Payment` and refunds are events named `Refund`, with a
-negative amount. Each event has the props `provider` and `billing`. They appear in
+negative amount. Each event has the prop `provider`, and a payment also has `billing`. They appear in
 **What they did**, and the revenue they carry shows next to each source, country, and
 device. To see revenue for one provider, filter by the prop `provider`.
 

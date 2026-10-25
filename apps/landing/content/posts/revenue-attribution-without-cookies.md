@@ -1,5 +1,5 @@
 ---
-title: Revenue attribution without cookies: which source makes money
+title: Revenue attribution without cookies: which source pays
 description: Revenue attribution ties each payment to the visit that led to it. Carry a ref into checkout and let the webhook bring it back, with no cookie needed.
 tags: revenue, how-to, privacy
 status: draft
@@ -87,7 +87,7 @@ misomoon follows the method above. It sets no cookies and stores nothing on the 
 
 | Provider | Where to add the webhook | Events |
 | --- | --- | --- |
-| Stripe | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `refund.created` |
+| Stripe | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice_payment.paid`, `refund.created`, `refund.updated`, `refund.failed` |
 | Polar | **Settings** > **Webhooks**, format **Raw** | `order.paid`, `refund.created`, `refund.updated` |
 | Lemon Squeezy | **Settings** > **Webhooks** | `order_created`, `order_refunded`, `subscription_created`, `subscription_payment_success`, `subscription_payment_refunded` |
 | Dodo Payments | **Developer** > **Webhooks** | `payment.succeeded`, `refund.succeeded` |
@@ -138,7 +138,7 @@ For a provider misomoon has no webhook for, pick **Your server** and post each p
 
 ### Read revenue by source
 
-Payments arrive as events named `Payment`, and refunds as events named `Refund` with a negative amount. Each carries the props `provider` and `billing`. On the dashboard:
+Payments arrive as events named `Payment`, and refunds as events named `Refund` with a negative amount. Each carries the prop `provider`, and a payment also carries `billing`. On the dashboard:
 
 - The **Revenue** tile shows the period's net revenue whenever it is above zero. Select it to draw revenue on the chart.
 - **Where they come from** shows the revenue next to each source. **Where they are** and **What they use** do the same for countries and devices. Select **All channels** to sort the full list by revenue.
