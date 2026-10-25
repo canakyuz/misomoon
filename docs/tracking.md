@@ -97,7 +97,9 @@ currencies are stored but left out of the totals, so the dashboard never adds eu
 dollars.
 
 To count payments from Stripe, Polar, Lemon Squeezy, or Dodo Payments without calling
-`misomoon()`, connect the provider's webhook: [Connect payments](revenue.md).
+`misomoon()`, connect the provider's webhook: [Connect payments](revenue.md). Totals add
+the revenue of every event, so pick one way per sale. With a webhook connected, send
+`Purchase` without `revenue`, or the sale counts twice.
 
 ## Turn goals into conversions
 
@@ -202,7 +204,7 @@ which is always on. It never records a session or what anyone types.
 
 | Report | What it counts |
 | --- | --- |
-| Clicks | Clicks per element, rage clicks (the third click on one element within a second), and dead clicks (nothing on the page changed for a second after a click on something that looks clickable) |
+| Clicks | Clicks per element, rage clicks (the third click on one element within a second and 30 pixels of the first two), and dead clicks (nothing on the page changed for a second after a click on something that looks clickable, other than a link, a form field, or a label) |
 | Scroll | The share of visits that scrolled past each tenth of the page |
 | Forms | Starts, submissions, and the field where people stopped |
 | Search | Site search terms, read from the page URL |

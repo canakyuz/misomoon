@@ -1,9 +1,13 @@
 {
+	// The self-hosted template: `pnpm --filter @misomoon/api run deploy` deploys a new
+	// misomoon server from it (docs/self-hosting.md), and `pnpm bundle` builds the Deploy to
+	// Cloudflare bundle from it. misomoon Cloud's own config is wrangler.cloud.jsonc.
 	"$schema": "node_modules/wrangler/config-schema.json",
 	"name": "misomoon-api",
 	"main": "src/index.ts",
-	"workers_dev": false,
-	"routes": [{ "pattern": "app.misomoon.com", "custom_domain": true }],
+	// The deploy prints the workers.dev address. For your own domain, add a route
+	// (docs/self-hosting.md#use-your-own-domain).
+	"workers_dev": true,
 	"compatibility_date": "2026-10-22",
 	"compatibility_flags": ["nodejs_compat"],
 	// Invocation logs and traces would keep request metadata for every beacon (user agent,
@@ -18,11 +22,13 @@
 		"not_found_handling": "single-page-application",
 		"run_worker_first": true
 	},
+	// Placeholder ids: the first deploy (scripts/deploy.ts) creates each database and
+	// writes its id here. Commit the file after that deploy.
 	"d1_databases": [
-		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "6bea2f02-201b-4bc6-a05d-cc133cfab5e7", "migrations_dir": "migrations/control" },
+		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations/control" },
 		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy` (scripts/deploy.ts).
-		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "3de426b3-9499-4d42-95e2-72c19ea5619d", "migrations_dir": "migrations/shard" },
-		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "a2699c88-401a-42dd-9976-b12bd832d5c4", "migrations_dir": "migrations/shard" }
+		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "00000000-0000-0000-0000-000000000002", "migrations_dir": "migrations/shard" }
 	],
 	"queues": {
 		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
@@ -36,26 +42,21 @@
 	// go out without the PDF. Local dev can't print (quick actions run remotely only).
 	"browser": { "binding": "BROWSER" },
 	"triggers": { "crons": ["*/5 * * * *"] },
+	// docs/configuration.md#variables explains each one.
 	"vars": {
 		"SHARD_SOFT_LIMIT_MB": "8000",
-		"RETENTION_DAYS": "1825",
-		// 25 months, the CNIL's limit for audience measurement without consent. With PLANS on, a
-		// site that sets no retention keeps the smaller of this and its plan's retention.
-		"RETENTION_DEFAULT_DAYS": "761",
-		"DEMO_SITE": "demo",
-		"SAMPLE_SITE": "acme",
-		"SIGNUPS": "open",
-		// Links in emails the cron and the queue send, which have no request to take an origin from.
-		// The deploy bundle leaves it out: a self-hosted server sets its own.
-		"PUBLIC_URL": "https://app.misomoon.com",
-		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). The deploy bundle
-		// (scripts/bundle.ts) leaves PLANS out, so a self-hosted server has no plan limits.
-		"PLANS": "on"
+		// Keep everything until you set a limit.
+		"RETENTION_DAYS": "0",
+		"RETENTION_DEFAULT_DAYS": "",
+		// No demo site, so the dashboard opens your first site, and no sample site.
+		"DEMO_SITE": "",
+		"SAMPLE_SITE": "",
+		// The first account can sign up and owns the server; everyone after it needs an invitation.
+		"SIGNUPS": "invite"
+		// Links in emails the cron and the queue send: set PUBLIC_URL to your dashboard's
+		// address, like "https://analytics.example.com".
 	}
 	// Secrets: AWS_SES_ACCESS_KEY_ID and AWS_SES_SECRET_ACCESS_KEY for Amazon SES (wrangler secret put …, or .dev.vars locally).
 	// Managed proxy (optional, docs/PROXY.md): secret CF_API_TOKEN, vars CF_ZONE_ID and
 	// PROXY_CNAME_TARGET, plus a route for customer hostnames: { "pattern": "*/*", "zone_name": … }.
-	// Billing through Polar (docs/billing.md): secrets POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET,
-	// vars POLAR_PRODUCT_STARTER, POLAR_PRODUCT_GROWTH, POLAR_PRODUCT_SCALE and POLAR_SERVER. The
-	// deploy bundle leaves out every POLAR_* var.
 }

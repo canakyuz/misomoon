@@ -50,6 +50,13 @@ describe('resolveHref', () => {
 		expect(resolveHref('https://developers.cloudflare.com/d1/', docs).href).toBe('https://developers.cloudflare.com/d1/')
 		expect(resolveHref('mailto:security@misomoon.com', docs).href).toBe('mailto:security@misomoon.com')
 	})
+
+	it('fails the build on a link that runs script or embeds data', () => {
+		for (const href of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'vbscript:msgbox(1)']) {
+			expect(() => resolveHref(href, docs)).toThrow(`a link must be http, https or mailto: ${href}`)
+		}
+		expect(() => renderPage('a.md', '# A\n\n[Click](javascript:alert(1))\n', docs, {}, raw)).toThrow('docs/a.md: a link must be http, https or mailto: javascript:alert(1)')
+	})
 })
 
 describe('parseNav', () => {
@@ -154,7 +161,7 @@ misomoon('Signup')
 		])
 	})
 
-	it('highlights code under a bar with its language and a copy button, and wraps tables to scroll', () => {
+	it('hands code to the highlighter under a bar with its language and a copy button, and wraps tables to scroll', () => {
 		expect(page.html).toContain(`<div class="code"><div class="code-bar"><span>js</span><button type="button" data-copy>Copy</button></div><pre>misomoon('Signup')</pre></div>`)
 		expect(page.html).toContain('<div class="table"><table>')
 		expect(page.html).toContain('<td><code>clicks</code></td>')

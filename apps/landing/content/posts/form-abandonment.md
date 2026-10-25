@@ -1,5 +1,5 @@
 ---
-title: "Form abandonment: measure it and find the field people quit on"
+title: "Form abandonment: find the field people quit on"
 description: Form abandonment is the share of people who start a form and never send it. Learn to measure starts, submissions, and the field where they stop, then fix it.
 tags: behavior, how-to
 status: draft
@@ -122,7 +122,7 @@ If **Form fields** is off, the **Forms** report says so, and **Open settings** t
 
 ### Name your forms and fields
 
-misomoon names each form by its `id` or `name`, and each field by its name. Give both a stable value:
+misomoon names each form by its `id` or `name`, or by the page path when it has neither, and each field by its name, then its `id`. Give both a stable value:
 
 ```html
 <form id="signup" action="/signup" method="post">

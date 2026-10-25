@@ -98,9 +98,14 @@ describe('Amazon SES', () => {
 		expect(calls.map((c) => c.url)).toEqual(['https://email.us-east-1.amazonaws.com/v2/email/outbound-emails'])
 	})
 
-	it('answers false when SES refuses', async () => {
-		http(400)
-		expect(await send(fakeEnv({ EMAIL_PROVIDER: 'ses', ...SES }))).toBe(false)
+	it("answers false when SES refuses, and logs SES's error type, not its message, which can quote the recipient", async () => {
+		vi.stubGlobal('fetch', async () => Response.json({ message: 'Email address is not verified: jane@client.example' }, { status: 400, headers: { 'x-amzn-errortype': 'MessageRejected:http://internal.amazon.com/coral/com.amazonaws.sesv2/' } }))
+		const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+		expect(await send(fakeEnv({ EMAIL_PROVIDER: 'ses', ...SES }), 'jane@client.example')).toBe(false)
+		const logged = log.mock.calls.map((c) => String(c[0])).join('\n')
+		log.mockRestore()
+		expect(logged).not.toContain('jane@client.example')
+		expect(logged).toContain('ses 400 MessageRejected')
 	})
 
 	it('does not send again after a 5xx, when SES may have sent the email already', async () => {
@@ -426,5 +431,60 @@ describe('the no-traffic alert', () => {
 			{ email: 'a@shop.com', kind: 'spike', threshold: 1 },
 			{ email: 'a@shop.com', kind: 'weekly', threshold: null },
 		])
+	})
+})
+
+describe('report limits', () => {
+	const request = (env: FakeEnv) => (method: string, path: string, body?: unknown) =>
+		worker.fetch(new Request(`https://app.test${path}`, { method, headers: { 'content-type': 'application/json', ...OWNER }, body: body ? JSON.stringify(body) : undefined }), env as unknown as Env, fakeCtx() as unknown as ExecutionContext)
+
+	afterEach(() => vi.useRealTimers())
+
+	it('sends at most 10 test reports a site an hour, then answers 429 until the oldest is an hour old', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		const start = Date.UTC(2026, 9, 22, 9)
+		vi.setSystemTime(start)
+		const b = binding()
+		const env = fakeEnv({ EMAIL: b.EMAIL })
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		await request(env)('POST', '/api/v1/sites', { domain: 'blog.com' })
+		const test = (site = 'shop-com') => request(env)('POST', `/api/v1/sites/${site}/reports/test`, { email: 'me@shop.com', kind: 'weekly' })
+		const statuses: number[] = []
+		for (let i = 0; i < 10; i++) statuses.push((await test()).status)
+		expect(statuses).toEqual(Array(10).fill(200))
+		const over = await test()
+		expect([over.status, await over.json()]).toEqual([429, { error: 'a site sends at most 10 test reports an hour; try again later' }])
+		expect(b.sent).toHaveLength(10)
+		// another site has its own count
+		expect((await test('blog-com')).status).toBe(200)
+		vi.setSystemTime(start + 3_600_000)
+		expect((await test()).status).toBe(200)
+	})
+
+	it('forgets test sends older than an hour in the hourly run', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		const now = Date.UTC(2026, 9, 22, 9, 15)
+		vi.setSystemTime(now)
+		const env = fakeEnv()
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		env.CONTROL.db.prepare("INSERT INTO report_tests (site_id, sent_at) VALUES ('shop-com', ?), ('shop-com', ?)").run(now - 3_600_001, now - 60_000)
+		const ctx = fakeCtx()
+		await worker.scheduled({ cron: '*/5 * * * *', scheduledTime: now } as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+		expect(env.CONTROL.rows('SELECT sent_at FROM report_tests').map((r) => r.sent_at)).toEqual([now - 60_000])
+	})
+
+	it('keeps at most 20 report and alert subscriptions a site, and still updates one it has', async () => {
+		const env = fakeEnv()
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		const add = (email: string, kind = 'weekly', threshold?: number) => request(env)('POST', '/api/v1/sites/shop-com/reports', { email, kind, threshold })
+		const statuses: number[] = []
+		for (let i = 0; i < 19; i++) statuses.push((await add(`p${i}@shop.com`)).status)
+		statuses.push((await add('alerts@shop.com', 'drop', 6)).status)
+		expect(statuses).toEqual(Array(20).fill(201))
+		const over = await add('one-more@shop.com')
+		expect([over.status, await over.json()]).toEqual([400, { error: 'a site has at most 20 report and alert subscriptions' }])
+		expect((await add('alerts@shop.com', 'drop', 12)).status).toBe(201)
+		expect(env.CONTROL.rows("SELECT threshold FROM email_reports WHERE email = 'alerts@shop.com'")[0].threshold).toBe(12)
 	})
 })

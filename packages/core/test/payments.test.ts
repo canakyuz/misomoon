@@ -83,6 +83,15 @@ describe('Stripe events', () => {
 		expect(link).toEqual({ provider: 'stripe', kind: 'link', id: 'cs_3', amount: 0, currency: '', ts: SEC * 1000, keys: ['link_ref_9', 'cs_3'], links: ['stripe:sub:sub_1', 'stripe:invoice:in_1', 'stripe:customer:cus_1'] })
 	})
 
+	it('links an invoice to the payment intent or charge its InvoicePayment names', () => {
+		const paid = (payment: Record<string, unknown>) => parsePayments('stripe', ev('invoice_payment.paid', { id: 'inpay_1', invoice: 'in_1', status: 'paid', created: SEC, payment })).payments
+		expect(paid({ type: 'payment_intent', payment_intent: 'pi_1' })).toEqual([
+			{ provider: 'stripe', kind: 'link', id: 'inpay_1', amount: 0, currency: '', ts: SEC * 1000, keys: ['stripe:paid:in_1'], links: ['stripe:pi:pi_1'] },
+		])
+		expect(paid({ type: 'charge', charge: 'ch_1' })[0].links).toEqual(['stripe:charge:ch_1'])
+		expect(paid({ type: 'out_of_band_payment' })).toEqual([])
+	})
+
 	it('counts subscription invoices, first and renewal, and skips invoices outside a subscription', () => {
 		const invoice = (billing_reason: string, extra: Record<string, unknown> = {}) =>
 			ev('invoice.paid', {
@@ -103,7 +112,7 @@ describe('Stripe events', () => {
 			currency: 'EUR',
 			ts: (SEC + 5) * 1000,
 			keys: ['ref_sub_1', 'stripe:invoice:in_1', 'stripe:sub:sub_1', 'stripe:customer:cus_1'],
-			links: ['stripe:sub:sub_1', 'stripe:customer:cus_1'],
+			links: ['stripe:paid:in_1', 'stripe:sub:sub_1', 'stripe:customer:cus_1'],
 			billing: 'new',
 		})
 		expect(parsePayments('stripe', invoice('subscription_cycle')).payments[0].billing).toBe('renewal')
@@ -111,10 +120,14 @@ describe('Stripe events', () => {
 		expect(parsePayments('stripe', invoice('subscription_cycle', { amount_paid: 0 })).payments).toEqual([])
 	})
 
-	it('reads each refund once, keyed by its payment intent and charge', () => {
+	it('reads each refund once, keyed by its payment intent and charge, and marks a failed one', () => {
 		const [r] = parsePayments('stripe', ev('refund.created', { id: 're_1', amount: 500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_1', charge: 'ch_1', created: SEC })).payments
 		expect(r).toEqual({ provider: 'stripe', kind: 'refund', id: 're_1', amount: 5, currency: 'USD', ts: SEC * 1000, keys: ['stripe:pi:pi_1', 'stripe:charge:ch_1'], links: [] })
-		expect(parsePayments('stripe', ev('refund.created', { id: 're_2', amount: 500, currency: 'usd', status: 'failed' })).payments).toEqual([])
+		// a failed refund takes back nothing; refund.updated counts only that
+		expect(parsePayments('stripe', ev('refund.failed', { id: 're_2', amount: 500, currency: 'usd', status: 'failed', payment_intent: 'pi_1', created: SEC })).payments).toEqual([
+			{ provider: 'stripe', kind: 'refund', id: 're_2', amount: 5, currency: 'USD', ts: SEC * 1000, keys: ['stripe:pi:pi_1'], links: [], failed: true },
+		])
+		expect(parsePayments('stripe', ev('refund.updated', { id: 're_1', amount: 500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_1' })).payments).toEqual([])
 	})
 
 	it('flags test-mode events and ignores other types', () => {
@@ -142,10 +155,11 @@ describe('Polar events', () => {
 		})
 	})
 
-	it('counts a succeeded refund with its tax, and skips a pending one', () => {
+	it('counts a succeeded refund with its tax, skips a pending one, and marks a failed one', () => {
 		const refund = (status: string) => ({ type: 'refund.updated', data: { id: 'rf-1', status, amount: 1000, tax_amount: 200, currency: 'usd', order_id: 'ord-uuid-1', modified_at: '2026-10-22T12:00:00Z' } })
 		expect(parsePayments('polar', refund('succeeded')).payments).toEqual([{ provider: 'polar', kind: 'refund', id: 'rf-1', amount: 12, currency: 'USD', ts: NOW, keys: ['polar:order:ord-uuid-1'], links: [] }])
 		expect(parsePayments('polar', refund('pending')).payments).toEqual([])
+		expect(parsePayments('polar', refund('failed')).payments).toEqual([{ provider: 'polar', kind: 'refund', id: 'rf-1', amount: 12, currency: 'USD', ts: NOW, keys: ['polar:order:ord-uuid-1'], links: [], failed: true }])
 	})
 })
 

@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import { PLANS as CLOUD_PLANS } from '@misomoon/core/plans'
 import { PLANS, summary } from './pricing.ts'
-import { breadcrumbs, jsonLd, minutes, posting, software, title } from './seo.ts'
+import { authorDescription, breadcrumbs, jsonLd, listTitle, minutes, posting, software, title } from './seo.ts'
 
 const O = 'https://misomoon.com'
 
@@ -9,6 +9,23 @@ describe('seo', () => {
 	it('adds the site name to a title once', () => {
 		expect(title('Blog')).toBe('Blog · misomoon')
 		expect(title('misomoon: cookieless analytics')).toBe('misomoon: cookieless analytics')
+	})
+
+	it('gives each older page of a list a title of its own, from its newest post', () => {
+		const posts = [{ publishedAt: '2026-03-04T09:00:00Z' }, { publishedAt: '2026-02-01T09:00:00Z' }]
+		expect(listTitle('Blog: notes on privacy-first analytics', 'Blog', null, posts)).toBe('Blog: notes on privacy-first analytics')
+		expect(listTitle('Blog: notes on privacy-first analytics', 'Blog', 'abc', posts)).toBe('Blog: posts from 4 March 2026 and before')
+		expect(listTitle('Blog', 'Blog', 'abc', [])).toBe('Blog')
+	})
+
+	it('keeps an author description between 70 and 160 characters', () => {
+		const short = authorDescription('Jane Doe', '')
+		expect(short).toBe('Posts by Jane Doe on the misomoon blog, about cookieless analytics, privacy and Cloudflare.')
+		expect(authorDescription('Jane Doe', 'Builds misomoon.')).toBe('Jane Doe: Builds misomoon. Posts on the misomoon blog about cookieless analytics, privacy and Cloudflare.')
+		const long = authorDescription('Jane Doe', 'word '.repeat(100).trim())
+		expect(long.length).toBeLessThanOrEqual(160)
+		expect(long).toMatch(/^Jane Doe: word .* word…$/)
+		for (const d of [short, long]) expect(d.length).toBeGreaterThanOrEqual(70)
 	})
 
 	it('escapes "<" so a title can’t close the JSON-LD script', () => {

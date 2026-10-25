@@ -197,6 +197,12 @@ export function classify(refHost: string | null, utm: UTM, selfHost: string, cli
 	return { source, channel, referrer_host: host }
 }
 
+/** The source misomoon names for a referrer host, as the tracker does: `Google` for google.com, else the host. */
+export function sourceName(host: string): string {
+	const h = host.trim().toLowerCase().replace(/^www\./, '')
+	return lookup(h)?.name ?? h
+}
+
 /** The channel for a source name as imports give them ("Google", "news.ycombinator.com"). */
 export function channelForSource(source: string, medium: string | null, utmSource: string | null): Channel {
 	const utm: UTM = { utm_source: utmSource, utm_medium: medium, utm_campaign: null, utm_term: null, utm_content: null }

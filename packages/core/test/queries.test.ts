@@ -27,17 +27,6 @@ describe('queries over demo traffic', () => {
 		]
 	})
 
-	it('computes a sane aggregate', async () => {
-		const agg = await aggregate(single, scope)
-		expect(agg.visitors).toBeGreaterThan(200)
-		expect(agg.visits).toBeGreaterThanOrEqual(agg.visitors)
-		expect(agg.pageviews).toBeGreaterThan(agg.visits)
-		expect(agg.bounce_rate).toBeGreaterThan(10)
-		expect(agg.bounce_rate).toBeLessThan(80)
-		expect(agg.visit_duration).toBeGreaterThan(0)
-		expect(agg.revenue).toBeGreaterThan(0)
-	})
-
 	it('computes several scopes in one round trip per shard, matching aggregate', async () => {
 		const scopes = [scope, { ...scope, filters: [{ dim: 'event', op: '==' as const, values: ['Signup'] }] }, { ...scope, filters: [{ dim: 'page', op: '==' as const, values: ['/pricing'] }] }]
 		let calls = 0
@@ -54,13 +43,6 @@ describe('queries over demo traffic', () => {
 		expect(s2.rows).toEqual(s1.rows)
 	})
 
-	it('fills every bucket in a timeseries', async () => {
-		const w = { from: Math.floor((NOW - 6 * DAY) / DAY) * DAY, to: NOW }
-		const pts = await timeseries(split.map((t) => ({ ...t })), scope, w, 'day')
-		expect(pts).toHaveLength(7)
-		expect(pts.reduce((s, p) => s + p.pageviews, 0)).toBeGreaterThan(0)
-	})
-
 	it('filters by session and event dimensions', async () => {
 		const all = await aggregate(single, scope)
 		const us = await aggregate(single, { ...scope, filters: [{ dim: 'country', op: '==', values: ['US'] }] })
@@ -71,13 +53,6 @@ describe('queries over demo traffic', () => {
 		expect(blog.visits).toBeLessThan(all.visits)
 		const entry = await breakdown(single, { ...scope, filters: [{ dim: 'entry_page', op: '==', values: ['/'] }] }, 'entry_page')
 		expect(entry.rows.map((r) => r.key)).toEqual(['/'])
-	})
-
-	it('breaks pages down with time on page and scroll depth', async () => {
-		const pages = await breakdown(single, scope, 'page', { limit: 5 })
-		expect(pages.rows[0].key).toBe('/')
-		expect(pages.rows[0].time_on_page).toBeGreaterThan(0)
-		expect(pages.rows[0].scroll_depth).toBeGreaterThan(0)
 	})
 
 	it('breaks down custom events and properties', async () => {

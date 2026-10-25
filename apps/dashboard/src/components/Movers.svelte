@@ -173,6 +173,12 @@
 	.move.on {
 		box-shadow: inset 0 0 0 1.5px var(--edge);
 	}
+	/* the selected style sets its own shadow, so the focus ring is added back on top of it */
+	.move.on:focus-visible {
+		box-shadow:
+			inset 0 0 0 1.5px var(--edge),
+			var(--focus);
+	}
 	.dim {
 		grid-area: dim;
 		font-size: 9.5px;

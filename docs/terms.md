@@ -38,9 +38,17 @@ We may stop accepting data for a site that breaks these rules, and tell you why.
 
 ## 5. Plans and payment
 
-[Plans, prices, billing period, taxes, and what happens when you go over a plan's limit.
+The plans, their prices and their limits are on [Use misomoon Cloud](cloud.md#plans). You
+pay monthly, in US dollars. Polar Software, Inc. sells the plans as merchant of record and
+charges the price and any taxes at checkout, under its own terms.
+
+Your first team gets a free 7-day trial, once per person, with no card. When a team goes
+past its plan's monthly events, misomoon keeps counting up to 125% of them, then stops
+storing the team's events until the next month or until you move to a bigger plan
+([what happens past the limit](cloud.md#go-past-your-monthly-events)).
+
 Prices may change with [30] days' notice; a change applies from your next billing
-period.]
+period.
 
 ## 6. Availability and changes
 

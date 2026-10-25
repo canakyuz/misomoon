@@ -1,0 +1,67 @@
+{
+	// misomoon Cloud (app.misomoon.com): `pnpm --filter @misomoon/api run deploy:cloud`.
+	// Self-hosted servers deploy from wrangler.jsonc, the template.
+	"$schema": "node_modules/wrangler/config-schema.json",
+	"name": "misomoon-api",
+	"main": "src/index.ts",
+	"workers_dev": false,
+	"routes": [{ "pattern": "app.misomoon.com", "custom_domain": true }],
+	"compatibility_date": "2026-10-22",
+	"compatibility_flags": ["nodejs_compat"],
+	// Invocation logs and traces would keep request metadata for every beacon (user agent,
+	// full URL, city, network); the code logs its own events, never an IP address.
+	"observability": { "enabled": true, "logs": { "invocation_logs": false }, "traces": { "enabled": false } },
+	"rules": [{ "type": "Text", "globs": ["**/*.min.js"], "fallthrough": true }],
+	// The dashboard is a static SPA served from this Worker. The Worker runs first for
+	// every path so a customer's proxy hostname serves only the tracker, never the app.
+	"assets": {
+		"directory": "../dashboard/dist",
+		"binding": "ASSETS",
+		"not_found_handling": "single-page-application",
+		"run_worker_first": true
+	},
+	"d1_databases": [
+		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "b115d9d2-e677-4fce-aaf6-6137f3f92feb", "migrations_dir": "migrations/control" },
+		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy:cloud` (scripts/deploy.ts).
+		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "73fef96c-ec3b-4309-aa6c-69054f8f5292", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "7e98e8e2-fcb8-4267-9c7a-4216980b43b2", "migrations_dir": "migrations/shard" }
+	],
+	"queues": {
+		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
+		"consumers": [{ "queue": "misomoon-events", "max_batch_size": 100, "max_batch_timeout": 5, "max_retries": 5, "dead_letter_queue": "misomoon-events-dlq" }]
+	},
+	// Stats API calls, and sign-in attempts: 100 per key or IP per minute across all isolates.
+	"ratelimits": [
+		{ "name": "STATS_LIMIT", "namespace_id": "1002", "simple": { "limit": 100, "period": 60 } }
+	],
+	// Browser Run prints the PDF attached to weekly and monthly reports. Without it, reports
+	// go out without the PDF. Local dev can't print (quick actions run remotely only).
+	"browser": { "binding": "BROWSER" },
+	"triggers": { "crons": ["*/5 * * * *"] },
+	"vars": {
+		"SHARD_SOFT_LIMIT_MB": "8000",
+		"RETENTION_DAYS": "1825",
+		// 25 months, the CNIL's limit for audience measurement without consent. With PLANS on, a
+		// site that sets no retention keeps the smaller of this and its plan's retention.
+		"RETENTION_DEFAULT_DAYS": "761",
+		"DEMO_SITE": "demo",
+		"SAMPLE_SITE": "acme",
+		"SIGNUPS": "open",
+		// Links in emails the cron and the queue send, which have no request to take an origin from.
+		// wrangler.jsonc and the deploy bundle leave it out: a self-hosted server sets its own.
+		"PUBLIC_URL": "https://app.misomoon.com",
+		// misomoon Cloud only: enforces the plans (the trial, sites per team, retention, events a month). wrangler.jsonc and
+		// the deploy bundle leave PLANS out, so a self-hosted server has no plan limits.
+		"PLANS": "on",
+		// Billing through Polar (docs/billing.md): the products of the live misomoon organization.
+		"POLAR_SERVER": "production",
+		"POLAR_PRODUCT_STARTER": "04574b1d-47c0-463f-ade3-630c3cddc106",
+		"POLAR_PRODUCT_GROWTH": "0b6fbf35-6e09-40a2-a3ae-af5fd01ea83a",
+		"POLAR_PRODUCT_SCALE": "b3387bc0-3b0a-475c-82e4-614ec7bf4054"
+	}
+	// Secrets: AWS_SES_ACCESS_KEY_ID and AWS_SES_SECRET_ACCESS_KEY for Amazon SES (wrangler secret put …, or .dev.vars locally).
+	// Managed proxy (optional, docs/PROXY.md): secret CF_API_TOKEN, vars CF_ZONE_ID and
+	// PROXY_CNAME_TARGET, plus a route for customer hostnames: { "pattern": "*/*", "zone_name": … }.
+	// Billing through Polar (docs/billing.md): secrets POLAR_ACCESS_TOKEN and POLAR_WEBHOOK_SECRET; the vars above.
+	// wrangler.jsonc and the deploy bundle leave out every POLAR_* var.
+}

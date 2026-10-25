@@ -118,7 +118,7 @@
 		<figcaption class="sr">
 			{fmt.format(total)} visitors in the last 30 days:
 			<ul>
-				{#each cols as c (c.t)}<li>{dayFmt.format(c.t)}: {fmt.format(c.visitors)}</li>{/each}
+				{#each days as c (c.t)}<li>{dayFmt.format(c.t)}: {fmt.format(c.visitors)}</li>{/each}
 			</ul>
 		</figcaption>
 	{/if}
@@ -214,6 +214,8 @@
 	}
 	.tip {
 		position: absolute;
+		/* above the hero headline, which is drawn over the moon */
+		z-index: 2;
 		top: -38px;
 		translate: -50% 0;
 		padding: 5px 9px;

@@ -2,7 +2,7 @@
 	import Crumbs from '#lib/components/Crumbs.svelte'
 	import PostIndex from '#lib/components/PostIndex.svelte'
 	import Seo from '#lib/components/Seo.svelte'
-	import { breadcrumbs, itemList, webpage } from '#lib/seo.ts'
+	import { breadcrumbs, itemList, listTitle, webpage } from '#lib/seo.ts'
 	import { page } from '$app/state'
 
 	let { data } = $props()
@@ -16,7 +16,7 @@
 
 <!-- a topic with one post is a thin page: it stays out of search until it has more -->
 <Seo
-	title="Posts about {data.tag}"
+	title={listTitle(`Posts about ${data.tag}`, `Posts about ${data.tag}`, data.cursor, data.posts)}
 	description="Every misomoon blog post about {data.tag}, newest first."
 	canonical={data.cursor ? `${origin}${path}?cursor=${encodeURIComponent(data.cursor)}` : `${origin}${path}`}
 	noindex={data.posts.length < 2 && !data.next}

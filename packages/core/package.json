@@ -13,7 +13,8 @@
     "./privacy": "./src/privacy.ts",
     "./shard": "./src/shard.ts",
     "./plans": "./src/plans.ts",
-    "./install": "./src/install.ts"
+    "./install": "./src/install.ts",
+    "./importers": "./src/importers/info.ts"
   },
   "scripts": {
     "test": "vp test run",

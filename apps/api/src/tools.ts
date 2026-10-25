@@ -13,6 +13,8 @@ export interface Tool {
 	title: string
 	description: string
 	inputSchema: Record<string, unknown>
+	/** true for a tool that changes data; every other tool only reads */
+	writes?: boolean
 	run: (env: Env, who: Principal, args: Record<string, unknown>) => Promise<unknown>
 }
 
@@ -195,6 +197,7 @@ export const TOOLS: Tool[] = [
 			required: ['site', 'text'],
 			additionalProperties: false,
 		},
+		writes: true,
 		run: async (env, who, a) => {
 			const site = await authorize(env, who, a.site as string, 'edit')
 			const ts = a.ts ? Date.parse(String(a.ts)) : Date.now()

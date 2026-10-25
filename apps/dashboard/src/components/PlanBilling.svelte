@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { PLANS, periodText, type Plan, type PlanId } from '@misomoon/core/plans'
+	import { eventStop, PLANS, periodText, type Plan, type PlanId } from '@misomoon/core/plans'
 	import { checkoutReturn, send } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
 
@@ -11,10 +11,12 @@
 		teamId: string
 		/** the team's plan id; null on the trial or with no plan */
 		plan: string | null
+		/** the team's events this UTC month */
+		used: number
 		/** owners and billing members */
 		canManage: boolean
 	}
-	let { teamId, plan, canManage }: Props = $props()
+	let { teamId, plan, used, canManage }: Props = $props()
 
 	const dash = getDash()
 	const team = $derived(dash.me?.teams.find((t) => t.id === teamId) ?? null)
@@ -127,6 +129,9 @@
 				<p>
 					Switch {team?.name ?? 'the team'} from {current?.name ?? 'its plan'} to {confirming.name}, ${confirming.price} a month? {status === 'canceled' ? 'The canceled subscription goes on, and the' : 'The'} card on file pays the new price. Polar works out the difference for the rest of this period.
 				</p>
+				{#if used >= eventStop(confirming)}
+					<p class="state warn">The team's sites recorded {used.toLocaleString('en')} events this month, past the {eventStop(confirming).toLocaleString('en')} at which {confirming.name} stops recording. Tracking pauses as soon as {confirming.name} applies, until the next month starts.</p>
+				{/if}
 				<div class="row">
 					<button class="btn primary" disabled={busy !== null} onclick={() => choose(confirming!)}>Switch now</button>
 					<button class="btn ghost" onclick={() => (confirming = null)}>Cancel</button>

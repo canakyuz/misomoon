@@ -66,7 +66,8 @@ export function searchConsoleQuery(window: { from: number; to: number }, offset:
 		dimensions: ['query'],
 		type: 'web',
 		dataState: 'all',
-		rowLimit: Math.min(Math.max(opts.limit, 1), 1000),
+		// Google's limit; a caller asks for one row past the page to know there are more
+		rowLimit: Math.min(Math.max(opts.limit, 1), 25_000),
 		startRow: (Math.max(opts.page ?? 1, 1) - 1) * opts.limit,
 		...(gsc.length ? { dimensionFilterGroups: [{ groupType: 'and', filters: gsc }] } : {}),
 	}

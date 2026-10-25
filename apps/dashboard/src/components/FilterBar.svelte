@@ -106,12 +106,12 @@
 		open = true
 	}
 
-	/** Fixed below the button, kept inside the window: the Topbar row is centred. */
+	/** Fixed below the button and opening leftward from its right edge, as the button sits at the header's right end; kept inside the window. */
 	function place() {
 		if (!button) return
 		const r = button.getBoundingClientRect()
 		const width = Math.min(600, innerWidth - 24)
-		pos = { top: r.bottom + 6, left: Math.max(12, Math.min(r.left, innerWidth - width - 12)) }
+		pos = { top: r.bottom + 6, left: Math.max(12, Math.min(r.right - width, innerWidth - width - 12)) }
 	}
 
 	/** Switches the right pane to a dimension, starting from the filter it already has. */
@@ -408,7 +408,7 @@
 	}
 	.pop:not(.picker) {
 		position: absolute;
-		left: 0;
+		right: 0;
 		top: calc(100% + 6px);
 		width: 340px;
 		padding: 12px;
@@ -505,6 +505,12 @@
 		color: var(--text);
 		font-weight: 600;
 		box-shadow: inset 0 0 0 1.5px var(--edge);
+	}
+	/* the selected style sets its own shadow, so the focus ring is added back on top of it */
+	.dim.on:focus-visible {
+		box-shadow:
+			inset 0 0 0 1.5px var(--edge),
+			var(--focus);
 	}
 	.dot {
 		width: 7px;

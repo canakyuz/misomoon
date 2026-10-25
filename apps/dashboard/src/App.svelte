@@ -118,10 +118,13 @@
 	</main>
 {:else}
 	<div class="app">
-		<Nav />
+		{#if !dash.isEmbed}<Nav />{/if}
 		<main class="main">
 			<div class="inner">
-				<PlanBanner />
+				{#if !dash.isEmbed}<PlanBanner />{/if}
+				{#if dash.isEmbed && dash.view !== 'overview'}
+					<button class="btn ghost back" onclick={() => (dash.view = 'overview')}>← Overview</button>
+				{/if}
 				{#if !dash.me}
 					<div class="boot"><span class="skeleton" style="width: 220px; height: 40px"></span><span class="skeleton" style="height: 380px; border-radius: 18px"></span></div>
 				{:else if !dash.site && dash.isSample}
@@ -186,6 +189,9 @@
 {/if}
 
 <style>
+	.back {
+		margin-bottom: 14px;
+	}
 	.glow {
 		position: fixed;
 		inset: 0;

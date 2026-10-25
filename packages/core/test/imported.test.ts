@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import { addGoogleRows, addCsvExport, GOOGLE_PULLS, aggregate, breakdown, channelForSource, importedInsertStmts, ImportedSet, timeseries, unzipTexts, zipFiles, type Scope } from '../src'
+import { addGoogleRows, addCsvExport, GOOGLE_PULLS, IMPORTED_DIMS, aggregate, breakdown, channelForSource, importedInsertStmts, ImportedSet, timeseries, unzipTexts, zipFiles, type Scope } from '../src'
 import { runner, shardDb } from './helpers'
 
 const scope: Scope = { siteId: 'demo', filters: [], tz: 0, imported: true }
@@ -27,6 +27,16 @@ async function load() {
 const pull = (name: string) => GOOGLE_PULLS.find((p) => p.name === name)!
 
 describe('imported history', () => {
+	it('pulls from Google only what the reports read', () => {
+		const stored = new Set<string>()
+		for (const p of GOOGLE_PULLS) {
+			const set = new ImportedSet()
+			addGoogleRows(set, p, [{ dimensionValues: [{ value: '20240101' }, ...p.dims.map(() => ({ value: 'x' }))], metricValues: p.metrics.map(() => ({ value: '1' })) }])
+			for (const r of set.list()) stored.add(r.dim)
+		}
+		expect([...stored].filter((d) => d && !(IMPORTED_DIMS as readonly string[]).includes(d))).toEqual([])
+	})
+
 	it('reads a CSV export into the totals', async () => {
 		const t = await load()
 		const agg = await aggregate(t, scope)
@@ -60,6 +70,13 @@ describe('imported history', () => {
 		expect(rows.find((r) => r.dim === '')).toMatchObject({ day: '2024-01-01', visitors: 10, pageviews: 30, visits: 12, bounces: 4, duration: 600 })
 		expect(rows.find((r) => r.dim === 'device')).toMatchObject({ key: 'Mobile', bounces: 2 })
 		expect(rows.filter((r) => r.dim === 'event').map((r) => r.key)).toEqual(['sign_up'])
+	})
+
+	it("files Google's outbound clicks, downloads, and form submissions under misomoon's names", () => {
+		const set = new ImportedSet()
+		const row = (d: string[], m: number[]) => ({ dimensionValues: d.map((value) => ({ value })), metricValues: m.map((x) => ({ value: String(x) })) })
+		addGoogleRows(set, pull('event'), ['click', 'file_download', 'form_submit', 'form_start'].map((name) => row(['20240101', name], [1, 2])))
+		expect(set.list().map((r) => r.key)).toEqual(['Outbound link', 'Download', 'Form sent', 'form_start'])
 	})
 
 	it('classifies imported source names', () => {

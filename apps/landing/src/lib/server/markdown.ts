@@ -32,7 +32,7 @@ export function headingId(text: string): string {
 /** Links may go to the web, to an email address, or to a path or heading on this site. */
 export function safeHref(href: string): string | null {
 	const h = href.trim()
-	if (/^(https?:\/\/|mailto:|\/(?!\/)|#)/i.test(h)) return h
+	if (/^(https?:\/\/|mailto:|\/(?![/\\])|#)/i.test(h)) return h
 	return null
 }
 

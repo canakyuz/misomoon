@@ -1,7 +1,7 @@
 # misomoon brand: "Miso Print"
 
 The repo had no existing brand, so this defines it. Tokens live in
-`packages/brand/tokens.css`; both apps import them.
+`packages/brand/tokens.css`; the landing, the dashboard, and the docs site import them.
 
 **Idea.** A risograph poster, not a glowing SaaS page. Warm newsprint, heavy ink, and
 one loud vermilion, with cobalt, leaf, plum and mustard as spot colours. Everything
@@ -34,7 +34,8 @@ instead of gradients. The moon is a halftone disc whose phase follows the light.
 - Text on vermilion (primary buttons, the selected tab or choice) is white,
   `--on-vermilion`, in both themes.
 - Highlighter `--highlight` for marked phrases; status good/warn/bad reuse leaf,
-  mustard and a red, always with a label or icon.
+  mustard and a red, always with a label or icon. So status text keeps its contrast, light
+  mode uses darker shades of leaf and mustard, and dark mode a lighter leaf.
 - Categorical chart order, validated (CVD separation, lightness band, contrast) with
   the dataviz validator:
   - Paper (on `#FBF7EE`): `#E8461A` `#2B45E0` `#0E8A55` `#B0389B` `#B98300`

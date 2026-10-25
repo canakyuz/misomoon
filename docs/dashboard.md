@@ -378,3 +378,18 @@ out, with **Settings** hidden. The Worker writes Acme's traffic every five minut
 **Live** has people on it. To turn the demo on, set
 [`SAMPLE_SITE`](configuration.md#variables). When it isn't set, `/demo` says the server
 has no sample site.
+
+The landing page's fig. 1 shows the same demo in a frame, at `/demo?embed&theme=dark` or
+`theme=light`. In this mode the dashboard hides its top bar, view tabs, plan banner, and
+the **Export CSV** and **Refresh** controls. It opens on **Overview** and shows
+**← Overview** when a click leads to another view. It takes the theme from the URL and
+doesn't save it. The page around it switches the theme
+without reloading the frame by posting `{"type": "misomoon:theme", "theme": "dark"}`.
+`?embed` works only on `/demo`; any other path ignores it.
+
+Fig. 1 loads the frame only when the figure is within a screen of view and the browser is
+idle. It first asks `/api/v1/me` whether the server has a sample site, and it skips the
+frame when the browser asks to save data. Until the frame loads, or when the API can't be
+reached, the figure shows a drawing of the dashboard. The button at the frame's top right
+opens it full screen; the X, Escape or a click outside closes it, and the dashboard stays
+on the view you left it on.

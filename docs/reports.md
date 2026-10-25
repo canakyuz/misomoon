@@ -110,6 +110,11 @@ Once the provider accepts the email, the button reads **Sent** for a moment. A t
 change when the next scheduled report goes out. If no provider is set up, or the provider
 refuses the email, the request fails with `503`.
 
+A site can send 10 tests an hour. The 11th fails with `429` and the message
+`a site sends at most 10 test reports an hour; try again later`. A test counts once it
+starts, even when the provider then refuses it. Each test stops counting an hour after it
+was sent.
+
 ## Change the timezone of reports
 
 Report periods, send times, and the days on the report's chart follow the site's timezone.
@@ -227,6 +232,15 @@ a send failed, run `wrangler tail` in `apps/api` and look for these lines:
 If report links point to `misomoon.com`, see
 [Links in email reports point to misomoon.com](troubleshooting.md#links-in-email-reports-point-to-misomooncom).
 
+## Limits
+
+Anyone with the edit permission can send reports to any address, so each site has caps:
+
+| What | Limit | When it's reached |
+| --- | --- | --- |
+| Report and alert subscriptions | 20 a site, counting every address and kind | **Subscribe** fails with `400` and `a site has at most 20 report and alert subscriptions`. Changing the threshold of a subscription the site has still works. Remove one to add another. |
+| Test reports | 10 a site in any hour | **Send a test** fails with `429` until the oldest of the 10 is an hour old. |
+
 ## API reference
 
 Each endpoint needs the edit permission on the site. [Sites](api.md#sites) lists the other
@@ -235,10 +249,10 @@ site collections.
 | Method and path | What it does |
 | --- | --- |
 | `GET /api/v1/sites/:id/reports` | Returns `subscriptions`, each with `id`, `email`, `kind`, `threshold`, and `last_sent_at` in milliseconds, and `sending`, which is `true` when an email provider is set up. |
-| `POST /api/v1/sites/:id/reports` | Subscribes `email` to `kind`, one of `weekly`, `monthly`, `spike`, or `drop`, with an optional `threshold`. Returns `201`. A second call with the same `email` and `kind` replaces the threshold. A missing or malformed `email`, an unknown `kind`, or a `threshold` out of range returns `400`. A `threshold` is a whole number: 1 or more visitors for `spike`, and 1 to 168 hours for `drop`. Reports store no threshold. |
+| `POST /api/v1/sites/:id/reports` | Subscribes `email` to `kind`, one of `weekly`, `monthly`, `spike`, or `drop`, with an optional `threshold`. Returns `201`. A second call with the same `email` and `kind` replaces the threshold. A missing or malformed `email`, an unknown `kind`, or a `threshold` out of range returns `400`. A `threshold` is a whole number: 1 or more visitors for `spike`, and 1 to 168 hours for `drop`. Reports store no threshold. A 21st subscription on a site returns `400` ([Limits](#limits)). |
 | `DELETE /api/v1/sites/:id/reports/:report` | Removes one subscription. Returns `204`. |
 | `GET /api/v1/sites/:id/reports/preview` | Returns the report as HTML. `kind=monthly` gives the monthly report, and any other value the weekly one. `format=pdf` returns the PDF, or `501` without the `BROWSER` binding, or `503` when the print fails. |
-| `POST /api/v1/sites/:id/reports/test` | Sends the report for `kind` to `email` now, with the PDF when one prints. `kind=monthly` gives the monthly report, and any other value the weekly one. Returns `{"ok": true}`, `400` without `email`, or `503` when no provider is set up or the provider refuses the email. |
+| `POST /api/v1/sites/:id/reports/test` | Sends the report for `kind` to `email` now, with the PDF when one prints. `kind=monthly` gives the monthly report, and any other value the weekly one. Returns `{"ok": true}`, `400` without `email`, `429` after 10 tests from the site in an hour ([Limits](#limits)), or `503` when no provider is set up or the provider refuses the email. |
 
 To subscribe an address to no-traffic alerts after 6 hours:
 

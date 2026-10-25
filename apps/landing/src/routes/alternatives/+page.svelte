@@ -12,9 +12,9 @@
 	const origin = $derived(page.url.origin)
 	const crumbs: [string, string][] = [['Compare', '/alternatives']]
 	const groups = [
-		['self-hosted', 'Self-hosted and open source', 'Tools you run yourself. Most need a server with Docker and a database. misomoon needs a Cloudflare account.'],
+		['self-hosted', 'Self-hosted and open source', 'Tools you run yourself. misomoon needs only a Cloudflare account, with no server or database of your own to run.'],
 		['hosted', 'Hosted services', 'Tools someone else runs for you, on their servers. misomoon Cloud runs it for you too, in the region you pick, or you keep it in your own account.'],
-		['product', 'Product analytics and session replay', 'Bigger tools built for product teams, with heavier trackers. misomoon covers the web analytics part at a fraction of the weight.'],
+		['product', 'Product analytics and session replay', 'Bigger tools built for product teams. misomoon covers the web analytics part, with a core tracker under 1 KB.'],
 	] as const
 	const ALTERNATIVES = $derived(data.alternatives)
 	const CHECKED = $derived(data.checked)

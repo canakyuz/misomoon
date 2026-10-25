@@ -26,8 +26,19 @@
 
 	afterNavigate(() => (menu = false))
 
-	// ⌘K, Ctrl+K and / open the search, unless the reader is typing somewhere
+	// the drawer takes focus when it opens, so a keyboard reader lands on its first link
+	let sidebar = $state<HTMLElement>()
+	$effect(() => {
+		if (menu) sidebar?.querySelector('a')?.focus()
+	})
+
+	// ⌘K, Ctrl+K and / open the search, unless the reader is typing somewhere; Escape closes the drawer
 	function onkeydown(e: KeyboardEvent) {
+		if (e.key === 'Escape' && menu) {
+			menu = false
+			document.querySelector<HTMLElement>('.menu')?.focus()
+			return
+		}
 		const typing = e.target instanceof HTMLElement && (e.target.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName))
 		if ((e.key === 'k' && (e.metaKey || e.ctrlKey)) || (e.key === '/' && !typing)) {
 			e.preventDefault()
@@ -70,7 +81,7 @@
 </header>
 
 <div class="shell">
-	<aside id="sidebar" class="side" class:open={menu}>
+	<aside id="sidebar" class="side" class:open={menu} bind:this={sidebar}>
 		<nav aria-label="Docs">
 			<a class="home" class:on={current === ''} href="/">Overview</a>
 			{#each data.nav.sections as s (s.title)}
@@ -284,11 +295,17 @@
 			z-index: 25;
 			width: min(300px, 86vw);
 			transform: translateX(-102%);
-			transition: transform var(--dur, 0.2s) var(--ease-out, ease-out);
+			/* hidden once it has slid out, so its links leave the tab order */
+			visibility: hidden;
+			transition:
+				transform var(--dur, 0.2s) var(--ease-out, ease-out),
+				visibility 0s linear var(--dur, 0.2s);
 		}
 		.side.open {
 			transform: none;
+			visibility: visible;
 			box-shadow: var(--shadow-lg);
+			transition: transform var(--dur, 0.2s) var(--ease-out, ease-out);
 		}
 		.scrim {
 			display: block;

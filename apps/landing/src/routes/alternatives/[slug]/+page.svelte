@@ -213,7 +213,7 @@
 	</ol>
 	<div class="ctas switch-ctas">
 		<a class="cta primary" href={signup}>{CTA} <span class="arrow">→</span></a>
-		<a class="cta ghost" href={docLink(data.docsUrl, 'import')}>Read the import guide</a>
+		<a class="cta ghost" href={docLink(data.docsUrl, `migrate-${a.slug}`)}>Read the switching guide</a>
 	</div>
 </section>
 

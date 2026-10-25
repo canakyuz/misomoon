@@ -20,6 +20,13 @@ open site.
    tracker endpoint keeps what it knows about a team for up to a minute, so a team that
    had stopped recording starts again within a minute after that.
 
+A team never pays for two plans. Before it opens a checkout, misomoon asks Polar whether
+the team already pays for a subscription, and switches that one instead. While the team's
+last checkout is still taking the payment, choosing a plan again says
+**Polar is still taking the payment for this team** and opens nothing. That ends as soon
+as the subscription the checkout made reaches misomoon, so a team whose subscription ended
+right after paying can pay again at once.
+
 Prices are in US dollars a month, as on [misomoon.com/pricing](https://misomoon.com/pricing).
 
 ## Switch plans
@@ -92,9 +99,24 @@ Webhooks can arrive late and out of order. misomoon keeps every subscription in 
 state, by Polar's `modified_at`, and a webhook with an older state changes nothing. A
 delivery Polar retries carries the same `webhook-id`, and misomoon handles each id once.
 
-If a team pays for two subscriptions at once, for example after two checkouts in two
-tabs, the newer one sets the plan and the log shows
-`team pays for more than one subscription`. Cancel and refund the other in Polar.
+A checkout asks Polar first, so a team doesn't end up with two subscriptions: Polar's
+subscriptions carrying the team's id in their metadata, and the team's last checkout. A
+subscription found there whose webhook hasn't come yet sets the plan, and the team
+switches it instead of paying for a second one. A checkout that took the card in the last
+hour holds off a new one until its subscription shows up. If a team still pays for two,
+for example after a switch in the customer portal, the newer one sets the plan and the
+log shows `team pays for more than one subscription`. Cancel and refund the other in
+Polar.
+
+A lost webhook can't keep a plan going. Once a day, at the cleanup at 03:15 UTC,
+misomoon reads again from Polar each team whose paid period ended more than a day ago,
+up to 50 teams a day. A renewal moves the team to the new period, and a subscription that
+ended ends the plan, as `subscription.revoked` would.
+
+If Polar answers that the team's subscription doesn't exist, choosing a plan opens a new
+checkout. misomoon marks the old subscription as ended only once Polar takes that
+checkout, because a token for the wrong organization also gets that answer. The daily
+check leaves such a subscription alone and logs it.
 
 ### Plans that support sets
 
@@ -113,7 +135,8 @@ Support can still set `teams.plan` by hand ([Set a team's plan](configuration.md
 ## Set up billing on your server
 
 misomoon Cloud runs this setup. A self-hosted server has no plans and no billing: the
-deploy bundle leaves out `PLANS` and every `POLAR_*` setting. To try billing, do these
+self-hosted template `apps/api/wrangler.jsonc` and the deploy bundle leave out `PLANS` and
+every `POLAR_*` setting. To try billing, do these
 steps in [Polar's sandbox](https://sandbox.polar.sh) first, with `POLAR_SERVER=sandbox`.
 The sandbox needs its own account, token, products, and webhook.
 
@@ -141,9 +164,10 @@ The sandbox needs its own account, token, products, and webhook.
    wrangler secret put POLAR_WEBHOOK_SECRET
    ```
 
-5. In `vars` in `apps/api/wrangler.jsonc`, add `POLAR_PRODUCT_STARTER`,
+5. In `vars` in `apps/api/wrangler.cloud.jsonc`, add `POLAR_PRODUCT_STARTER`,
    `POLAR_PRODUCT_GROWTH`, and `POLAR_PRODUCT_SCALE` with the product ids, and
-   `POLAR_SERVER` set to `sandbox` while you test. Keep `PLANS` set to `on`. Deploy.
+   `POLAR_SERVER` set to `sandbox` while you test. Keep `PLANS` set to `on`. Deploy with
+   `pnpm --filter @misomoon/api run deploy:cloud`.
 6. Sign in to the dashboard. `GET /api/v1/me` now says `"billing": true`, and the
    **Plan** card shows the plans. Choose one and pay with a test card from
    [Polar's sandbox docs](https://polar.sh/docs/integrate/sandbox). The plan shows within
@@ -161,6 +185,38 @@ Three Polar settings change what customers see:
 
 [Configuration](configuration.md#billing) lists each setting.
 
+### Test billing on your machine
+
+The [Polar CLI](https://polar.sh/docs/integrate/cli/webhooks) forwards the sandbox
+organization's webhooks to `wrangler dev`, so you can pay for a plan without deploying and
+without a webhook endpoint in Polar.
+
+1. Do steps 1 and 2 above in the sandbox.
+2. Install the CLI, and sign in to the sandbox:
+
+   ```sh
+   npm install -g @polar-sh/cli
+   polar auth login --sandbox
+   ```
+
+3. Start forwarding, and leave it running. It prints a secret.
+
+   ```sh
+   polar webhook listen http://localhost:8787/api/billing/polar/webhook
+   ```
+
+4. In `apps/api/.dev.vars`, set `PLANS` to `on`, `POLAR_ACCESS_TOKEN` to the sandbox
+   token, `POLAR_WEBHOOK_SECRET` to the secret the CLI printed, `POLAR_SERVER` to
+   `sandbox`, the three `POLAR_PRODUCT_*` ids, and `PUBLIC_URL` to
+   `http://localhost:5173`, so Polar sends you back to the dashboard rather than to the
+   API's port. Start the API and the dashboard as
+   [CONTRIBUTING.md](../CONTRIBUTING.md#run-it-locally) shows, and restart the API after
+   any change to `.dev.vars`.
+5. Open the dashboard at `http://localhost:5173`, choose a plan, and pay with a test card.
+
+The CLI logs each event with misomoon's answer: `200` when it set the team's plan, and
+`202` for an event that changes nothing, such as `order.paid`.
+
 ### When something fails
 
 - Without `PLANS=on`, the billing routes answer `404` and the dashboard shows no billing.
@@ -176,11 +232,24 @@ Three Polar settings change what customers see:
 - When Polar refuses a request, the route answers `502` with Polar's message, and the log
   has `polar error` with Polar's status. A wrong token or a token for the other
   `POLAR_SERVER` shows up here.
+- Polar refuses an email whose domain doesn't exist. misomoon then opens the checkout
+  without the email, and Polar asks for one there.
+- Choosing a plan while the team's last checkout is still taking the payment answers
+  `409` with the code `payment_pending`. It clears once the subscription that checkout
+  made reaches misomoon, or an hour after that checkout started.
+- `polar subscription missing` in the log: the daily check found a team whose paid period
+  ended, and Polar answered `404` for its subscription, or it is for another product.
+  Check the token and `POLAR_SERVER`, then the subscription in Polar. The team keeps its
+  plan until support sets it. `polar subscription gone` means a checkout replaced a
+  subscription Polar no longer had.
+- `polar reconcile failed` in the log: the daily check couldn't read a team's
+  subscription. It tries again the next day.
 
 ## What misomoon stores
 
 For each team that pays, misomoon stores Polar's customer id and subscription id, the
-subscription's status and product, and the end of the paid period, in the control
-database (`teams` and `polar_subscriptions`). It also keeps the `webhook-id` of each
+subscription's status and product, the end of the paid period, and the id of the last
+checkout opened for the team, in the control database (`teams` and
+`polar_subscriptions`). It also keeps the `webhook-id` of each
 webhook for 30 days. Polar keeps the card, the billing address, the tax details, and the
 invoices.

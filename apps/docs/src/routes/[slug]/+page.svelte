@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { page } from '$app/state'
+	import { ORIGIN } from '#lib/site.ts'
 	import Marks from '#lib/components/Marks.svelte'
 	import { brandsOf } from '#lib/guides.ts'
 
 	let { data } = $props()
-	const url = $derived(`${page.url.origin}/${data.slug}`)
+	const url = $derived(`${ORIGIN}/${data.slug}`)
 	const OG_IMAGE = 'https://misomoon.com/og.png'
 	// a TechArticle in a breadcrumb trail: docs home, the sidebar section, this page
 	const ld = $derived(
@@ -19,14 +19,14 @@
 					url,
 					image: OG_IMAGE,
 					inLanguage: 'en',
-					isPartOf: { '@type': 'WebSite', name: 'misomoon docs', url: page.url.origin },
+					isPartOf: { '@type': 'WebSite', name: 'misomoon docs', url: ORIGIN },
 					publisher: { '@type': 'Organization', name: 'misomoon', url: 'https://misomoon.com', logo: 'https://misomoon.com/logo.png' },
 					about: { '@type': 'SoftwareApplication', name: 'misomoon', url: 'https://misomoon.com' },
 				},
 				{
 					'@type': 'BreadcrumbList',
 					itemListElement: [
-						{ '@type': 'ListItem', position: 1, name: 'Docs', item: page.url.origin },
+						{ '@type': 'ListItem', position: 1, name: 'Docs', item: ORIGIN },
 						...(data.section ? [{ '@type': 'ListItem', position: 2, name: data.section }] : []),
 						{ '@type': 'ListItem', position: data.section ? 3 : 2, name: data.title, item: url },
 					],

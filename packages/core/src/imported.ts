@@ -1,7 +1,7 @@
 import type { Channel } from './channel'
 import { channelForSource } from './channel'
 import { BUILTIN_EVENTS } from './ingest'
-import { MINUTE } from './time'
+import { fromLocal, type Zone } from './time'
 import type { Stmt } from './queries'
 
 /**
@@ -62,6 +62,17 @@ export class ImportedSet {
 		return [...this.rows.values()]
 	}
 
+	/** Removes the days `skip` returns true for, and returns how many days that was. */
+	drop(skip: (day: string) => boolean): number {
+		const gone = new Set<string>()
+		for (const [id, r] of this.rows) {
+			if (!skip(r.day)) continue
+			gone.add(r.day)
+			this.rows.delete(id)
+		}
+		return gone.size
+	}
+
 	get days(): { from: string; to: string } | null {
 		let from = ''
 		let to = ''
@@ -76,7 +87,11 @@ export class ImportedSet {
 // ---------------------------------------------------------------- CSV export
 
 export function parseCsv(text: string): string[][] {
-	const out: string[][] = []
+	return [...csvRows(text)]
+}
+
+/** The rows of a CSV text one at a time, so a large file needn't be held as rows. */
+export function* csvRows(text: string): Generator<string[]> {
 	let row: string[] = []
 	let cell = ''
 	let quoted = false
@@ -95,16 +110,15 @@ export function parseCsv(text: string): string[][] {
 		} else if (c === '\n' || c === '\r') {
 			if (c === '\r' && text[i + 1] === '\n') i++
 			row.push(cell)
-			if (row.length > 1 || row[0] !== '') out.push(row)
+			if (row.length > 1 || row[0] !== '') yield row
 			row = []
 			cell = ''
 		} else cell += c
 	}
 	if (cell !== '' || row.length) {
 		row.push(cell)
-		out.push(row)
+		yield row
 	}
-	return out
 }
 
 /** `imported_sources_20240101_20241231.csv` → `sources`. */
@@ -193,7 +207,8 @@ function referrerKey(r: string): string {
 
 // ---------------------------------------------------------------- Google
 
-const GA_CHANNELS: Record<string, Channel> = {
+/** Google's default channel groups, as misomoon's channels. Other tools use them too. */
+export const GA_CHANNELS: Record<string, Channel> = {
 	'Organic Search': 'Organic Search',
 	'Paid Search': 'Paid Search',
 	'Organic Social': 'Organic Social',
@@ -211,6 +226,8 @@ const GA_CHANNELS: Record<string, Channel> = {
 
 /** CSV exports name automatic events differently; imports use misomoon's names. */
 const EXPORT_EVENTS: Record<string, string> = { 'Outbound Link: Click': BUILTIN_EVENTS.outbound, 'File Download': BUILTIN_EVENTS.download, 'Form: Submission': BUILTIN_EVENTS.form }
+/** Google's enhanced measurement events that misomoon tracks under its own names (`click` is an outbound click). */
+const GA_EVENTS: Record<string, string> = { click: BUILTIN_EVENTS.outbound, file_download: BUILTIN_EVENTS.download, form_submit: BUILTIN_EVENTS.form }
 
 const GA_DEVICES: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet' }
 
@@ -269,7 +286,7 @@ export const GOOGLE_PULLS: GooglePull[] = [
 		name: 'event',
 		dims: ['eventName'],
 		metrics: ['totalUsers', 'eventCount'],
-		rows: (d, m) => (GA_OWN_EVENTS.has(d.eventName) ? [] : [['event', d.eventName, { visitors: m.totalUsers, events: m.eventCount }]]),
+		rows: (d, m) => (GA_OWN_EVENTS.has(d.eventName) ? [] : [['event', GA_EVENTS[d.eventName] ?? d.eventName, { visitors: m.totalUsers, events: m.eventCount }]]),
 	},
 	{
 		name: 'place',
@@ -294,7 +311,6 @@ export const GOOGLE_PULLS: GooglePull[] = [
 			return unset(d.operatingSystemVersion) ? [['os', os, visit(m)], ['os_version', `${os} ${d.operatingSystemVersion}`, visit(m)]] : [['os', os, visit(m)]]
 		},
 	},
-	{ name: 'language', dims: ['language'], metrics: VISIT_METRICS, rows: (d, m) => (unset(d.language) ? [['language', d.language, visit(m)]] : []) },
 ]
 
 /** Google's automatic events, which misomoon measures itself (pageviews, visits, scroll). */
@@ -313,7 +329,8 @@ export function addGoogleRows(set: ImportedSet, pull: GooglePull, rows: { dimens
 	}
 }
 
-function normalizeImportedPath(p: string): string {
+/** A page path as the tracker stores it: no query, no trailing slash. */
+export function normalizeImportedPath(p: string): string {
 	const path = (p || '/').split('?')[0]
 	return path.length > 1 && path.endsWith('/') ? path.slice(0, -1) : path
 }
@@ -322,13 +339,22 @@ function normalizeImportedPath(p: string): string {
 
 const COLS = ['site_id', 'import_id', 'ts', 'dim', 'key', ...METRICS] as const
 
-/** Local midnight of a YYYY-MM-DD date, as a UTC instant. */
-export function localMidnight(day: string, offset: number): number {
-	return Date.parse(day + 'T00:00:00Z') - offset * MINUTE
+const midnights = new Map<string, number>()
+
+/** Midnight of a YYYY-MM-DD date in `zone`, with that day's own offset, as a UTC instant. */
+export function localMidnight(day: string, zone: Zone): number {
+	// an import asks for the same few thousand days once per row
+	const k = `${zone} ${day}`
+	let ts = midnights.get(k)
+	if (ts === undefined) {
+		if (midnights.size >= 20_000) midnights.clear()
+		midnights.set(k, (ts = fromLocal(Date.parse(day + 'T00:00:00Z'), zone)))
+	}
+	return ts
 }
 
 /** Insert statements, a few rows each to stay under D1's 100 bound parameters. */
-export function importedInsertStmts(siteId: string, importId: string, rows: ImportedRow[], offset: number): Stmt[] {
+export function importedInsertStmts(siteId: string, importId: string, rows: ImportedRow[], zone: Zone): Stmt[] {
 	const per = Math.floor(100 / COLS.length)
 	const stmts: Stmt[] = []
 	for (let i = 0; i < rows.length; i += per) {
@@ -336,7 +362,7 @@ export function importedInsertStmts(siteId: string, importId: string, rows: Impo
 		stmts.push({
 			sql: `INSERT INTO imported (${COLS.join(', ')}) VALUES ${chunk.map(() => `(${COLS.map(() => '?').join(', ')})`).join(', ')}
 				ON CONFLICT (site_id, dim, ts, key, import_id) DO UPDATE SET ${METRICS.map((m) => `${m} = ${m} + excluded.${m}`).join(', ')}`,
-			params: chunk.flatMap((r) => [siteId, importId, localMidnight(r.day, offset), r.dim, r.key, ...METRICS.map((m) => r[m])]),
+			params: chunk.flatMap((r) => [siteId, importId, localMidnight(r.day, zone), r.dim, r.key, ...METRICS.map((m) => r[m])]),
 		})
 	}
 	return stmts

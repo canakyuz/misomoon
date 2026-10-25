@@ -13,7 +13,8 @@ and left out of the sitemap. None of these pages use this API.
 
 A post appears at `/blog/<slug>`. A page appears at `/<slug>`, and a page slug can have
 up to three segments, such as `/guides/setup`. Each author has a page at
-`/authors/<id>`.
+`/authors/<id>`. The site's nav, footer, and sitemap link to `/blog` only once a post is
+published; until then `/blog` still opens, empty.
 
 ## Set up the database and the token
 
@@ -97,6 +98,8 @@ title: Set up misomoon in ten minutes
 description: Deploy misomoon to your Cloudflare account, add your first site, and see your first visit in the dashboard.
 status: published
 ---
+
+Deploy the Worker, add a site, and paste the snippet into your page's `<head>`.
 ```
 
 ## Publish the files
@@ -150,8 +153,10 @@ matter and an array in JSON.
 | `avatar` | Authors | No | An `https` URL or a path on the site. |
 | `sameAs` | Authors | No | Up to 10 `https` URLs of the author's profiles. Search engines read them to tell who the author is. |
 
-The body is Markdown, up to 200,000 characters, with tables and fenced code. The site
-renders it when you publish:
+A post or page needs a body: Markdown, 1 to 200,000 characters, with tables and fenced
+code. A post or page file with nothing after its front matter fails with
+`400 {"error":"body: Markdown, 1 to 200,000 characters"}`. The site renders the body
+when you publish:
 
 - Raw HTML prints as text.
 - A link keeps its `href` only for `https:`, `http:`, `mailto:`, a path on the site, or

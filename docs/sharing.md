@@ -189,7 +189,9 @@ A public site is open to everyone who reaches your misomoon URL signed out:
 
 Anyone signed out can also read the site's goals, funnels, shared saved filters, and
 annotations. They can't change anything, because every change needs the editor role or
-above. The site's daily usage stays hidden.
+above. The site's daily usage and its Google search terms from
+[Search Console](import.md#connect-search-console) stay hidden: the Stats API and MCP
+answer `403` with `search terms are shown to the site's team only`.
 
 A person who is signed in to an account with no role on the site doesn't see a public
 site in their dashboard. They can open it signed out, for example in a private window.
@@ -226,8 +228,9 @@ bar. The viewer can:
 - run the site's saved funnels, and try steps without saving them
 - download the CSV export with **More** > **Export CSV**
 
-The viewer can't open **Settings**, save filters or funnels, sign in from the navigation bar, or
-see the site's daily usage. The keys `1` to `6` switch views, and `7` does nothing.
+The viewer can't open **Settings**, save filters or funnels, sign in from the navigation bar,
+see the site's daily usage, or see the Google search terms from
+[Search Console](import.md#connect-search-console), which only the site's team sees. The keys `1` to `6` switch views, and `7` does nothing.
 
 A viewer who is signed in to misomoon in the same browser still sees only the shared
 link's site. The dashboard doesn't send their own session with requests from the link.
@@ -252,4 +255,6 @@ link with a password asks for it again.
 - The per-page reports in **Behavior**, such as the click and scroll reports for one page,
   replace every page filter with the page you pick, the saved filter's page filter too. If
   a saved filter filters by page, a viewer can open those reports for other pages.
-- misomoon has no embed code or embed widget.
+- misomoon has no embed code or embed widget. Another site can show a shared link in an
+  iframe. The rest of the dashboard, a public site included, refuses to load in a frame on
+  another site.

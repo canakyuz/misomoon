@@ -32,6 +32,8 @@
 	import { DEFAULT_SEARCH_PARAMS, FEATURES, LIGHT_FEATURES, searchParams, siteFeatures, type Feature } from '@misomoon/core/features'
 	import { OPT_OUT_SNIPPET, privacyPolicy, retentionDays } from '@misomoon/core/privacy'
 	import { getDash, Resource } from '../lib/dash.svelte'
+	import { googleError } from '../lib/google'
+	import { IMPORTER_INFO, importerInfo } from '@misomoon/core/importers'
 
 	const dash = getDash()
 	const origin = location.origin
@@ -43,7 +45,14 @@
 	let newKey = $state<{ id: string; site: string; key: string } | null>(null)
 	/** the key whose Rotate button was pressed once, waiting for the second press */
 	let confirmRotate = $state<string | null>(null)
-	let error = $state<string | null>(null)
+	// a Google sign-in that failed comes back here with google_error=; say why once, then drop it from the URL
+	const signInError = googleError(location.search)
+	let error = $state<string | null>(signInError)
+	if (signInError) {
+		const u = new URL(location.href)
+		u.searchParams.delete('google_error')
+		history.replaceState(history.state, '', u)
+	}
 	/** the action now running, so a double click cannot send it twice */
 	let busy = $state<string | null>(null)
 	/** asks once more before removing a working proxy hostname */
@@ -412,11 +421,27 @@
 			u.searchParams.delete('google')
 			history.replaceState(history.state, '', u)
 		})
+	// an import from another tool's API: the form its importer asks for
+	let tool = $state('')
+	let toolInput = $state<Record<string, string>>({})
+	let toolFrom = $state('')
+	let toolTo = $state('')
+	const toolInfo = $derived(tool ? importerInfo(tool) : undefined)
+	const startTool = () =>
+		run('startTool', async () => {
+			await send('POST', `/api/v1/sites/${dash.site}/imports/api`, { importer: tool, input: toolInput, from: toolFrom || undefined, to: toolTo || undefined })
+			tool = ''
+			toolInput = {}
+			toolFrom = ''
+			toolTo = ''
+		})
+	const importSource = (source: string) => (source === 'google' ? 'Google' : source === 'csv' ? 'CSV' : (importerInfo(source)?.name ?? source))
 	const removeImport = (id: string) => run('removeImport', async () => (await send('DELETE', `/api/v1/sites/${dash.site}/imports/${id}`), await dash.load()))
 	$effect(() => {
-		// poll while a Google import runs in the background
-		if (!imports.data?.some((i) => i.status === 'importing')) return
-		const t = setTimeout(() => importPoll++, 4000)
+		// poll while an import runs in the background; an API import moves every few minutes
+		const running = imports.data?.filter((i) => i.status === 'importing') ?? []
+		if (!running.length) return
+		const t = setTimeout(() => importPoll++, running.some((i) => i.days_total == null) ? 4000 : 30_000)
 		return () => clearTimeout(t)
 	})
 
@@ -936,14 +961,14 @@
 					<h3>Import history</h3>
 					<a class="doc-link" href={docUrl('import')} target="_blank" rel="noopener">Import docs <ArrowUpRight size={13} /></a>
 				</div>
-				<p class="muted">Bring your past data. Upload a CSV export (the zip or its CSV files), or import straight from a Google property. Imported numbers show in unfiltered reports, next to what misomoon collects.</p>
+				<p class="muted">Bring your past data. Upload a CSV export (the zip or its CSV files), import straight from a Google property, or read it from another analytics tool. Imported numbers show in unfiltered reports, next to what misomoon collects. An import keeps only the days before misomoon started counting, so no day counts twice.</p>
 				<ul class="goals">
 					{#each imports.data ?? [] as i (i.id)}
 						<li>
-							<span class="pill {i.status === 'failed' ? 'page' : 'event'}">{i.source === 'google' ? 'Google' : 'CSV'}</span>
+							<span class="pill {i.status === 'failed' ? 'page' : 'event'}">{importSource(i.source)}</span>
 							<strong class="grow">{i.label}</strong>
 							<span class="muted small">
-								{#if i.status === 'importing'}Importing…{:else if i.status === 'failed'}Failed: {i.error}{:else}{i.from_day} to {i.to_day}, {i.rows.toLocaleString()} rows{/if}
+								{#if i.status === 'importing'}Importing…{#if i.days_total} {(i.days_done ?? 0).toLocaleString()} of {i.days_total.toLocaleString()} days{/if}{:else if i.status === 'failed'}Failed: {i.error}{:else}{i.from_day} to {i.to_day}, {i.rows.toLocaleString()} rows{#if i.skipped_days}. Skipped {i.skipped_days.toLocaleString()} {i.skipped_days === 1 ? 'day' : 'days'} already counted{/if}{/if}
 							</span>
 							<button class="btn ghost icon" onclick={() => removeImport(i.id)} aria-label="Delete import"><Trash size={14} /></button>
 						</li>
@@ -958,16 +983,40 @@
 						<input class="input" type="date" bind:value={gaTo} aria-label="To" />
 						<button class="btn primary" onclick={startGoogle} disabled={!gaProperty}>Import</button>
 					</div>
-					<p class="muted small">Leave the dates empty to import everything up to yesterday. Import only days before you added misomoon, or they count twice.</p>
+					<p class="muted small">Leave the dates empty to import everything Google has. The import ends the day before misomoon started counting, and skips days an earlier import covers.</p>
+				{:else if toolInfo}
+					<div class="tool-form">
+						<div class="head-row">
+							<h4>Import from {toolInfo.name}</h4>
+							<a class="doc-link" href={docUrl(toolInfo.guide)} target="_blank" rel="noopener">Switching guide <ArrowUpRight size={13} /></a>
+						</div>
+						{#each toolInfo.fields.filter((f) => !f.when || !!toolInput[f.when.field]?.trim() === f.when.set) as f (f.name)}
+							<label class="params">
+								<span>{f.label}{f.optional ? '' : ' *'}</span>
+								{#if f.help}<small>{f.help}</small>{/if}
+								<input class="input" type={f.kind === 'secret' ? 'password' : f.kind === 'url' ? 'url' : 'text'} bind:value={toolInput[f.name]} placeholder={f.placeholder} autocomplete="off" spellcheck="false" aria-label={f.label} />
+							</label>
+						{/each}
+						<div class="inline">
+							<label class="params dates"><span>From</span><input class="input" type="date" bind:value={toolFrom} /></label>
+							<label class="params dates"><span>To</span><input class="input" type="date" bind:value={toolTo} /></label>
+							<button class="btn primary" onclick={startTool} disabled={busy === 'startTool'}>{busy === 'startTool' ? 'Checking…' : 'Import'}</button>
+							<button class="btn ghost" onclick={() => (tool = '')}>Cancel</button>
+						</div>
+						<p class="muted small">
+							misomoon checks the sign-in now, then reads a day at a time on the server, so you can close the page. Leave the dates empty to import everything before misomoon started counting. The sign-in is deleted when the import ends.
+						</p>
+					</div>
 				{:else}
 					<div class="inline">
 						<label class="btn file">
 							<Upload size={14} />
 							{uploading ? 'Uploading…' : 'Upload CSV or zip'}
 							<!-- visually hidden, not `hidden`, so the keyboard can reach it -->
-							<input type="file" accept=".zip,.csv" multiple onchange={upload} disabled={uploading} />
+							<input type="file" accept=".zip,.csv,.gz" multiple onchange={upload} disabled={uploading} />
 						</label>
 						<button class="btn" onclick={connectGoogle}>Connect Google</button>
+						<Select label="Import from another tool" placeholder="Import from another tool…" bind:value={tool} options={IMPORTER_INFO.map((i) => ({ value: i.id, label: i.name }))} />
 					</div>
 				{/if}
 			</section>
@@ -1038,7 +1087,7 @@
 				{#if atSiteLimit(team.plan)}
 					<p class="muted small">{team.name} has all the sites its plan includes. It keeps them, but can't add or take in another.</p>
 				{/if}
-				<PlanBilling teamId={team.id} plan={team.plan.state === 'plan' ? team.plan.id : null} canManage={teamRole === 'owner' || teamRole === 'billing'} />
+				<PlanBilling teamId={team.id} plan={team.plan.state === 'plan' ? team.plan.id : null} used={team.plan.events_used} canManage={teamRole === 'owner' || teamRole === 'billing'} />
 				<p class="muted small">Every plan has every feature. For help with plans, email <a href="mailto:{SUPPORT_EMAIL}">{SUPPORT_EMAIL}</a>.</p>
 			</section>
 		{/if}
@@ -1425,6 +1474,20 @@
 	}
 	.params {
 		grid-column: 1 / -1;
+	}
+	.tool-form {
+		display: grid;
+		gap: 10px;
+		margin-top: 8px;
+	}
+	.tool-form h4 {
+		margin: 0;
+	}
+	.tool-form .inline {
+		align-items: flex-end;
+	}
+	.params.dates {
+		grid-column: auto;
 	}
 	.params > span {
 		font-weight: 600;

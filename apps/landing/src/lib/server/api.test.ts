@@ -2,6 +2,9 @@ import { describe, expect, it } from 'vite-plus/test'
 import * as entries from '../../routes/api/entries/+server.ts'
 import * as one from '../../routes/api/entries/[kind]/[...slug]/+server.ts'
 import * as author from '../../routes/api/authors/[id]/+server.ts'
+import * as blog from '../../routes/blog/+page.server.ts'
+import * as layout from '../../routes/+layout.server.ts'
+import * as sitemapRoute from '../../routes/sitemap.xml/+server.ts'
 import { cached, keys } from './api.ts'
 import { fakeD1 } from './fake-d1.ts'
 
@@ -126,5 +129,37 @@ describe('the content API', () => {
 		expect(await read()).toBe(1)
 		await one.PUT(ev(p, req('PUT', post), { kind: 'post', slug: 'count' }))
 		expect(await read()).toBe(2)
+	})
+})
+
+describe('blog pages', () => {
+	it('answer 404 to a cursor the blog never handed out, and cache nothing for it', async () => {
+		const p = platform()
+		const load = (cursor: string) => blog.load({ url: new URL(`https://misomoon.com/blog?cursor=${cursor}`), platform: p, setHeaders: () => {} } as never)
+		await expect(load('not-a-cursor')).rejects.toMatchObject({ status: 404 })
+		expect(p.cache.store.size).toBe(0)
+		await expect(load(btoa('2026-01-01|7'))).resolves.toMatchObject({ posts: [] })
+	})
+})
+
+describe('the Blog link', () => {
+	const hasBlog = async (p: App.Platform) => ((await (layout.load as (e: unknown) => Promise<{ blog: boolean }>)({ platform: p })).blog)
+	const inSitemap = async (p: App.Platform) => (await (await sitemapRoute.GET({ platform: p, url: new URL('https://misomoon.com/sitemap.xml') } as never)).text()).includes('<loc>https://misomoon.com/blog</loc>')
+
+	it('is hidden, and the sitemap leaves /blog out, until a post is published', async () => {
+		const p = platform()
+		await withAuthor(p)
+		await one.PUT(ev(p, req('PUT', { ...post, status: 'draft' }), { kind: 'post', slug: 'wip' }))
+		expect(await hasBlog(p)).toBe(false)
+		expect(await inSitemap(p)).toBe(false)
+		await one.PUT(ev(p, req('PUT', post), { kind: 'post', slug: 'wip' }))
+		expect(await hasBlog(p)).toBe(true)
+		expect(await inSitemap(p)).toBe(true)
+	})
+
+	it('is hidden without a database, and kept when the database errors, so a blip does not move the nav', async () => {
+		expect(await hasBlog(platform({ db: false }))).toBe(false)
+		const broken = { ...platform(), env: { CONTENT: { prepare: () => { throw new Error('D1 down') } } } } as unknown as App.Platform
+		expect(await hasBlog(broken)).toBe(true)
 	})
 })

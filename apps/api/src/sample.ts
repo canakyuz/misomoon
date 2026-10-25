@@ -50,6 +50,7 @@ async function lastEvent(env: Env, siteId: string): Promise<number | null> {
 async function createSampleSite(env: Env, id: string, now: number): Promise<Site> {
 	await env.CONTROL.prepare('INSERT OR IGNORE INTO teams (id, name, created_at) VALUES (?, ?, ?)').bind(SAMPLE_TEAM, 'Sample sites', now).run()
 	const site = await createSite(env, SAMPLE_TEAM, { id, domain: SAMPLE.domain, name: SAMPLE.name, timezone: SAMPLE.timezone, currency: SAMPLE.currency, public: true })
+	// later runs find the site and skip this, so a site without its goals goes, and the next run starts over
 	await env.CONTROL.batch([
 		env.CONTROL.prepare('UPDATE sites SET retention_days = ? WHERE id = ?').bind(SAMPLE.retention, id),
 		...SAMPLE.goals.map(([name, kind, match]) =>
@@ -58,7 +59,11 @@ async function createSampleSite(env: Env, id: string, now: number): Promise<Site
 		...SAMPLE.funnels.map((f) =>
 			env.CONTROL.prepare('INSERT INTO funnels (id, site_id, name, steps, mode, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(crypto.randomUUID(), id, f.name, JSON.stringify(f.steps), 'sequential', now),
 		),
-	])
+	]).catch(async (e) => {
+		await env.CONTROL.prepare('DELETE FROM sites WHERE id = ?').bind(id).run()
+		invalidate(`site:${id}`)
+		throw e
+	})
 	invalidate(`site:${id}`)
 	console.log(JSON.stringify({ msg: 'sample site created', site: id }))
 	return { ...site, retention_days: SAMPLE.retention }

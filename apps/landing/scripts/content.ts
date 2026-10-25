@@ -25,7 +25,12 @@ async function call(method: string, path: string, body?: unknown) {
 		body: body ? JSON.stringify(body) : undefined,
 	})
 	const text = await res.text()
-	const json = text ? (JSON.parse(text) as { error?: string; warnings?: string[] }) : {}
+	let json: { error?: string; warnings?: string[] } = {}
+	try {
+		if (text) json = JSON.parse(text)
+	} catch {
+		// an error page from a proxy or the wrong CONTENT_URL; the status and text say enough
+	}
 	if (!res.ok) throw new Error(`${method} ${path}: ${res.status} ${json.error ?? text}`)
 	return { status: res.status, json }
 }

@@ -18,6 +18,8 @@
 	const signup = $derived(signupUrl(data.appUrl))
 	// null on a cold edge cache: the page prints its evergreen edition
 	const live = $derived(data.live)
+	/** the real demo dashboard has loaded in fig. 1 */
+	let demoReady = $state(false)
 	const DAY = 86_400_000
 	// time until the next edition goes to press, at midnight UTC; unknown (placeholders) until the browser runs
 	let now = $state<number | null>(null)
@@ -123,7 +125,7 @@
 		],
 		[
 			'Do I still need a cookie banner?',
-			'misomoon sets no cookies, stores nothing on the visitor’s device and never stores IP addresses, which are the usual reasons for one. Whether you need one depends on your country, on the features you turn on, and on what else your site does. This is not legal advice.',
+			'misomoon sets no cookies and never stores IP addresses, which are the usual reasons for one. It stores nothing on the visitor’s device unless they opt out of being counted. Whether you need one depends on your country, on the features you turn on, and on what else your site does. This is not legal advice.',
 		],
 		[
 			'Does misomoon have heatmaps and scroll maps?',
@@ -144,7 +146,7 @@
 		],
 		[
 			'What if a bot floods my site?',
-			'Known bots are dropped before they count. For the rest, set a daily cap per site. Once a day is full, the edge drops the extra events within a minute.',
+			'Known bots are dropped before they count. For the rest, a site can have a daily cap: self-hosted, you set it in your configuration, and on Cloud, support sets it. Once a day is full, the edge drops the extra events within a minute.',
 		],
 		['What happens to my data if I stop?', 'Export any period as a ZIP of CSV files from the dashboard, on any plan. Self-hosted, the data also stays in your own D1 databases.'],
 	]
@@ -209,6 +211,7 @@
 					<a class="cta ghost" href="/demo">Open the live demo</a>
 				</div>
 				<p class="assure mono">{TRIAL_DAYS}-day free trial · No card needed · Open source</p>
+				<a class="watch mono" href="#film">▶ Watch the 30-second film</a>
 			</div>
 		</div>
 	</div>
@@ -219,9 +222,28 @@
 	<div class="wrap">
 		<div class="stage-label mono">
 			<span>fig. 1</span>
-			{live ? 'The live demo dashboard, drawn from this site’s real numbers' : 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
+			{demoReady
+				? 'The real dashboard on Acme, a sample store that gets new visits every few minutes. Click around.'
+				: live
+					? 'The live demo dashboard, drawn from this site’s real numbers'
+					: 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
 		</div>
-		<HeroProduct {live} />
+		<HeroProduct {live} demo="{data.appUrl}/demo" bind:ready={demoReady} />
+	</div>
+</section>
+
+<!-- ───────────────────────────── the film -->
+<section class="chapter" id="film">
+	<div class="wrap">
+		<header class="head center" {@attach reveal()}>
+			<span class="eyebrow"><b>▶</b> The film · 30 seconds</span>
+			<h2 class="display">Where did<br /><em>the $29 come from?</em></h2>
+			<p>A post goes viral and a $29 payment lands the same night. misomoon follows the buyer back to the visit that brought them: a Reddit comment, not the post.</p>
+		</header>
+		<div class="film print" {@attach reveal(80)}>
+			<!-- svelte-ignore a11y_media_has_caption: the film's words are on screen; its sound is music -->
+			<video src="/film/misomoon-film.mp4" poster="/film/poster.webp" width="1920" height="1080" controls playsinline preload="none"></video>
+		</div>
 	</div>
 </section>
 
@@ -232,8 +254,8 @@
 			<span class="eyebrow"><b>★</b> The whole kit</span>
 			<h2 class="display">Six tools.<br /><em>One script tag.</em></h2>
 			<p>
-				Most analytics stops at pageviews. Revenue, heatmaps, form analytics, error tracking and speed checks then cost a subscription each.
-				misomoon does all six, and you tick only the parts you use.
+				Traffic is where it starts. misomoon adds revenue, heatmaps, form analytics, error tracking and speed checks to the same script, and you
+				tick only the parts you use.
 			</p>
 		</header>
 		<ol class="kit">
@@ -263,7 +285,7 @@
 				the visit that brought the buyer. A renewal a year later still counts toward that first visit, and none of it needs a cookie.
 			</p>
 			<ul class="chips mono">
-				{#each ['Stripe', 'Polar', 'Lemon Squeezy', 'Dodo Payments', 'Your server'] as p (p)}<li>{p}</li>{/each}
+				{#each ['Stripe', 'Polar', 'Lemon Squeezy', 'Dodo Payments', 'Custom'] as p (p)}<li>{p}</li>{/each}
 			</ul>
 		</header>
 		<div class="ledger-col">
@@ -303,7 +325,7 @@
 			<div class="aside">
 				<p>
 					See a heatmap of clicks and a scroll map drawn over your own page, with rage clicks and dead clicks marked. Find the form field where
-					people gave up and the JavaScript errors they hit. misomoon never records a session or what anyone types.
+					people gave up and the JavaScript errors they hit. misomoon never records a session or reads what anyone types into a form. Site search keeps the term from the page URL, with emails and ids removed.
 				</p>
 				<div class="facts">
 					<div class="fact v"><b class="display">1.0<small>KB</small></b><span>for every click, rage and dead</span></div>
@@ -461,7 +483,7 @@
 				your numbers questions in plain words. The tools read stats. The only thing they can write is a note on your timeline.
 			</p>
 			<div class="tools-list mono">
-				{#each ['list_sites', 'get_aggregate', 'get_timeseries', 'get_breakdown', 'get_goal_conversions', 'get_realtime', 'get_web_vitals', 'run_funnel'] as t, i (t)}<span
+				{#each ['list_sites', 'list_dimensions', 'get_aggregate', 'get_timeseries', 'get_breakdown', 'get_goal_conversions', 'get_realtime', 'get_web_vitals', 'run_funnel', 'get_journeys', 'get_search_terms', 'get_page_interactions', 'add_annotation'] as t, i (t)}<span
 						style:--r="{((i * 37) % 7) - 3}deg">{t}</span
 					>{/each}
 			</div>
@@ -479,7 +501,7 @@
 			</div>
 			<div class="aside">
 				<p>
-					The essentials every analytics tool counts, and the ones that explain them: how long people really read, how far they scroll, how fast the
+					The essentials you’d expect, and the ones that explain them: how long people really read, how far they scroll, how fast the
 					page felt, and which AI assistant sent them. Here is everything a single pageview leaves behind.
 				</p>
 			</div>
@@ -518,7 +540,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 				</div>
 				<div class="facts" {@attach reveal(180)}>
 					<div class="fact v"><b class="display">&lt;1<small>KB</small></b><span>core tracker, gzipped</span></div>
-					<div class="fact m"><b class="display">0</b><span>cookies or local storage</span></div>
+					<div class="fact m"><b class="display">0</b><span>cookies, on every plan</span></div>
 					<div class="fact c"><b class="display">5</b><span>Web Vitals, from real users</span></div>
 				</div>
 			</div>
@@ -536,7 +558,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 			</div>
 			<div class="aside">
 				<p>
-					Funnels, revenue, and reports usually wait behind the top plan. On misomoon, the smallest plan has the same features as the largest. {DIFFER} The
+					Funnels, revenue, and reports come on every plan: the smallest has the same features as the largest. {DIFFER} The
 					open-source version has all of it too.
 				</p>
 				<p class="more"><a href="/pricing">Compare the plans →</a></p>
@@ -572,7 +594,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 			<div><b>No IP addresses kept.</b> An IP address is used for one hash and never stored. Search terms, error messages and click labels lose emails, ids and tokens before they are saved.</div>
 			<div><b>Forgets daily.</b> Visitor ids use a salt that is replaced every day and deleted after two.</div>
 			<div><b>Your region.</b> On misomoon Cloud, each site keeps its numbers in the European Union, the United States or Asia-Pacific, under our <a href="/dpa">data processing agreement</a>. Self-hosted, they stay in your own Cloudflare account.</div>
-			<div><b>Nothing on the device.</b> No cookies and no local storage, so there is no cookie to accept.</div>
+			<div><b>No cookies.</b> There is no cookie to accept. The device keeps one flag only when a visitor opts out, so they stay uncounted.</div>
 		</div>
 	</div>
 </section>
@@ -2265,6 +2287,32 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 		letter-spacing: 0.06em;
 		text-transform: uppercase;
 		color: var(--text-2);
+	}
+	.watch {
+		margin-top: 10px;
+		font-size: 12px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		text-decoration: underline;
+		text-decoration-thickness: 1.5px;
+		text-underline-offset: 4px;
+	}
+	.watch:hover {
+		color: var(--miso);
+	}
+
+	/* ── the film */
+	.film {
+		max-width: 1080px;
+		margin: 48px auto 0;
+		aspect-ratio: 16 / 9;
+		background: var(--block);
+	}
+	.film video {
+		display: block;
+		width: 100%;
+		height: 100%;
 	}
 
 	@media (max-width: 1060px) {

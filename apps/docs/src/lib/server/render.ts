@@ -105,10 +105,14 @@ export function parseNav(readme: string): Nav {
 /**
  * Where a link in `docs/<from>` goes on the site. Other pages in docs/ become site paths,
  * a moved page goes to misomoon.com, files elsewhere in the repo open on GitHub, and
- * everything else is left alone.
+ * http, https and mailto links are left alone. Any other scheme fails the build.
  */
 export function resolveHref(href: string, docs: Set<string>): { href: string; file: string | null; id: string | null } {
-	if (/^[a-z][a-z0-9+.-]*:/i.test(href) || href.startsWith('//')) return { href, file: null, id: null }
+	if (/^[a-z][a-z0-9+.-]*:/i.test(href)) {
+		if (!/^(https?|mailto):/i.test(href)) throw new Error(`a link must be http, https or mailto: ${href}`)
+		return { href, file: null, id: null }
+	}
+	if (href.startsWith('//')) return { href, file: null, id: null }
 	const [path, hash = ''] = href.split('#')
 	if (!path) return { href, file: null, id: hash || null }
 	const clean = path.replace(/^\.\//, '')
@@ -158,7 +162,12 @@ export function renderPage(file: string, md: string, docs: Set<string>, images: 
 				return `<h${depth} id="${id}"><a class="anchor" href="#${id}" aria-hidden="true" tabindex="-1">#</a>${inner}</h${depth}>\n`
 			},
 			link({ href, title: t, tokens }) {
-				const r = resolveHref(href, docs)
+				let r: ReturnType<typeof resolveHref>
+				try {
+					r = resolveHref(href, docs)
+				} catch (e) {
+					throw new Error(`docs/${file}: ${(e as Error).message}`)
+				}
 				links.push(r)
 				const external = /^https?:/.test(r.href) && !r.href.startsWith(REPO + '/blob/main/docs/')
 				const icon = r.file ? marks(r.file) : ''

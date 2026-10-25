@@ -25,6 +25,17 @@ describe('the sample site', () => {
 		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM sites WHERE id = 'acme'")[0].n).toBe(0)
 	})
 
+	it('sets the sample site up whole on the next run when its goals failed to save', async () => {
+		const env = fakeEnv({ SAMPLE_SITE: 'acme' })
+		const batch = env.CONTROL.batch.bind(env.CONTROL)
+		env.CONTROL.batch = async (stmts) => (stmts.some((s) => s.sql.startsWith('INSERT OR IGNORE INTO goals')) ? Promise.reject(new Error('D1 network error')) : batch(stmts))
+		await expect(fill(env, NOW, 2)).rejects.toThrow('D1 network error')
+		env.CONTROL.batch = batch
+		await fill(env, NOW, 2)
+		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM goals WHERE site_id = 'acme'")[0].n).toBe(SAMPLE.goals.length)
+		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM funnels WHERE site_id = 'acme'")[0].n).toBe(SAMPLE.funnels.length)
+	})
+
 	it('creates a public site with goals and funnels on the sample team, and fills its history a day per run', async () => {
 		const env = fakeEnv({ SAMPLE_SITE: 'acme' })
 		await fill(env, NOW)
@@ -56,10 +67,9 @@ describe('the sample site', () => {
 		// the run starts at the newest stored hit, which inserts nothing again
 		await fill(env, NOW, 40)
 		expect(events(env)).toBe(filled)
-		// five minutes later, only the new hits are added
+		// five minutes later a run adds what is new, and below no hit is stored twice
 		await fill(env, NOW + 5 * MINUTE, 40)
-		const after = events(env)
-		expect(after).toBeGreaterThanOrEqual(filled)
+		expect(events(env)).toBeGreaterThanOrEqual(filled)
 		const ids = (db: FakeEnv['SHARD_0']) => db.rows("SELECT event_id FROM events WHERE site_id = 'acme'").map((r) => r.event_id)
 		const all = [...ids(env.SHARD_0), ...ids(env.SHARD_1)]
 		expect(new Set(all).size).toBe(all.length)

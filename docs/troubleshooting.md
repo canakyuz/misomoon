@@ -51,8 +51,9 @@ domain.
 
 - **A D1 database is not found**: A `database_id` in `wrangler.jsonc` doesn't exist in
   this account, for example after you copied the file from another account. On a
-  command-line install, set the id back to its placeholder, such as
-  `00000000-0000-0000-0000-000000000001`, and the deploy creates the database.
+  command-line install, set the id back to its placeholder from the repository's
+  `apps/api/wrangler.jsonc`, such as `00000000-0000-0000-0000-000000000001`, and the
+  deploy creates a new, empty database.
 - **`pnpm deploy` copies files into a folder instead of deploying**: `deploy` is a
   built-in pnpm command. Use `pnpm --filter @misomoon/api run deploy`.
 
@@ -88,8 +89,9 @@ Set the `PUBLIC_URL` variable to the address of your dashboard, for example
 
 The Stats API allows 100 requests a minute for each API key, or for each IP address
 when the caller has no key. Signed-in dashboards and shared links aren't limited.
-Sign-up, sign-in, password resets, invitation accepts, and shared-link passwords share
-the same limit for each IP address. Wait a minute, or spread the requests out.
+Sign-up, sign-in, password resets, account deletion, invitation accepts, and shared-link
+passwords each allow 100 attempts a minute for each IP address, counted separately for
+each one. Wait a minute, or spread the requests out.
 
 ## Google import fails with `redirect_uri_mismatch`
 

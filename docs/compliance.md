@@ -74,9 +74,9 @@ retention, and browser signals respected, the text reads:
 ```md
 ## Analytics
 
-To see how example.com is used, we use misomoon, a privacy-friendly analytics tool. It sets no cookies and stores nothing on your device.
+To see how example.com is used, we use misomoon, a privacy-friendly analytics tool. It sets no cookies, and stores nothing on your device unless you opt out of being counted, which it remembers in your browser.
 
-To count unique visitors, misomoon makes an identifier from your IP address and browser with a random value that changes every day, and keeps only that identifier. Your IP address is never stored. The identifier can’t be followed from one day to the next or across sites.
+To count unique visitors, misomoon makes an identifier from your IP address and browser with a random value that changes every day, and keeps only that identifier. Your IP address is never stored. The identifier can’t be followed across sites, or from one day to the next, except that a visit still going at midnight UTC keeps both days’ identifiers.
 
 It records:
 

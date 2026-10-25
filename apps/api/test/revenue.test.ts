@@ -74,6 +74,20 @@ describe('revenue settings', () => {
 		expect((await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/paypal', {}, ADMIN)).res.status).toBe(404)
 	})
 
+	it('takes the secret `polar webhook listen` prints, so a local server can count Polar orders', async () => {
+		const env = await shop()
+		const secret = '6t3c8ce2247c493a3ade20uea4484d64'
+		expect((await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret }, ADMIN)).res.status).toBe(200)
+		const body = JSON.stringify({ type: 'order.paid', data: { id: 'ord-local-1', total_amount: 1900, currency: 'usd', billing_reason: 'purchase', customer_id: 'cus-local', metadata: {}, created_at: new Date().toISOString() } })
+		const ts = Math.floor(Date.now() / 1000)
+		const sig = createHmac('sha256', secret).update(`msg_local.${ts}.${body}`).digest('base64')
+		const res = await call(env, 'POST', '/api/webhooks/polar/shop-com', body, { 'webhook-id': 'msg_local', 'webhook-timestamp': String(ts), 'webhook-signature': `v1,${sig}` })
+		expect(res.res.status).toBe(200)
+		expect(payments(env)).toEqual([{ name: 'Payment', visitor: 0, source: null, revenue: 19 }])
+		const bad = await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret: 'polar_oat_123' }, ADMIN)
+		expect([bad.res.status, await bad.json()]).toEqual([400, { error: 'paste the Polar signing secret, which starts with whsec_, or the secret polar webhook listen prints' }])
+	})
+
 	it('keeps signed-out callers out', async () => {
 		const env = await shop()
 		expect((await call(env, 'GET', '/api/v1/sites/shop-com/revenue')).res.status).toBe(401)
@@ -164,6 +178,22 @@ describe('crediting payments to visits, without cookies', () => {
 		expect(renewal).toEqual([{ visitor_id: '', source: 'X', revenue: 15, props: '{"provider":"stripe","billing":"renewal"}' }])
 	})
 
+	it('takes a renewal refund off its source on API versions whose invoices name no payment', async () => {
+		const env = await shop()
+		const sub = { parent: { subscription_details: { subscription: 'sub_9' } }, customer: 'cus_9', currency: 'usd', amount_paid: 1500 }
+		await beacon(env, { n: 'pageview', r: 'https://twitter.com/' })
+		await beacon(env, { n: 'engagement', e: 0, k: 'link_ref_9' })
+		await stripe(env, 'checkout.session.completed', { id: 'cs_live_9', mode: 'subscription', subscription: 'sub_9', customer: 'cus_9', client_reference_id: 'link_ref_9' })
+		// since 2025-03-31 the invoice has no payment_intent; its InvoicePayment names it
+		await stripe(env, 'invoice_payment.paid', { id: 'inpay_9', invoice: 'in_9', status: 'paid', payment: { type: 'payment_intent', payment_intent: 'pi_9' } })
+		await stripe(env, 'invoice.paid', { id: 'in_9', billing_reason: 'subscription_cycle', ...sub })
+		await stripe(env, 'refund.created', { id: 're_9', amount: 1500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_9' })
+		expect(payments(env)).toEqual([
+			{ name: 'Payment', visitor: 1, source: 'X', revenue: 15 },
+			{ name: 'Refund', visitor: 1, source: 'X', revenue: -15 },
+		])
+	})
+
 	it('takes a refund off the source that earned the payment', async () => {
 		const env = await shop()
 		await beacon(env, { n: 'pageview', r: 'https://news.ycombinator.com/' })
@@ -175,6 +205,47 @@ describe('crediting payments to visits, without cookies', () => {
 			{ name: 'Refund', visitor: 1, source: 'Hacker News', revenue: -9 },
 		])
 		expect(await bySource(env)).toEqual({ 'Hacker News': 40 })
+	})
+
+	it('gives the money back when a Stripe refund fails, and counts a redelivered refund no more', async () => {
+		const env = await shop()
+		await stripe(env, 'checkout.session.completed', paid('cs_live_5'))
+		const refund = { id: 're_2', amount: 900, currency: 'usd', payment_intent: 'pi_cs_live_5' }
+		await stripe(env, 'refund.created', { ...refund, status: 'pending' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49, -9])
+		await stripe(env, 'refund.failed', { ...refund, status: 'failed' })
+		expect(payments(env)).toEqual([{ name: 'Payment', visitor: 0, source: null, revenue: 49 }])
+		await stripe(env, 'refund.created', { ...refund, status: 'pending' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
+	})
+
+	it('never counts a refund canceled before its refund.created arrives', async () => {
+		const env = await shop()
+		await stripe(env, 'checkout.session.completed', paid('cs_live_6'))
+		const refund = { id: 're_3', amount: 900, currency: 'usd', payment_intent: 'pi_cs_live_6' }
+		await stripe(env, 'refund.updated', { ...refund, status: 'canceled' })
+		await stripe(env, 'refund.created', { ...refund, status: 'requires_action' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
+	})
+
+	it('gives the money back when a Polar refund fails after it succeeded', async () => {
+		const env = await shop()
+		const secret = `whsec_${Buffer.from('a 32 byte key for standard hooks').toString('base64')}`
+		await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret }, ADMIN)
+		const polar = (type: string, data: Record<string, unknown>) => {
+			const body = JSON.stringify({ type, data })
+			const ts = Math.floor(Date.now() / 1000)
+			const id = `msg_${Math.random()}`
+			const sig = createHmac('sha256', Buffer.from('a 32 byte key for standard hooks')).update(`${id}.${ts}.${body}`).digest('base64')
+			return call(env, 'POST', '/api/webhooks/polar/shop-com', body, { 'webhook-id': id, 'webhook-timestamp': String(ts), 'webhook-signature': `v1,${sig}` })
+		}
+		const now = new Date().toISOString()
+		await polar('order.paid', { id: 'ord-1', total_amount: 4900, currency: 'usd', billing_reason: 'purchase', customer_id: 'cus-1', metadata: {}, created_at: now })
+		const refund = { id: 'rf-1', amount: 900, tax_amount: 0, currency: 'usd', order_id: 'ord-1', created_at: now, modified_at: now }
+		await polar('refund.updated', { ...refund, status: 'succeeded' })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49, -9])
+		await polar('refund.updated', { ...refund, status: 'failed', modified_at: new Date(Date.now() + 60_000).toISOString() })
+		expect(payments(env).map((p) => p.revenue)).toEqual([49])
 	})
 
 	it('reads Lemon Squeezy refunds as the change in the refunded total', async () => {
@@ -256,6 +327,32 @@ describe('a payment ends up with its strongest key, whatever order things arrive
 			{ name: 'Payment', visitor: 1, source: 'Google', revenue: 19 },
 		])
 		expect(await bySource(env)).toEqual({ 'Hacker News': 49, Google: 19 })
+	})
+
+	it('keeps the ref when its beacon is handled while the webhook is still crediting the customer', async () => {
+		const env = await shop()
+		const post = await ownServer(env)
+		await visit(env, 'https://news.ycombinator.com/', HN_IP)
+		await ref(env, 'ref_first_visit', HN_IP)
+		await post({ id: 'order_1', amount: 49, currency: 'USD', ref: 'ref_first_visit', customer: 'cus_9' })
+		await visit(env, 'https://www.google.com/', GOOGLE_IP)
+		// the webhook finds only the customer's old visit; before it writes that, the ref beacon is handled
+		const batch = env.CONTROL.batch.bind(env.CONTROL)
+		let raced = false
+		env.CONTROL.batch = async (stmts) => {
+			if (!raced && stmts.some((s) => s.sql.startsWith('UPDATE payments SET attributed_by'))) {
+				raced = true
+				await ref(env, 'ref_second_visit', GOOGLE_IP)
+			}
+			return batch(stmts)
+		}
+		await post({ id: 'order_2', amount: 19, currency: 'USD', ref: 'ref_second_visit', customer: 'cus_9' })
+		expect(raced).toBe(true)
+		expect(env.CONTROL.rows("SELECT id, attributed_by FROM payments WHERE id = 'order_2'")).toEqual([{ id: 'order_2', attributed_by: 'ref_second_visit' }])
+		expect(payments(env)).toEqual([
+			{ name: 'Payment', visitor: 1, source: 'Hacker News', revenue: 49 },
+			{ name: 'Payment', visitor: 1, source: 'Google', revenue: 19 },
+		])
 	})
 
 	it('keeps crediting a customer to their first visit when a later payment carries nothing else', async () => {

@@ -236,9 +236,10 @@
 		inset: 0;
 		z-index: 29;
 	}
+	/* the picker sits at the header's right end, so the calendar opens leftward from it */
 	.pop {
 		position: absolute;
-		left: 50%;
+		right: 0;
 		top: calc(100% + 6px);
 		display: grid;
 		grid-template-columns: 188px auto;
@@ -247,13 +248,12 @@
 		z-index: 30;
 		box-shadow: var(--shadow-lg);
 		text-align: left;
-		transform: translateX(-50%);
 		animation: drop var(--dur) var(--ease-out);
 	}
 	@keyframes drop {
 		from {
 			opacity: 0;
-			transform: translate(-50%, -4px);
+			transform: translateY(-4px);
 		}
 	}
 	.presets {

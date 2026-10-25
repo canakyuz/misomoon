@@ -15,43 +15,142 @@ To hide imported history, turn off
 appears once the site has a finished import, and it starts on. Turning it off adds
 `imported=0` to the address, which [the API](api.md#query-parameters) also accepts.
 
+## Days that count once
+
+misomoon adds imported days to the days it counted itself, so it keeps each day from one
+place only. An import keeps the days that are:
+
+- Before the first day misomoon counted on the site, in the site's time zone. The day you
+  added the script holds part of a day from misomoon, so it isn't imported either.
+- Outside the days of every earlier finished import. The first import of a day wins, so
+  import the source you trust most first.
+
+You can upload a whole export and leave the trimming to misomoon. The import's row says
+how many days it skipped, as in `Skipped 5 days already counted`. If no day is left, the
+upload fails and stores nothing, with one of these errors:
+
+- `misomoon has counted this site since 2026-10-12, and every day in this import is on or after it, so there is nothing to add`
+- `earlier imports already cover every day in this import, so there is nothing to add`
+
+An import checks the days when it runs. Days misomoon counts later don't change it, and
+deleting an import doesn't bring back days another import skipped. To import those days,
+delete the later import and upload it again.
+
 ## Import a Google Analytics property
 
-misomoon adds imported days to the days it collected, so a day in both counts twice.
-Import only the days before misomoon started collecting on the site. A self-hosted
-instance first needs [Google sign-in](#set-up-google-sign-in-on-your-instance).
+A self-hosted instance first needs
+[Google sign-in](#set-up-google-sign-in-on-your-instance).
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Connect Google**.
 3. Sign in with a Google account that can read the property, and allow access. Finish
-   within an hour of the click.
+   within an hour of the click, in the same browser. A sign-in that ends in another
+   browser stops at a page that says "This Google sign-in was started in another
+   browser." Click **Connect Google** again in the browser you use misomoon in.
+   If you cancel, take more than an hour, or Google refuses, **Settings** shows why, for
+   example "The Google sign-in was canceled, so nothing was connected."
 4. Back in **Settings**, pick the property in **Google property**. The list shows each
    property as `Account: Property`.
-5. In **To**, set the day before misomoon started collecting.
-6. To start later than the earliest day Google has, set **From**.
-7. Click **Import**.
+5. To start later than the earliest day Google has, set **From**. To end earlier, set
+   **To**.
+6. Click **Import**.
 
 Both dates are included. An empty **From** starts at `2015-08-14`, the earliest day
-Google serves. An empty **To** ends yesterday.
+Google serves. An empty **To**, or one on or after the first day misomoon counted, ends
+the day before that day. On a site misomoon hasn't counted yet, an empty **To** ends
+yesterday. Days an earlier import covers are skipped
+([Days that count once](#days-that-count-once)).
 
 The import runs on the server, so you can close the page. Its row says **Importing…**
 until it shows the first and last day and the number of rows stored. If it shows
-**Failed:** and an error, delete it and start again at **Connect Google**.
+**Failed:** and an error, delete it and start again at **Connect Google**. A failed import
+keeps none of its rows, so starting again counts no day twice. An import still
+**Importing…** after an hour was stopped part way: within the next hour misomoon marks it
+**Failed**, with "The import stopped before it finished", and deletes its rows.
+
+misomoon deletes the Google sign-in it got for the import when the import ends, and within
+a day if you never start one.
+
+## Import from another tool
+
+misomoon reads the history of some analytics tools straight from their APIs. The
+**Import from another tool** list in the **Import history** card shows them, and each
+tool's [switching guide](README.md#switch-from-another-tool) lists what it brings.
+
+1. Open **Settings** > **Integrations**.
+2. In the **Import history** card, pick the tool in **Import from another tool**.
+3. Fill in the fields the tool asks for, such as its server address, the site's ID in
+   the tool, and an API key. **Switching guide** at the top of the form says where to find
+   them.
+4. Optionally, set **From** and **To**.
+5. Click **Import**.
+
+misomoon checks the fields and signs in to the tool while you wait. A wrong key or an
+address it can't reach stops the import there, with the tool's answer, and stores nothing.
+The server address must be a public `https://` address without a port.
+
+Both dates are included. An empty **From** starts on the first day the tool has, when the
+tool says which day that is. Otherwise the form asks you to set **From**. An empty **To**,
+or one on or after the first day misomoon counted, ends the day before that day. Days an
+earlier import covers are skipped ([Days that count once](#days-that-count-once)).
+
+The import runs on the server, from the newest day back, so you can close the page. It
+reads for a few minutes at a time, then goes on every five minutes. Its row shows
+**Importing…** and the days read so far, such as `120 of 365 days`, and each finished day
+shows in your reports as soon as it's read.
+
+- When the tool asks misomoon to slow down, misomoon waits as long as the tool asks.
+- When the tool doesn't answer, or answers with a server error, misomoon tries again five
+  minutes later, up to six runs in a row. Then the import fails.
+- When the tool refuses the key part way, the import fails.
+- When one day takes more time or requests than a run has, as a day of many custom
+  events can at a tool's rate limit, misomoon reads it again in the next run, up to six
+  runs in a row without a finished day. Then the import fails with
+  `<tool> needs more time or requests for one day than a run has`.
+
+A failed import keeps none of its rows and shows **Failed:** with the tool's answer.
+misomoon keeps the API key or password while the import runs and deletes it when the
+import finishes, fails, or is deleted. A running import stops when you delete it.
 
 ## Upload CSV files
 
 misomoon reads a CSV export as one ZIP file or as the CSV files from it.
-[CSV format](#csv-format) lists the files and columns.
+[CSV format](#csv-format) lists the files and columns. It also reads some analytics tools'
+own export files as they come, ZIP or gzipped `.csv.gz` alike. Each tool's
+[switching guide](README.md#switch-from-another-tool) says whether its export is one of
+them.
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Upload CSV or zip**.
-3. Pick the ZIP file, or one or more CSV files.
+3. Pick the ZIP file, one or more CSV files, or the other tool's export file.
 
 Include `imported_visitors.csv`, the only file that fills the site totals and the chart.
-misomoon reads the files while you wait and skips the ones it doesn't read. If no file
+misomoon keeps only the days nothing counted yet
+([Days that count once](#days-that-count-once)). It reads the files while you wait and skips the ones it doesn't read. If no file
 holds rows it reads, the upload fails with
-`no imported_*.csv files found (expected a CSV export)`. To upload from a script, see
+`no imported_*.csv files found (expected a CSV export, or an export misomoon reads from another tool)`.
+An export of another tool's that misomoon reads but can't take, such as one in a format
+version it doesn't know, fails with the reason, and stores nothing. To upload from a script, see
 [the API reference](api.md#imports).
+
+### Raw event exports
+
+Some tools export raw events, one row or line per page view or custom event. misomoon
+counts them as its tracker counts visits:
+
+- A visitor's visit ends after 30 minutes without an event, unless the export has its own
+  visit id ([A visit ends after 30 minutes without activity](metrics.md#a-visit-ends-after-30-minutes-without-activity)).
+- A visit takes its source, UTM tags, place, browser, operating system, and device from its
+  first event. A referrer on the site's own host counts as none, and an app's
+  `android-app://` referrer names the app's site, as the tracker reads it.
+- A visit with one page view and no other event is a bounce
+  ([A bounce is a visit with one pageview and no interaction](metrics.md#a-bounce-is-a-visit-with-one-pageview-and-no-interaction)).
+- A visit counts on the day it starts in the site's **Timezone**, and a custom event on
+  the day it was sent.
+
+Upload all the files of one export at once, such as the page views and the events, so
+that an event joins its visit. A visit cut off at the end of an export counts as a shorter
+visit, so export whole days.
 
 ### CSV format
 
@@ -65,7 +164,9 @@ folder. misomoon skips files for reports that the table below doesn't list.
 - Commas separate values. A value in double quotes may hold commas and line breaks, and
   `""` inside it is one double quote.
 - Counts are rounded to whole numbers. An empty, negative, or non-numeric count is `0`.
-- Text values are trimmed and cut at 500 characters. An empty value becomes `(none)`.
+- Text values are trimmed and cut at 500 characters. An empty value becomes `(none)`. An
+  empty `country`, `region`, `browser_version`, or `operating_system_version` adds nothing
+  to its report.
 
 The visit columns are `visitors` (unique visitors that day), `visits`, `pageviews`,
 `bounces`, and `visit_duration` (the total length of all visits, in seconds).
@@ -86,8 +187,9 @@ The visit columns are `visitors` (unique visitors that day), `visits`, `pageview
 ## Delete an import
 
 Each import is separate. To import the same days again, delete the old import first, or
-those days count twice. If an import says **Importing…**, wait until it finishes or
-fails. Rows that a running import writes after you delete it stay in your reports.
+the new one skips them ([Days that count once](#days-that-count-once)). If a Google import says **Importing…**, wait until it finishes or
+fails: rows it writes after you delete it stay in your reports. An import from another
+tool stops when you delete it and keeps none of its rows.
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Delete import** on the import's row.
@@ -103,7 +205,10 @@ Without it, the **Google Search Console** card says **Not enabled on this server
 
 1. Open **Settings** > **Integrations**.
 2. In the **Google Search Console** card, click **Connect Search Console**.
-3. Sign in with a Google account that has the site in Search Console, and allow access.
+3. Sign in with a Google account that has the site in Search Console, and allow access,
+   in the same browser. A sign-in that ends in another browser stops at a page that says
+   "This Google sign-in was started in another browser." If you cancel, take more than
+   an hour, or Google refuses, **Settings** shows why.
 4. Back in **Settings**, pick the property in **Search Console property**. Properties
    for the site's domain come first and say **matches this site**.
 5. Click **Connect**.
@@ -114,7 +219,9 @@ property. Connecting another one replaces it.
 
 To see the search terms, open **Overview**, click the **Organic Search** channel in
 **Where they come from**, then click the **Search terms** tab. The tab lists the terms
-with the most clicks from Google in the period. For impressions, click-through rate, and position, call
+with the most clicks from Google in the period. Only the site's team and its guests see
+the tab: a [shared link](sharing.md#what-a-viewer-sees) or a
+[public site](sharing.md#what-public-means) viewer doesn't. For impressions, click-through rate, and position, call
 [the breakdown endpoint](api.md#get-apiv1statsbreakdown) with `property=search_term`, or
 use the `get_search_terms` [MCP tool](mcp.md#tools).
 
@@ -146,6 +253,12 @@ instance already has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, you are done
    wrangler secret put GOOGLE_CLIENT_ID
    wrangler secret put GOOGLE_CLIENT_SECRET
    ```
+
+misomoon ties each sign-in to the browser that started it with a cookie, so a link to the
+callback that someone else opens connects nothing. In `wrangler dev` at
+`http://localhost:8787`, and through the dashboard's dev server, the cookie goes without
+`Secure` because the address is HTTP; add `http://localhost:8787/api/v1/google/callback`
+as a redirect URI to sign in there.
 
 On an instance deployed with the button, set the secrets under the Worker's
 **Settings** > **Variables and Secrets** in the Cloudflare dashboard. misomoon builds the
@@ -183,6 +296,8 @@ other secrets.
 - From Google, a bounce is a session that wasn't engaged (`sessions` minus
   `engagedSessions`). Google's own events `page_view`, `session_start`, `first_visit`,
   `user_engagement`, and `scroll` are left out, because misomoon measures them itself.
+  Google's `click` (an outbound click), `file_download`, and `form_submit` become
+  `Outbound link`, `Download`, and `Form sent`, so they add up with what misomoon tracks.
 
 ### What imports leave out
 
@@ -200,10 +315,14 @@ other secrets.
 | Limit | Value |
 | --- | --- |
 | Time to finish a Google sign-in | 1 hour from the click on **Connect Google** or **Connect Search Console** |
-| Google import dates | `YYYY-MM-DD`. Another form falls back to the default. |
+| Google import dates | `YYYY-MM-DD`. Another form falls back to the default. A **From** after the day before misomoon's first counted day fails with `misomoon has counted this site since 2026-10-12, so the import must start before it`. |
 | Import name, import error, and CSV text value | 120, 500, and 500 characters |
+| Another tool's CSV export of single page views | 50 MB unzipped. A larger one fails with the reason, and the tool's guide names a smaller export to upload instead. |
+| Raw event exports in one upload | 50 MB unzipped, all files together. More fails with `these raw event exports are larger than 50 MB unzipped; upload fewer days at a time`. |
+| A field of an import from another tool | 500 characters. More fails with `<field> must be text of at most 500 characters`. |
+| Requests an import from another tool makes in one run | 2,000, and no more than the tool allows |
 | Search terms per page | 1,000 from the breakdown, 100 from the MCP tool |
-| Imports while the site's data moves between shards | Fail with `this site's history is being moved between shards; try the import again in a few hours` |
+| Imports while the site's data moves between shards | CSV and Google imports fail with `this site's history is being moved between shards; try the import again in a few hours`. An import from another tool waits an hour and goes on. |
 
 ### Roles
 
@@ -211,7 +330,8 @@ other secrets.
 | --- | --- |
 | Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` | Whoever deploys the Worker |
 | Import, see, and delete imports, and connect or disconnect Search Console | Owner, admin, editor, and guest editor |
-| See imported numbers, **Include imported history**, and search terms | Everyone who can see the site's reports |
+| See imported numbers and **Include imported history** | Everyone who can see the site's reports |
+| See search terms | Members of the site's team and its guests. A shared link or a public site viewer gets `403` with `search terms are shown to the site's team only`. |
 
 An API key acts with its owner's role. The routes are in the API reference under
 [Imports](api.md#imports) and [Google Search Console](api.md#google-search-console).

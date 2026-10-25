@@ -84,7 +84,7 @@ where did they come from?" It should call `list_sites`, then `get_aggregate` and
 | `get_web_vitals` | p75 and good, needs-improvement, and poor counts for LCP, INP, CLS, FCP, and TTFB. |
 | `run_funnel` | Conversion through up to 8 page or event steps. |
 | `get_journeys` | The most common paths through the site. |
-| `get_search_terms` | Google Search Console queries, if the site is connected. |
+| `get_search_terms` | Google Search Console queries, if the site is connected. Needs a role on the site, so a client without a key on a public site gets an error. |
 | `get_page_interactions` | Clicks, scroll depth, site search, JavaScript errors, forms, media, or tagged content, one report at a time, for the site or one page. |
 | `add_annotation` | Adds a note to the site timeline, such as a deploy. Needs the editor role or above. |
 | `list_dimensions` | Every dimension that breakdowns and filters accept. |
@@ -105,6 +105,10 @@ ways:
 `compare` takes `previous` or `year`. `run_funnel` takes 2 to 8 steps, and
 `get_journeys` takes a `path` of up to 6 pages. `add_annotation` takes `text` of up to
 200 characters and an optional ISO `ts`, which defaults to now.
+
+`tools/list` marks every tool `readOnlyHint: true` except `add_annotation`, which is
+marked `readOnlyHint: false` and `destructiveHint: false`: it adds a note and never
+changes or deletes one. A client that asks before a tool writes asks for that one only.
 
 ## Limits
 

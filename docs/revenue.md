@@ -34,6 +34,10 @@ subscription. A ref or a checkout id is kept for 30 days.
 A payment that finds no visit still counts toward total revenue. Reports list it under
 **Unknown**.
 
+Totals add the revenue of every event, the tracker's included. If your site also sends
+`misomoon('Purchase', { revenue })` for a sale that a webhook reports, that sale counts
+twice. Leave `revenue` out of the tracker event once a provider is connected.
+
 ## Connect a provider
 
 1. Open **Settings** > **Revenue** and pick your provider.
@@ -51,15 +55,42 @@ gets no ref but still works.
 
 | Provider | Id | Where to add the webhook | Events |
 | --- | --- | --- | --- |
-| Stripe | `stripe` | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `refund.created` |
+| Stripe | `stripe` | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice_payment.paid`, `refund.created`, `refund.updated`, `refund.failed` |
 | Polar | `polar` | **Settings** > **Webhooks**, format **Raw** | `order.paid`, `refund.created`, `refund.updated` |
 | Lemon Squeezy | `lemonsqueezy` | **Settings** > **Webhooks** | `order_created`, `order_refunded`, `subscription_created`, `subscription_payment_success`, `subscription_payment_refunded` |
 | Dodo Payments | `dodo` | **Developer** > **Webhooks** | `payment.succeeded`, `refund.succeeded` |
 | Your server | `custom` | Your own code ([Send payments from your own server](#send-payments-from-your-own-server)) | Payments and refunds |
 
+Stripe API versions from 2025-03-31 on leave the payment out of an invoice, so
+`invoice_payment.paid` tells misomoon which payment paid it. Without that event, a refund
+of a subscription payment still counts toward total revenue, under **Unknown**.
+
+A refund counts when Stripe creates it, or when Polar marks it succeeded. A Stripe refund
+can still fail weeks later. When a refund fails or is canceled, misomoon deletes its
+`Refund` event, and the payment counts in full again.
+
 **Settings** > **Revenue** shows the time of the last event. If a webhook fails its
 signature check, the page shows the error. Test-mode payments from Stripe and Lemon
 Squeezy mark the connection as working but don't count toward revenue.
+
+### Test Polar on your machine
+
+On a misomoon server running in `wrangler dev`, the
+[Polar CLI](https://polar.sh/docs/integrate/cli/webhooks) can deliver Polar's webhooks
+without a public URL. Use a site kept for testing, because the sample orders count as
+revenue.
+
+1. Sign in to the CLI with `polar auth login --sandbox`, then forward to the site's
+   webhook URL. It prints a secret.
+
+   ```sh
+   polar webhook listen http://localhost:8787/api/webhooks/polar/<site id>
+   ```
+
+2. Paste that secret into **Settings** > **Revenue** > **Polar**. misomoon takes the
+   CLI's 32-character secret as well as one that starts with `whsec_`.
+3. Send a sample order with `polar webhook trigger order.paid`. The CLI shows misomoon's
+   answer, and **Settings** > **Revenue** shows the time of the event.
 
 ## Pass the ref to the checkout
 
@@ -145,7 +176,7 @@ reason, and a bad signature returns `401`.
 ## Read revenue on the dashboard
 
 Payments are events named `Payment` and refunds are events named `Refund`, with a
-negative amount. Each event has the props `provider` and `billing`. They appear in
+negative amount. Each event has the prop `provider`, and a payment also has `billing`. They appear in
 **What they did**, and the revenue they carry shows next to each source, country, and
 device. To see revenue for one provider, filter by the prop `provider`.
 

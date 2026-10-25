@@ -77,7 +77,14 @@ async function dispatch(env: Env, who: Principal, call: RpcRequest) {
 			return ok({})
 		case 'tools/list':
 			return ok({
-				tools: TOOLS.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: { readOnlyHint: true, openWorldHint: false } })),
+				tools: TOOLS.map((t) => ({
+					name: t.name,
+					title: t.title,
+					description: t.description,
+					inputSchema: t.inputSchema,
+					// the one tool that writes, add_annotation, adds a row and never changes or deletes one
+					annotations: t.writes ? { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } : { readOnlyHint: true, openWorldHint: false },
+				})),
 			})
 		case 'tools/call': {
 			const name = String(call.params?.name ?? '')

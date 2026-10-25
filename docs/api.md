@@ -206,7 +206,8 @@ rows have more:
 `search_term` rows have `key`, `clicks`, `impressions`, `ctr` (percent), `position` (1 is
 the top), and `visitors`, which holds the clicks. They come live from Google and stay
 cached for ten minutes. A site without [Search Console](#google-search-console) returns
-`409`.
+`409`. Search terms need a role on the site: a shared link token, or a request without a
+token for a public site, returns `403` with `search terms are shown to the site's team only`.
 
 ### POST /api/v1/stats/funnel
 
@@ -421,10 +422,10 @@ A `sh_` token lasts 7 days, or until the link expires if that is sooner.
 | Method and path | Role | What it does |
 | --- | --- | --- |
 | `GET /api/v1/sites/:id/reports` | Editor | `{"subscriptions": [...], "sending": true}`. A subscription has `id`, `email`, `kind`, `threshold`, `last_sent_at`. `sending` is `false` without an email provider. |
-| `POST /api/v1/sites/:id/reports` | Editor | Subscribes `email` to `kind`, with an optional whole-number `threshold`. Returns `201` with `{"ok": true}`. |
+| `POST /api/v1/sites/:id/reports` | Editor | Subscribes `email` to `kind`, with an optional whole-number `threshold`. Returns `201` with `{"ok": true}`, or `400` when the site already has 20 subscriptions ([the limits](reports.md#limits)). |
 | `DELETE /api/v1/sites/:id/reports/:report` | Editor | Deletes a subscription. Returns `204`. |
 | `GET /api/v1/sites/:id/reports/preview` | Editor | The report as it would go out now, as HTML. `kind` is `weekly` (default) or `monthly`. `format=pdf` returns the PDF attachment, which needs the `BROWSER` binding (`501` without it, `503` when printing fails). |
-| `POST /api/v1/sites/:id/reports/test` | Editor | Sends the `weekly` (default) or `monthly` report now to `email`. Returns `{"ok": true}`, or `503` when the email could not go out. |
+| `POST /api/v1/sites/:id/reports/test` | Editor | Sends the `weekly` (default) or `monthly` report now to `email`. Returns `{"ok": true}`, `429` after 10 tests from the site in an hour ([the limits](reports.md#limits)), or `503` when the email could not go out. |
 
 A second subscription for the same email and kind replaces the threshold. A threshold
 out of range returns `400`.
@@ -443,12 +444,13 @@ it to the site's own data.
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
-| `GET /api/v1/sites/:id/imports` | Editor | Lists the imports, newest first: `id`, `site_id`, `source` (`csv` or `google`), `label`, `from_day`, `to_day`, `status` (`importing`, `done`, or `failed`), `error`, `rows`, `created_at`. |
-| `POST /api/v1/sites/:id/imports` | Editor | Imports a CSV export. Returns `201` and the import. |
+| `GET /api/v1/sites/:id/imports` | Editor | Lists the imports, newest first: `id`, `site_id`, `source`, `label`, `from_day`, `to_day`, `status` (`importing`, `done`, or `failed`), `error`, `rows`, `skipped_days` (days left out because misomoon or an earlier import counted them), `created_at`, and for an import from another tool that is still running, `days_done` and `days_total` (otherwise `null`). `source` is `csv`, `google`, or the importer's id. |
+| `POST /api/v1/sites/:id/imports` | Editor | Imports the `file` fields of a multipart form: a CSV export as a ZIP or its `imported_*.csv` files, or another tool's export that misomoon reads ([Upload CSV files](import.md#upload-csv-files)), with `.gz` files unzipped first. It leaves out the days misomoon or an earlier import counted ([Days that count once](import.md#days-that-count-once)). Returns `201` and the import, or `400` when no day is left or an export can't be read, with the reason. |
 | `DELETE /api/v1/sites/:id/imports/:import` | Editor | Deletes the import and its rows on every shard. Returns `204`. |
+| `POST /api/v1/sites/:id/imports/api` | Editor | Imports from another tool's API ([Import from another tool](import.md#import-from-another-tool)). Takes `importer` (the tool's id, such as `umami`), `input` (an object of the tool's form fields as strings, such as `website` and `key`), and `from` and `to` (`YYYY-MM-DD`, optional, with the same defaults as the form). Checks the sign-in first and returns `400` with the tool's answer when it fails, or `202` with `{"id": ..., "status": "importing"}`. The import goes on in the background. |
 | `POST /api/v1/sites/:id/imports/google/connect` | Editor | Step 1 of a Google import. Returns `{"url": ...}`, the Google consent page. Sign-in must finish within an hour. Google then returns the person to the dashboard settings with `google=<grant id>` in the URL. |
 | `GET /api/v1/sites/:id/imports/google/properties` | Editor | Step 2. The Google Analytics properties the Google account can read, for `grant=<grant id>`: `id` (`properties/123`), `name`, `account`. |
-| `POST /api/v1/sites/:id/imports/google` | Editor | Step 3. Takes `grant` and `property` (both required), `from` and `to` (`YYYY-MM-DD`, default the earliest day Google serves and yesterday in UTC), and `label`. Imports in the background and returns `202` with `{"id": ..., "status": "importing"}`. The server deletes the grant when the import finishes. |
+| `POST /api/v1/sites/:id/imports/google` | Editor | Step 3. Takes `grant` and `property` (both required), `from` and `to` (`YYYY-MM-DD`, default the earliest day Google serves and the day before misomoon's first counted day, or yesterday in UTC before it). A `to` on or after misomoon's first day becomes the day before it, and a `from` after that returns `400`. Also takes `label`. Imports in the background and returns `202` with `{"id": ..., "status": "importing"}`. The server deletes the grant when the import finishes. |
 
 The CSV import takes `multipart/form-data` with one or more `file` fields: a ZIP of the
 export, or its CSV files named `imported_<table>.csv` or
@@ -458,6 +460,13 @@ export, or its CSV files named `imported_<table>.csv` or
 history moves between shards, it returns `409`, so try again a few hours later.
 
 Without Google configured, the Google routes return `501`.
+
+A `connect` route also sets the `misomoon_google` cookie (`HttpOnly`, `SameSite=Lax`,
+`Secure` over HTTPS, path `/api/v1/google`, one hour), which holds the OAuth state. Google
+sends the person to `GET /api/v1/google/callback`, which finishes the sign-in only when
+that cookie matches the state, and clears it. Without the cookie, or with another
+sign-in's, it answers `403` with a page saying the sign-in was started in another browser,
+and asks Google for nothing. Call `connect` from the browser that opens the consent page.
 
 ### Google Search Console
 
@@ -548,7 +557,7 @@ work in every mode.
 | --- | --- | --- |
 | `GET /api/v1/me` | Any | Who you are, and what you can open. |
 | `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
-| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members. |
+| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
 
 `GET /api/v1/me` returns:
 
@@ -585,7 +594,7 @@ work in every mode.
 | `GET /api/v1/teams` | Session | Your teams: `id`, `name`, your `role`, and the number of `members` and `sites`. |
 | `POST /api/v1/teams` | Session | Makes a team with you as owner. Takes `name` (cut to 80 characters, default `My team`). Returns `201` with `id`, `name`, `created_at`, and `role`. With plans on, the team gets the free trial only if it is the first team you create; otherwise it needs a plan before it can add a site. |
 | `PATCH /api/v1/teams/:team` | Session, team owner or admin | Renames the team. Takes `name`. |
-| `DELETE /api/v1/teams/:team` | Session, team owner | Deletes the team. Returns `204`, or `409` while it has sites. |
+| `DELETE /api/v1/teams/:team` | Session, team owner | Deletes the team. Returns `204`, or `409` while it has sites or a paid plan that still renews. |
 | `GET /api/v1/teams/:team/members` | Session, team owner or admin | `{"members": [...], "guests": [...], "invitations": [...]}`. Members have `id`, `email`, `name`, `role`, `created_at`. Guests have `id`, `email`, `name`, `role`, `site_id`. Invitations have `id`, `email`, `role`, `site_id`, `expires_at`, `created_at`. |
 | `PATCH /api/v1/teams/:team/members/:user` | Session, team owner or admin | Changes a member's `role` to `owner`, `admin`, `editor`, `viewer`, or `billing`. |
 | `DELETE /api/v1/teams/:team/members/:user` | Session, team owner or admin, or the member | Removes a member, or leaves the team. Returns `204`. |
@@ -628,14 +637,15 @@ they answer `501` and name it ([Billing](configuration.md#billing)).
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
-| `POST /api/v1/teams/:team/checkout` | Session, team owner or billing member | Takes `{"plan": "growth"}`: `starter`, `growth`, or `scale`. For a team without a subscription, it creates a Polar checkout with the team id in its metadata, your email filled in, and **Settings** > **Team** as the way back, and returns `{"url": ...}` to open. For a team that pays for a subscription, it switches that subscription to the plan, resuming it first when it is canceled, and returns the team's new state: `url` (`null`), `plan`, `plan_status`, `plan_period_end`, and `pending` (`plan` and `applies_at` for a switch Polar applies at the next renewal, or `null`). |
+| `POST /api/v1/teams/:team/checkout` | Session, team owner or billing member | Takes `{"plan": "growth"}`: `starter`, `growth`, or `scale`. For a team without a subscription, it first asks Polar for a subscription carrying the team id in its metadata, then creates a Polar checkout with the team id in its metadata, your email filled in, and **Settings** > **Team** as the way back, and returns `{"url": ...}` to open. For a team that pays for a subscription, including one Polar has and whose webhook hasn't come yet, it switches that subscription to the plan, resuming it first when it is canceled, and returns the team's new state: `url` (`null`), `plan`, `plan_status`, `plan_period_end`, and `pending` (`plan` and `applies_at` for a switch Polar applies at the next renewal, or `null`). |
 | `POST /api/v1/teams/:team/portal` | Session, team owner or billing member | Opens a Polar customer portal session for the team's customer, for the card, invoices, and cancelling. Returns `{"url": ...}`. |
 | `POST /api/billing/polar/webhook` | Public, signed by Polar | Takes Polar's `subscription.*` webhooks and sets the team's plan from the subscription. Returns `{"ok": true}`, or `{"ok": true, "duplicate": true}` for a `webhook-id` it handled before. Another event, a product that is none of the plans, or a subscription without a team returns `202` with `{"ok": true, "ignored": true}`. |
 
 An admin, editor, viewer, or API key gets `403`, and a team you are not on `404`. An
 unknown `plan` returns `400`. When Polar can't charge the card for a switch, the checkout
-route returns `402` with the code `payment_failed`, and nothing changes. A change Polar
-refuses, or the portal for a team that has not paid yet, returns `409`. When Polar refuses
+route returns `402` with the code `payment_failed`, and nothing changes. While the team's
+last checkout is still taking the payment, it returns `409` with the code
+`payment_pending` and opens no checkout. A change Polar refuses, or the portal for a team that has not paid yet, returns `409`. When Polar refuses
 a request or does not answer, the routes return `502`.
 
 The webhook returns `401` when the signature does not match or the `webhook-timestamp` is

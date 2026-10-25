@@ -1,16 +1,13 @@
-import adapter from '@sveltejs/adapter-static'
+import adapter from '@sveltejs/adapter-cloudflare'
 import { sveltekit } from '@sveltejs/kit/vite'
 import { defineConfig } from 'vite-plus'
 
 export default defineConfig({
 	plugins: [
 		sveltekit({
-			// every page is prerendered from docs/; the Worker only serves files
-			adapter: adapter({ pages: 'build', strict: true }),
-			// a link to a page or a heading that doesn't exist fails the build
-			prerender: { entries: ['*', '/404'], handleHttpError: 'fail', handleMissingId: 'fail' },
-			// the canonical and structured-data URLs are built from page.url.origin
-			paths: { origin: 'https://docs.misomoon.com' },
+			// each page renders in the Worker from docs/ (src/hooks.server.ts caches it);
+			// src/lib/server/docs.test.ts fails on a link to a page or heading that doesn't exist
+			adapter: adapter(),
 			output: { bundleStrategy: 'single' },
 		}),
 	],

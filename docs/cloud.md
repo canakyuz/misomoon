@@ -66,6 +66,10 @@ A move to a smaller plan deletes no site and changes no setting:
   visits, events, and payments older than the new limit. Each site's **Keep stats for**
   stays as it was, and applies again if the team moves back up. Export what you want to
   keep first ([Take your data with you](#take-your-data-with-you)).
+- With more events this month than the new plan's stop, 125% of its events, recording
+  stops as soon as the new plan applies and starts again when the next month starts
+  ([Go past your monthly events](#go-past-your-monthly-events)). The switch dialog in
+  **Settings** > **Team** says so before you switch.
 
 ### Go past your monthly events
 

@@ -1,3 +1,4 @@
+import { embedFrom } from './embed'
 import type { TeamPlanInfo } from '@misomoon/core/plans'
 import type { SiteRole, TeamRole } from '@misomoon/core/roles'
 import type { Region } from '@misomoon/core/shard'
@@ -15,6 +16,9 @@ export const emailLink: { kind: 'invite' | 'reset'; token: string } | null = (()
  * signed out, so it never uses (or shows) the viewer's own account.
  */
 export const demoPath: boolean = /^\/demo\/?$/.test(location.pathname)
+
+/** `/demo?embed`: the demo inside the landing's fig. 1. Read at load, since the dashboard rewrites the URL. */
+export const embedded = embedFrom(location.pathname, location.search)
 
 /** `?signup` on the URL, from the landing's Start free buttons: open on the sign-up form. */
 export const signupLink: boolean = !demoPath && new URLSearchParams(location.search).has('signup')
@@ -268,14 +272,20 @@ export interface ContentReport {
 
 export interface ImportRow {
 	id: string
-	source: 'csv' | 'google'
+	/** csv, google, or an importer id (IMPORTER_INFO in @misomoon/core/importers) */
+	source: string
 	label: string
 	from_day: string | null
 	to_day: string | null
 	status: 'importing' | 'done' | 'failed'
 	error: string | null
 	rows: number
+	/** days left out because misomoon or an earlier import counted them already */
+	skipped_days: number
 	created_at: number
+	/** while an import from another tool runs: the days read so far, and all it will read */
+	days_done: number | null
+	days_total: number | null
 }
 
 export interface SharedLink {

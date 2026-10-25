@@ -1,0 +1,818 @@
+added_iso,hostname,path,is_unique,referrer_hostname,utm_source,utm_medium,utm_campaign,utm_content,utm_term,duration_seconds,scrolled_percentage,country_code,browser_name,browser_version,os_name,os_version,device_type,session_id
+2026-10-19T22:01:34.364Z,simpleanalytics.com,/,true,,,,,,,8,5,GB,Google Chrome,155,Android,17.0.0,mobile,session-0001
+2026-10-19T22:03:28.995Z,simpleanalytics.com,/,true,,,,,,,5,15,CH,Google Chrome,153,macOS,26.6.2,desktop,session-0002
+2026-10-19T22:03:34.462Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,13,100,CH,Google Chrome,153,macOS,26.6.2,desktop,session-0002
+2026-10-19T22:03:47.676Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,16,100,CH,Google Chrome,153,macOS,26.6.2,desktop,session-0002
+2026-10-19T22:08:01.129Z,simpleanalytics.com,/blog/google-analytics-and-consent,true,google,,,,,,,15,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:13:56.384Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,27,15,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:14:22.465Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,38,25,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:15:00.240Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,3,30,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:15:03.372Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,14,25,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:15:17.034Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,86,30,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:16:39.062Z,simpleanalytics.com,/,true,,,,,,,,,CZ,Google Chrome,,iOS,18.0,mobile,session-0004
+2026-10-19T22:16:43.228Z,simpleanalytics.com,/use-cases/agencies,false,simpleanalytics.com,,,,,,16,20,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:16:58.904Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,8,30,IN,Google Chrome,155,macOS,26.5.2,desktop,session-0003
+2026-10-19T22:18:07.053Z,simpleanalytics.com,/pricing,true,google,,,,,,23,45,DE,Google Chrome,154,macOS,15.6.0,desktop,session-0005
+2026-10-19T22:20:12.429Z,simpleanalytics.com,/,true,,,,,,,7,5,US,iOS Safari,18,iOS,18.7,mobile,session-0006
+2026-10-19T22:20:19.613Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,6,25,US,iOS Safari,18,iOS,18.7,mobile,session-0006
+2026-10-19T22:21:23.479Z,simpleanalytics.com,/,true,,,,,,,1,15,DE,Google Chrome,155,Windows,19.0.0,desktop,session-0007
+2026-10-19T22:22:47.245Z,simpleanalytics.com,/,true,,,,,,,2,10,PL,Safari,27,macOS,10.15.7,desktop,session-0008
+2026-10-19T22:27:51.565Z,simpleanalytics.com,/,true,,,,,,,7,35,PT,Google Chrome,155,macOS,26.5.2,desktop,session-0009
+2026-10-19T22:27:57.976Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,10,35,PT,Google Chrome,155,macOS,26.5.2,desktop,session-0009
+2026-10-19T22:28:08.036Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,10,100,PT,Google Chrome,155,macOS,26.5.2,desktop,session-0009
+2026-10-19T22:33:19.230Z,simpleanalytics.com,/,true,,,,,,,2,5,AU,Chrome Mobile,155,iOS,26.6,mobile,session-0010
+2026-10-19T22:35:06.522Z,simpleanalytics.com,/,true,,,,,,,,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0011
+2026-10-19T22:41:07.383Z,simpleanalytics.com,/,true,google,,,,,,10,10,US,Safari,26,macOS,10.15.7,desktop,session-0012
+2026-10-19T22:43:46.303Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0013
+2026-10-19T22:43:46.667Z,simpleanalytics.com,/pricing,false,,,,,,,4,30,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0014
+2026-10-19T22:44:11.384Z,simpleanalytics.com,/,true,,,,,,,,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0015
+2026-10-19T22:44:12.461Z,simpleanalytics.com,/,true,,,,,,,444,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0016
+2026-10-19T22:50:48.786Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0017
+2026-10-19T22:50:48.787Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0018
+2026-10-19T23:06:39.279Z,simpleanalytics.com,/,true,reddit.com,,,,,,,35,PT,Google Chrome,155,macOS,26.5.2,desktop,session-0019
+2026-10-19T23:07:49.162Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,7,35,PT,Google Chrome,155,macOS,26.5.2,desktop,session-0019
+2026-10-19T23:10:57.723Z,simpleanalytics.com,/,true,,,,,,,5,5,PY,Google Chrome,155,Android,12.0.0,mobile,session-0020
+2026-10-19T23:19:20.734Z,simpleanalytics.com,/,true,,,,,,,1,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0021
+2026-10-19T23:52:35.458Z,simpleanalytics.com,/,true,,,,,,,1,10,US,Google Chrome,155,Windows,19.0.0,desktop,session-0022
+2026-10-19T23:56:29.507Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0023
+2026-10-19T23:56:29.835Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0024
+2026-10-20T00:03:40.749Z,simpleanalytics.com,/,true,alternativeto.site,alternativeto.site,referral,,,,4,15,US,Firefox,158,macOS,10.15,desktop,session-0025
+2026-10-20T00:03:44.576Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,23,100,US,Firefox,158,macOS,10.15,desktop,session-0025
+2026-10-20T00:13:55.973Z,simpleanalytics.com,/blog/google-is-tracking-you-even-when-you-use-duck-duck-go,true,duckduckgo.com,,,,,,124,75,US,DuckDuckGo,18,iOS,18.7,mobile,session-0026
+2026-10-20T00:15:59.538Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,,,US,DuckDuckGo,18,iOS,18.7,mobile,session-0026
+2026-10-20T00:29:14.313Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,129,100,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0027
+2026-10-20T00:29:14.761Z,simpleanalytics.com,/pricing,false,,,,,,,128,30,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0028
+2026-10-20T00:36:54.451Z,simpleanalytics.com,/,true,,,,,,,,,CN,Google Chrome,155,Windows,19.0.0,desktop,session-0029
+2026-10-20T00:40:59.654Z,simpleanalytics.com,/,true,google,,,,,,,,US,Google Chrome,152,Windows,19.0.0,desktop,session-0030
+2026-10-20T00:52:28.684Z,simpleanalytics.com,/,true,,,,,,,,10,EG,Safari,15,macOS,10.15.8,desktop,session-0031
+2026-10-20T01:01:27.585Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0032
+2026-10-20T01:01:28.021Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0033
+2026-10-20T01:04:38.579Z,simpleanalytics.com,/,true,google,,,,,,13,20,IN,Google Chrome,155,Windows,19.0.0,desktop,session-0034
+2026-10-20T01:20:51.596Z,simpleanalytics.com,/,true,boringcashcow.com,,,,,,,,IE,Google Chrome,,Android,15.0.0,mobile,session-0035
+2026-10-20T01:22:44.141Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0036
+2026-10-20T01:22:45.273Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0037
+2026-10-20T01:24:22.419Z,simpleanalytics.com,/,true,,,,,,,3,5,US,iOS Safari,18,iOS,18.7,mobile,session-0038
+2026-10-20T01:46:30.102Z,simpleanalytics.com,/,true,google,,,,,,6,20,US,Google Chrome,,Windows,19.0.0,desktop,session-0039
+2026-10-20T01:46:43.613Z,simpleanalytics.com,/,false,,,,,,,6,30,US,Google Chrome,,Windows,19.0.0,desktop,session-0040
+2026-10-20T01:46:49.616Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,20,90,US,Google Chrome,,Windows,19.0.0,desktop,session-0040
+2026-10-20T01:47:09.978Z,simpleanalytics.com,/methodology,false,simpleanalytics.com,,,,,,2,90,US,Google Chrome,,Windows,19.0.0,desktop,session-0040
+2026-10-20T01:47:11.504Z,simpleanalytics.com,/integrations,false,simpleanalytics.com,,,,,,,,US,Google Chrome,,Windows,19.0.0,desktop,session-0040
+2026-10-20T01:47:35.284Z,simpleanalytics.com,/blog/4-privacy-friendly-google-analytics-alternatives,true,google,,,,,,93,60,US,Google Chrome,,Windows,19.0.0,desktop,session-0041
+2026-10-20T01:49:09.547Z,simpleanalytics.com,/guides/track-dark-mode-activated,false,,,,,,,1,100,CN,Google Chrome,114,macOS,14.5.0,desktop,session-0042
+2026-10-20T02:09:29.322Z,simpleanalytics.com,/,true,,,,,,,14,10,GB,Google Chrome,155,Android,17.0.0,mobile,session-0043
+2026-10-20T02:10:39.120Z,simpleanalytics.com,/,true,,,,,,,2,10,AG,Safari,26,macOS,10.15.7,desktop,session-0044
+2026-10-20T02:17:05.589Z,simpleanalytics.com,/,true,,,,,,,35,35,ID,Firefox,158,Linux,,desktop,session-0045
+2026-10-20T02:17:40.283Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,37,100,ID,Firefox,158,Linux,,desktop,session-0045
+2026-10-20T02:18:16.900Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,110,100,ID,Firefox,158,Linux,,desktop,session-0045
+2026-10-20T02:20:13.719Z,simpleanalytics.com,/,true,,,,,,,6,15,ID,Firefox,158,Linux,,desktop,session-0046
+2026-10-20T02:28:19.052Z,simpleanalytics.com,/,true,,,,,,,2,15,NZ,Google Chrome,155,Linux,,desktop,session-0047
+2026-10-20T02:30:24.754Z,simpleanalytics.com,/,true,,,,,,,2,15,CN,Google Chrome,155,macOS,27.0.1,desktop,session-0048
+2026-10-20T02:35:55.803Z,simpleanalytics.com,/,true,,,,,,,3,15,US,Firefox,155,macOS,10.15,desktop,session-0049
+2026-10-20T02:38:50.568Z,simpleanalytics.com,/,true,,,,,,,2,15,CN,Google Chrome,155,macOS,27.0.1,desktop,session-0050
+2026-10-20T02:39:00.012Z,simpleanalytics.com,/blog/the-eu-wants-to-kill-cookie-banners-by-moving-consent-to-your-browser,true,dashboard.simpleanalytics.com,,,,,,134,95,US,Google Chrome,155,macOS,14.6.1,desktop,session-0051
+2026-10-20T02:41:12.581Z,simpleanalytics.com,/,true,,,,,,,,,DE,iOS Safari,18,iOS,18.7,mobile,session-0052
+2026-10-20T02:45:20.521Z,simpleanalytics.com,/,true,,,,,,,,,BJ,iOS Safari,18,iOS,18.7,mobile,session-0053
+2026-10-20T02:48:39.763Z,simpleanalytics.com,/,true,,,,,,,,5,NO,iOS Safari,18,iOS,18.7,mobile,session-0054
+2026-10-20T02:48:44.500Z,simpleanalytics.com,/,true,,,,,,,4,5,US,iOS Safari,18,iOS,18.1,mobile,session-0055
+2026-10-20T02:49:46.628Z,simpleanalytics.com,/,true,,,,,,,,,CN,Google Chrome,155,macOS,27.0.1,desktop,session-0056
+2026-10-20T02:49:50.203Z,simpleanalytics.com,/pricing,true,google,,,,,,29,55,CN,Google Chrome,155,macOS,27.0.1,desktop,session-0057
+2026-10-20T02:55:46.231Z,simpleanalytics.com,/,true,google,,,,,,2,15,TH,Google Chrome,155,Windows,19.0.0,desktop,session-0058
+2026-10-20T02:55:48.289Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,8,90,TH,Google Chrome,155,Windows,19.0.0,desktop,session-0058
+2026-10-20T02:56:40.411Z,simpleanalytics.com,/blog,true,,,,,,,,,TH,Google Chrome,155,macOS,26.6.2,desktop,session-0059
+2026-10-20T03:08:22.938Z,simpleanalytics.com,/,true,,,,,,,5,5,AU,Chrome Mobile,155,iOS,26.6,mobile,session-0060
+2026-10-20T03:12:15.976Z,simpleanalytics.com,/,true,,,,,,,1,10,US,Firefox,158,Windows,10,desktop,session-0061
+2026-10-20T03:16:19.699Z,simpleanalytics.com,/customers,false,,,,,,,,,ID,Google Chrome,155,Android,15.0.0,mobile,session-0062
+2026-10-20T03:18:46.259Z,simpleanalytics.com,/,false,,,,,,,,,IN,Firefox,158,Linux,,desktop,session-0063
+2026-10-20T03:30:46.273Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0064
+2026-10-20T03:36:44.021Z,simpleanalytics.com,/,true,,,,,,,,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0065
+2026-10-20T03:56:54.642Z,simpleanalytics.com,/,true,google,,,,,,69,50,AU,Microsoft Edge,155,macOS,27.0.1,desktop,session-0066
+2026-10-20T04:06:24.283Z,simpleanalytics.com,/,true,,,,,,,2,5,FI,iOS Safari,18,iOS,18.7,mobile,session-0067
+2026-10-20T04:06:26.540Z,simpleanalytics.com,/,true,,,,,,,,5,FI,iOS Safari,18,iOS,18.7,mobile,session-0068
+2026-10-20T04:07:03.264Z,simpleanalytics.com,/,true,,,,,,,1,15,UA,Google Chrome,155,Windows,19.0.0,desktop,session-0069
+2026-10-20T04:12:49.612Z,simpleanalytics.com,/,true,google,,,,,,51,100,IN,Google Chrome,149,macOS,26.5.2,desktop,session-0070
+2026-10-20T04:13:05.404Z,simpleanalytics.com,/,true,,,,,,,7,5,AU,Chrome Mobile,155,iOS,26.6,mobile,session-0071
+2026-10-20T04:21:18.547Z,simpleanalytics.com,/,true,google,,,,,,4,5,US,iOS Safari,18,iOS,18.7,mobile,session-0072
+2026-10-20T04:23:26.698Z,simpleanalytics.com,/,true,,freestuffdev,,,,,2,10,CN,Google Chrome,151,Windows,19.0.0,desktop,session-0073
+2026-10-20T04:24:48.039Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,9,100,US,Safari,27,macOS,10.15.7,desktop,session-0074
+2026-10-20T04:24:56.774Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,11,100,US,Safari,27,macOS,10.15.7,desktop,session-0074
+2026-10-20T04:25:07.626Z,simpleanalytics.com,/,true,,,,,,,2,10,BG,Google Chrome,,macOS,15.7.4,desktop,session-0075
+2026-10-20T04:30:25.790Z,simpleanalytics.com,/blog/google-is-tracking-you-even-when-you-use-duck-duck-go,true,duckduckgo.com,,,,,,,,BS,Google Chrome,,Android,16.0.0,mobile,session-0076
+2026-10-20T04:34:32.152Z,simpleanalytics.com,/blog/google-analytics-identifiers,true,google,,,,,,31,100,US,Google Chrome,155,Windows,19.0.0,desktop,session-0077
+2026-10-20T04:35:02.050Z,simpleanalytics.com,/,true,,,,,,,3,10,DE,Safari,27,macOS,10.15.7,desktop,session-0078
+2026-10-20T04:35:02.628Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,4,100,US,Google Chrome,155,Windows,19.0.0,desktop,session-0077
+2026-10-20T04:40:37.560Z,simpleanalytics.com,/blog/does-google-sell-your-data,true,google,,,,,,54,35,US,Google Chrome,155,Windows,19.0.0,desktop,session-0079
+2026-10-20T04:47:27.529Z,simpleanalytics.com,/,true,,,,,,,3,10,DE,Safari,27,macOS,10.15.7,desktop,session-0080
+2026-10-20T04:50:14.357Z,simpleanalytics.com,/privacy-policy,false,,,,,,,26260,15,PL,Google Chrome,158,Windows,19.0.0,desktop,session-0081
+2026-10-20T04:59:51.648Z,simpleanalytics.com,/,true,,,,,,,3,15,CH,Google Chrome,155,Windows,19.0.0,desktop,session-0082
+2026-10-20T05:00:55.324Z,simpleanalytics.com,/,false,,,,,,,,,LI,Chrome Mobile,155,iOS,27.0,mobile,session-0083
+2026-10-20T05:07:51.458Z,simpleanalytics.com,/about,true,twitter.com,,,,,,19,100,CA,iOS Safari,26,iOS,26.6,mobile,session-0084
+2026-10-20T05:10:56.501Z,simpleanalytics.com,/,true,,,,,,,2,5,PL,Google Chrome,155,Android,16.0.0,mobile,session-0085
+2026-10-20T05:11:04.087Z,simpleanalytics.com,/,false,,,,,,,1,5,PL,Google Chrome,155,Android,16.0.0,mobile,session-0086
+2026-10-20T05:17:47.897Z,simpleanalytics.com,/,true,,,,,,,1,10,BG,Google Chrome,,macOS,15.7.4,desktop,session-0087
+2026-10-20T05:21:34.950Z,simpleanalytics.com,/pricing,true,,,,,,,2,40,,Google Chrome,155,Linux,,desktop,session-0088
+2026-10-20T05:23:57.512Z,simpleanalytics.com,/,true,wip.co,wip,,,,,6,25,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0089
+2026-10-20T05:28:59.733Z,simpleanalytics.com,/pricing,true,google,,,,,,26,100,IN,Google Chrome,154,macOS,26.5.2,desktop,session-0090
+2026-10-20T05:29:25.567Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,11,20,IN,Google Chrome,154,macOS,26.5.2,desktop,session-0090
+2026-10-20T05:32:49.531Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0091
+2026-10-20T05:40:42.360Z,simpleanalytics.com,/gdpr-compliance,true,,chatgpt.com,,,,,18,20,US,Microsoft Edge,155,Windows,15.0.0,desktop,session-0092
+2026-10-20T05:50:14.568Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0093
+2026-10-20T05:52:12.782Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0094
+2026-10-20T05:52:13.171Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0095
+2026-10-20T05:58:56.826Z,simpleanalytics.com,/,true,european-alternatives.eu,,,,,,14,5,NL,Chrome Mobile,152,iOS,26.6,mobile,session-0096
+2026-10-20T05:59:11.040Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,14,15,NL,Chrome Mobile,152,iOS,26.6,mobile,session-0096
+2026-10-20T05:59:24.549Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,3,5,NL,Chrome Mobile,152,iOS,26.6,mobile,session-0096
+2026-10-20T06:00:32.722Z,simpleanalytics.com,/blog/track-your-content-marketing-efforts-with-simple-analytics,true,,,,,,,,,US,Google Chrome,149,Linux,,desktop,session-0097
+2026-10-20T06:02:52.516Z,simpleanalytics.com,/,true,,,,,,,,15,BE,Google Chrome,155,macOS,14.5.0,desktop,session-0098
+2026-10-20T06:04:44.090Z,simpleanalytics.com,/,true,,,,,,,3,5,NL,Chrome Mobile,155,iOS,27.0,mobile,session-0099
+2026-10-20T06:16:09.189Z,simpleanalytics.com,/,true,,,,,,,3,10,IN,Google Chrome,155,macOS,26.5.1,desktop,session-0100
+2026-10-20T06:16:19.469Z,simpleanalytics.com,/,true,,,,,,,,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0101
+2026-10-20T06:16:34.871Z,simpleanalytics.com,/,true,,,,,,,7,5,CH,iOS Safari,18,iOS,18.5,mobile,session-0102
+2026-10-20T06:16:59.538Z,simpleanalytics.com,/,true,,,,,,,3,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0103
+2026-10-20T06:18:39.406Z,simpleanalytics.com,/pricing,true,google,,,,,,193,75,FR,Google Chrome,153,Windows,19.0.0,desktop,session-0104
+2026-10-20T06:21:14.895Z,simpleanalytics.com,/,true,,,,,,,2,5,NL,Chrome Mobile,155,iOS,26.6,mobile,session-0105
+2026-10-20T06:26:02.321Z,simpleanalytics.com,/,true,docs.simpleanalytics.com,,,,,,2,15,CN,Google Chrome,155,macOS,27.0.1,desktop,session-0106
+2026-10-20T06:28:08.051Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,753,100,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0107
+2026-10-20T06:28:08.690Z,simpleanalytics.com,/pricing,false,,,,,,,752,30,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0108
+2026-10-20T06:29:50.068Z,simpleanalytics.com,/,true,,,,,,,3,20,CN,Google Chrome,155,macOS,26.2.0,desktop,session-0109
+2026-10-20T06:36:25.458Z,simpleanalytics.com,/,true,,,,,,,3,10,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0110
+2026-10-20T06:39:15.207Z,simpleanalytics.com,/,true,,,,,,,2,5,CZ,Google Chrome,155,Android,13.0.0,mobile,session-0111
+2026-10-20T06:43:24.054Z,simpleanalytics.com,/,true,,,,,,,13,10,PL,Google Chrome,155,Windows,19.0.0,desktop,session-0112
+2026-10-20T06:45:07.413Z,simpleanalytics.com,/,true,,,,,,,12,10,PL,Firefox,153,Windows,10,desktop,session-0113
+2026-10-20T06:45:54.971Z,simpleanalytics.com,/guides/track-twitter-traffic,true,,,,,,,,,US,iOS Safari,18,iOS,18.7,mobile,session-0114
+2026-10-20T06:53:35.734Z,simpleanalytics.com,/,true,google,,,,,,4,10,NL,Google Chrome,155,macOS,15.6.1,desktop,session-0115
+2026-10-20T06:56:51.097Z,simpleanalytics.com,/features/ai,true,,producthunt,,,,,2,40,TR,Google Chrome,155,macOS,26.6.2,desktop,session-0116
+2026-10-20T06:58:45.541Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,8,100,LT,Safari,27,macOS,10.15.7,desktop,session-0117
+2026-10-20T06:58:53.988Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,6,100,LT,Safari,27,macOS,10.15.7,desktop,session-0117
+2026-10-20T06:59:00.425Z,simpleanalytics.com,/signup/add-your-colleagues,false,simpleanalytics.com,,,,,,6,100,LT,Safari,27,macOS,10.15.7,desktop,session-0117
+2026-10-20T06:59:57.318Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,222,100,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0118
+2026-10-20T06:59:57.319Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0119
+2026-10-20T07:03:52.683Z,simpleanalytics.com,/tools/timezone,false,,,,,,,,,NG,Google Chrome,155,Android,16.0.0,mobile,session-0120
+2026-10-20T07:05:00.691Z,simpleanalytics.com,/,true,,,,,,,3,20,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0121
+2026-10-20T07:08:23.417Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0122
+2026-10-20T07:08:23.915Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0123
+2026-10-20T07:08:35.945Z,simpleanalytics.com,/,true,google,,,,,,4,15,US,Opera,136,Windows,19.0.0,desktop,session-0124
+2026-10-20T07:13:04.966Z,simpleanalytics.com,/,true,,,,,,,1,5,GB,Google Chrome,155,Android,16.0.0,mobile,session-0125
+2026-10-20T07:16:34.238Z,simpleanalytics.com,/,true,dashboard.simpleanalytics.com,,,,,,,,DK,Google Chrome,152,macOS,26.5.1,desktop,session-0126
+2026-10-20T07:17:00.505Z,simpleanalytics.com,/,true,dashboard.simpleanalytics.com,,,,,,4,5,FI,Chrome Mobile,155,iOS,26.7,mobile,session-0127
+2026-10-20T07:17:52.663Z,simpleanalytics.com,/,true,,,,,,,,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0128
+2026-10-20T07:23:43.732Z,simpleanalytics.com,/,true,,,,,,,2,5,GB,Google Chrome,155,Android,16.0.0,mobile,session-0129
+2026-10-20T07:24:47.387Z,simpleanalytics.com,/,true,,,,,,,,,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0130
+2026-10-20T07:25:27.621Z,simpleanalytics.com,/,true,,,,,,,2,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0131
+2026-10-20T07:25:31.892Z,simpleanalytics.com,/,true,,,,,,,,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0132
+2026-10-20T07:25:51.176Z,simpleanalytics.com,/,true,,,,,,,29,20,RO,Google Chrome,153,macOS,26.6.2,desktop,session-0133
+2026-10-20T07:26:05.538Z,simpleanalytics.com,/,true,,,,,,,2,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0134
+2026-10-20T07:26:20.351Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,41,65,RO,Google Chrome,153,macOS,26.6.2,desktop,session-0133
+2026-10-20T07:26:31.749Z,simpleanalytics.com,/,true,,,,,,,1,15,RS,Google Chrome,155,macOS,26.6.2,desktop,session-0135
+2026-10-20T07:26:35.697Z,simpleanalytics.com,/,true,,,,,,,,15,DE,Google Chrome,155,macOS,26.5.0,desktop,session-0136
+2026-10-20T07:27:42.054Z,simpleanalytics.com,/,true,google,,,,,,7,20,IN,Google Chrome,155,Android,10.0.0,mobile,session-0137
+2026-10-20T07:28:06.941Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,,,FR,Google Chrome,152,Windows,19.0.0,desktop,session-0138
+2026-10-20T07:28:55.363Z,simpleanalytics.com,/pricing,true,,,,,,,,,,Google Chrome,155,Linux,,desktop,session-0139
+2026-10-20T07:31:52.646Z,simpleanalytics.com,/,true,,,,,,,2,10,ID,Safari,26,macOS,10.15.7,desktop,session-0140
+2026-10-20T07:31:58.017Z,simpleanalytics.com,/,true,,chatgpt.com,,,,,281,35,FI,Microsoft Edge,155,Windows,19.0.0,desktop,session-0141
+2026-10-20T07:32:29.710Z,simpleanalytics.com,/,true,,,,,,,1,20,BE,Google Chrome,154,macOS,26.6.2,desktop,session-0142
+2026-10-20T07:32:30.578Z,simpleanalytics.com,/,true,,,,,,,2,25,BE,Google Chrome,155,macOS,26.6.2,desktop,session-0143
+2026-10-20T07:36:39.465Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,6509,45,FI,Microsoft Edge,155,Windows,19.0.0,desktop,session-0141
+2026-10-20T07:41:24.049Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,2,10,NL,Safari,27,macOS,10.15.7,desktop,session-0144
+2026-10-20T07:42:28.661Z,simpleanalytics.com,/,true,dashboard.simpleanalytics.com,,,,,,58,100,IN,Google Chrome,153,macOS,15.6.0,desktop,session-0145
+2026-10-20T07:44:33.399Z,simpleanalytics.com,/,true,google,,,,,,2,15,CZ,Firefox,158,Windows,10,desktop,session-0146
+2026-10-20T07:44:40.726Z,simpleanalytics.com,/,true,google,,,,,,10,15,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:44:50.707Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,70,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:44:54.759Z,simpleanalytics.com,/,true,,,,,,,3,20,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0148
+2026-10-20T07:46:00.396Z,simpleanalytics.com,/features/ai,false,simpleanalytics.com,,,,,,81,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:46:45.211Z,simpleanalytics.com,/,true,,,,,,,1,20,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0149
+2026-10-20T07:47:08.885Z,simpleanalytics.com,/features/ai,true,aibase.com,,,,,,12,35,CN,Google Chrome,155,Windows,10.0.0,desktop,session-0150
+2026-10-20T07:47:27.099Z,simpleanalytics.com,/use-cases/business-owners,false,simpleanalytics.com,,,,,,13,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:47:40.003Z,simpleanalytics.com,/use-cases/agencies,false,simpleanalytics.com,,,,,,16,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:47:55.517Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,65,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:49:00.388Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,214,85,DE,Google Chrome,155,Windows,15.0.0,desktop,session-0147
+2026-10-20T07:49:39.410Z,simpleanalytics.com,/,true,,netlify,,,dashboard,,3,10,IT,Google Chrome,155,Windows,19.0.0,desktop,session-0151
+2026-10-20T07:50:35.580Z,simpleanalytics.com,/,true,,netlify,,,dashboard,,2,10,IT,Google Chrome,155,Windows,19.0.0,desktop,session-0152
+2026-10-20T07:52:23.849Z,simpleanalytics.com,/,true,bidora.lol,,,,,,34,100,IN,Google Chrome,155,Windows,19.0.0,desktop,session-0153
+2026-10-20T07:56:33.662Z,simpleanalytics.com,/,true,,,,,,,2,10,BE,Google Chrome,155,macOS,27.0.0,desktop,session-0154
+2026-10-20T07:56:54.962Z,simpleanalytics.com,/,false,,,,,,,2,10,BE,Google Chrome,155,macOS,27.0.0,desktop,session-0155
+2026-10-20T07:57:07.712Z,simpleanalytics.com,/,false,,,,,,,1,10,BE,Google Chrome,155,macOS,27.0.0,desktop,session-0156
+2026-10-20T07:58:02.096Z,simpleanalytics.com,/,true,,,,,,,,,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0157
+2026-10-20T07:59:00.369Z,simpleanalytics.com,/blog/eu-task-force-cracks-down-on-cookie-banners,true,,,,,,,,,CH,Firefox,158,Windows,10,desktop,session-0158
+2026-10-20T08:00:34.686Z,simpleanalytics.com,/,true,ntp.msn.com,,,,,,,,BR,Microsoft Edge,155,Windows,10.0.0,desktop,session-0159
+2026-10-20T08:00:43.775Z,simpleanalytics.com,/,true,google,,,,,,16,100,RO,Google Chrome,152,macOS,15.6.1,desktop,session-0160
+2026-10-20T08:01:00.745Z,simpleanalytics.com,/,true,,,,,,,19,100,RO,Google Chrome,152,macOS,15.6.1,desktop,session-0161
+2026-10-20T08:01:19.591Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,61,100,RO,Google Chrome,152,macOS,15.6.1,desktop,session-0161
+2026-10-20T08:02:00.509Z,simpleanalytics.com,/,true,,,,,,,2,10,CY,Firefox,158,macOS,10.15,desktop,session-0162
+2026-10-20T08:03:04.049Z,simpleanalytics.com,/,true,,,,,,,6,5,AU,Chrome Mobile,155,iOS,26.6,mobile,session-0163
+2026-10-20T08:07:24.254Z,simpleanalytics.com,/,true,google,,,,,,1,15,PL,Google Chrome,138,Linux,,desktop,session-0164
+2026-10-20T08:09:21.782Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0165
+2026-10-20T08:10:16.040Z,simpleanalytics.com,/about,true,,,,,,,6,20,DE,Google Chrome,152,macOS,26.6.2,desktop,session-0166
+2026-10-20T08:13:09.186Z,simpleanalytics.com,/,true,,,,,,,,,BE,Google Chrome,155,macOS,27.0.0,desktop,session-0167
+2026-10-20T08:13:30.275Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,36,20,NL,iOS Safari,18,iOS,18.7,mobile,session-0168
+2026-10-20T08:14:06.440Z,simpleanalytics.com,/sessions-without-consent,false,simpleanalytics.com,,,,,,,,NL,iOS Safari,18,iOS,18.7,mobile,session-0168
+2026-10-20T08:16:45.411Z,simpleanalytics.com,/blog/how-to-export-data-from-google-analytics,true,google,,,,,,,,US,Google Chrome,154,Linux,,desktop,session-0169
+2026-10-20T08:16:58.414Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,18,iOS,18.7,mobile,session-0170
+2026-10-20T08:19:14.641Z,simpleanalytics.com,/,true,,,,,,,2,10,IT,Firefox,158,macOS,10.15,desktop,session-0171
+2026-10-20T08:19:56.069Z,simpleanalytics.com,/,true,,,,,,,6,15,DE,Firefox,158,Windows,10,desktop,session-0172
+2026-10-20T08:20:00.936Z,simpleanalytics.com,/,true,google,,,,,,,,,Google Chrome,,Linux,,desktop,session-0173
+2026-10-20T08:21:22.110Z,simpleanalytics.com,/,true,,,,,,,,20,DE,Google Chrome,155,Windows,19.0.0,desktop,session-0174
+2026-10-20T08:23:20.102Z,simpleanalytics.com,/pricing,true,google,,,,,,87,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0175
+2026-10-20T08:25:37.337Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0176
+2026-10-20T08:25:40.344Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Google Chrome,154,macOS,27.0.1,desktop,session-0177
+2026-10-20T08:28:23.945Z,simpleanalytics.com,/pricing,true,,,,,,,1,40,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0178
+2026-10-20T08:28:25.049Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,230,40,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0178
+2026-10-20T08:29:54.675Z,simpleanalytics.com,/,true,google,,,,,,8,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0179
+2026-10-20T08:29:56.621Z,simpleanalytics.com,/,true,google,,,,,,15,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0180
+2026-10-20T08:32:18.714Z,simpleanalytics.com,/pricing,true,,,,,,,54,30,IT,Google Chrome,,Windows,19.0.0,desktop,session-0181
+2026-10-20T08:34:16.007Z,simpleanalytics.com,/,true,,,,,,,5,5,IE,Firefox Mobile,158,Android,16,mobile,session-0182
+2026-10-20T08:34:49.759Z,simpleanalytics.com,/,true,google,,,,,,2,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0183
+2026-10-20T08:38:09.823Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0184
+2026-10-20T08:38:47.499Z,simpleanalytics.com,/,true,,,,,,,,,GB,Google Chrome,155,Windows,19.0.0,desktop,session-0185
+2026-10-20T08:39:02.179Z,simpleanalytics.com,/,true,,,,,,,,10,GB,Google Chrome,155,macOS,26.5.2,desktop,session-0186
+2026-10-20T08:40:17.125Z,simpleanalytics.com,/,true,,,,,,,2,15,IT,Google Chrome,155,Windows,19.0.0,desktop,session-0187
+2026-10-20T08:41:27.192Z,simpleanalytics.com,/,true,,,,,,,,10,NO,Google Chrome,155,macOS,26.2.0,desktop,session-0188
+2026-10-20T08:43:28.843Z,simpleanalytics.com,/,true,,,,,,,1,20,IE,Firefox,154,macOS,10.15,desktop,session-0189
+2026-10-20T08:44:40.965Z,simpleanalytics.com,/,true,,,,,,,,,NL,Safari,27,macOS,10.15.7,desktop,session-0190
+2026-10-20T08:45:47.059Z,simpleanalytics.com,/,true,,,,,,,2,10,GB,Google Chrome,155,Windows,19.0.0,desktop,session-0191
+2026-10-20T08:50:29.619Z,simpleanalytics.com,/,true,,,,,,,10,15,AT,Google Chrome,155,Linux,,desktop,session-0192
+2026-10-20T08:51:29.577Z,simpleanalytics.com,/,true,,,,,,,2,10,IT,Google Chrome,,macOS,26.6.2,desktop,session-0193
+2026-10-20T08:54:47.333Z,simpleanalytics.com,/,true,,,,,,,3,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0194
+2026-10-20T08:54:59.600Z,simpleanalytics.com,/,true,,,,,,,,15,DE,Google Chrome,155,macOS,26.5.0,desktop,session-0195
+2026-10-20T08:56:21.686Z,simpleanalytics.com,/,true,,,,,,,,,BE,Google Chrome,155,macOS,14.5.0,desktop,session-0196
+2026-10-20T08:56:26.655Z,simpleanalytics.com,/,true,,,,,,,2,10,BE,Firefox,158,Windows,10,desktop,session-0197
+2026-10-20T08:56:36.560Z,simpleanalytics.com,/,true,,,,,,,2,10,FR,Google Chrome,,macOS,27.0.1,desktop,session-0198
+2026-10-20T08:57:05.460Z,simpleanalytics.com,/,true,,,,,,,,,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0199
+2026-10-20T08:57:54.319Z,simpleanalytics.com,/,true,,,,,,,,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0200
+2026-10-20T08:59:34.695Z,simpleanalytics.com,/,true,,,,,,,,15,NO,Google Chrome,155,macOS,26.2.0,desktop,session-0201
+2026-10-20T09:01:08.186Z,simpleanalytics.com,/,true,,,,,,,,5,DE,iOS Safari,18,iOS,18.7,mobile,session-0202
+2026-10-20T09:04:00.090Z,simpleanalytics.com,/,true,,,,,,,6,5,AU,Chrome Mobile,155,iOS,26.6,mobile,session-0203
+2026-10-20T09:04:30.289Z,simpleanalytics.com,/,true,,,,,,,2,5,NL,Chrome Mobile,155,iOS,27.0,mobile,session-0204
+2026-10-20T09:05:56.624Z,simpleanalytics.com,/,true,joostdevree.nl,,,,,,,,BE,Google Chrome,155,Windows,19.0.0,desktop,session-0205
+2026-10-20T09:06:55.282Z,simpleanalytics.com,/,true,google,,,,,,8,5,GR,iOS Safari,18,iOS,18.7,mobile,session-0206
+2026-10-20T09:08:55.049Z,simpleanalytics.com,/pricing,true,google,,,,,,20,30,GB,Firefox,158,Linux,,desktop,session-0207
+2026-10-20T09:08:59.037Z,simpleanalytics.com,/,true,,,,,,,6,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0208
+2026-10-20T09:10:04.808Z,simpleanalytics.com,/,true,,,,,,,2,15,SI,Google Chrome,154,macOS,27.0.1,desktop,session-0209
+2026-10-20T09:17:10.983Z,simpleanalytics.com,/,true,,,,,,,60,15,RU,Google Chrome,155,Windows,19.0.0,desktop,session-0210
+2026-10-20T09:17:23.109Z,simpleanalytics.com,/,true,,,,,,,,15,PL,Safari,27,macOS,10.15.7,desktop,session-0211
+2026-10-20T09:17:42.717Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0212
+2026-10-20T09:18:19.738Z,simpleanalytics.com,/plausible-alternative,true,gemini.google.com,,,,,,,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0213
+2026-10-20T09:19:59.875Z,simpleanalytics.com,/consent-analytics-gap,false,simpleanalytics.com,,,,,,8,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0213
+2026-10-20T09:20:07.792Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,17,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0213
+2026-10-20T09:20:18.173Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Firefox,158,Windows,10,desktop,session-0214
+2026-10-20T09:20:24.446Z,simpleanalytics.com,/badges,false,simpleanalytics.com,,,,,,2,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0213
+2026-10-20T09:20:25.963Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,8,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0213
+2026-10-20T09:20:40.826Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,10,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0215
+2026-10-20T09:20:50.719Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,13,100,TH,Google Chrome,155,Windows,10.0.0,desktop,session-0215
+2026-10-20T09:21:37.124Z,simpleanalytics.com,/,true,google,,,,,,11,10,GB,Google Chrome,153,macOS,26.6.2,desktop,session-0216
+2026-10-20T09:21:48.105Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,230,50,GB,Google Chrome,153,macOS,26.6.2,desktop,session-0216
+2026-10-20T09:22:44.446Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Google Chrome,155,Windows,19.0.0,desktop,session-0217
+2026-10-20T09:25:25.764Z,simpleanalytics.com,/,true,,,,,,,24,10,NL,Safari,26,macOS,10.15.7,desktop,session-0218
+2026-10-20T09:25:54.102Z,simpleanalytics.com,/,true,google,,,,,,10,10,NL,Safari,26,macOS,10.15.7,desktop,session-0219
+2026-10-20T09:26:54.054Z,simpleanalytics.com,/,true,,,,,,,,,RS,Google Chrome,155,macOS,26.6.2,desktop,session-0220
+2026-10-20T09:30:04.208Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0221
+2026-10-20T09:31:46.907Z,simpleanalytics.com,/,true,,,,,,,14,10,CZ,Safari,26,macOS,10.15.7,desktop,session-0222
+2026-10-20T09:32:01.063Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,37,80,CZ,Safari,26,macOS,10.15.7,desktop,session-0222
+2026-10-20T09:32:03.141Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0223
+2026-10-20T09:32:03.620Z,simpleanalytics.com,/,true,,,,,,,134,15,CZ,Google Chrome,,Linux,,desktop,session-0224
+2026-10-20T09:33:12.458Z,simpleanalytics.com,/,true,trustmrr.com,trustmrr,,,,,40,90,NG,iOS Safari,18,iOS,18.7,mobile,session-0225
+2026-10-20T09:34:31.038Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0226
+2026-10-20T09:34:57.005Z,simpleanalytics.com,/blog/the-eu-wants-to-kill-cookie-banners-by-moving-consent-to-your-browser,true,dashboard.simpleanalytics.com,,,,,,57,95,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0227
+2026-10-20T09:35:22.074Z,simpleanalytics.com,/,true,,,,,,,29,10,CZ,Safari,26,macOS,10.15.7,desktop,session-0228
+2026-10-20T09:36:09.427Z,simpleanalytics.com,/,true,,,,,,,2,20,DZ,Google Chrome,155,Windows,14.0.0,desktop,session-0229
+2026-10-20T09:39:34.439Z,simpleanalytics.com,/,true,google,,,,,,,15,DK,Google Chrome,155,Windows,19.0.0,desktop,session-0230
+2026-10-20T09:39:59.608Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,8,40,DK,Google Chrome,155,Windows,19.0.0,desktop,session-0230
+2026-10-20T09:41:08.684Z,simpleanalytics.com,/,true,,,,,,,6,10,CZ,Safari,26,macOS,10.15.7,desktop,session-0231
+2026-10-20T09:41:52.346Z,simpleanalytics.com,/,true,,,,,,,22,15,CH,Google Chrome,155,macOS,26.6.2,desktop,session-0232
+2026-10-20T09:46:34.388Z,simpleanalytics.com,/,true,,,,,,,12,15,ES,Google Chrome,155,macOS,26.7.1,desktop,session-0233
+2026-10-20T09:46:51.778Z,simpleanalytics.com,/,true,,,,,,,13,10,CZ,Safari,26,macOS,10.15.7,desktop,session-0234
+2026-10-20T09:47:03.664Z,simpleanalytics.com,/,true,,,,,,,,10,CZ,Safari,26,macOS,10.15.7,desktop,session-0235
+2026-10-20T09:48:36.677Z,simpleanalytics.com,/,true,,,,,,,2,25,BE,Google Chrome,155,macOS,26.6.2,desktop,session-0236
+2026-10-20T09:51:05.924Z,simpleanalytics.com,/,true,google,,,,,,67,50,NL,Google Chrome,154,macOS,26.6.2,desktop,session-0237
+2026-10-20T09:51:23.941Z,simpleanalytics.com,/,true,google,,,,,,34,25,NL,Google Chrome,154,macOS,26.5.2,desktop,session-0238
+2026-10-20T09:52:13.236Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,60,75,NL,Google Chrome,154,macOS,26.6.2,desktop,session-0237
+2026-10-20T09:54:46.743Z,simpleanalytics.com,/,true,google,,,,,,4,20,BE,Google Chrome,155,macOS,27.0.1,desktop,session-0239
+2026-10-20T09:55:07.837Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0240
+2026-10-20T09:56:00.495Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,1,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0241
+2026-10-20T10:00:11.181Z,simpleanalytics.com,/,true,european-alternatives.eu,,,,,,,10,PT,Google Chrome,155,Windows,19.0.0,desktop,session-0242
+2026-10-20T10:00:34.838Z,simpleanalytics.com,/pricing,false,,,,,,,,,FI,Google Chrome,147,macOS,14.6.0,desktop,session-0243
+2026-10-20T10:00:38.839Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0244
+2026-10-20T10:02:18.506Z,simpleanalytics.com,/,true,,,,,,,3,10,UA,Google Chrome,155,Windows,19.0.0,desktop,session-0245
+2026-10-20T10:04:49.386Z,simpleanalytics.com,/,true,dashboard.simpleanalytics.com,,,,,,1,15,GB,Google Chrome,155,Windows,19.0.0,desktop,session-0246
+2026-10-20T10:10:53.867Z,simpleanalytics.com,/,true,,,,,,,1,30,AE,Google Chrome,152,Windows,10.0.0,desktop,session-0247
+2026-10-20T10:12:31.952Z,simpleanalytics.com,/,true,,,,,,,1,15,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0248
+2026-10-20T10:17:42.427Z,simpleanalytics.com,/,true,,,,,,,4,10,NL,Google Chrome,155,macOS,26.6.2,desktop,session-0249
+2026-10-20T10:17:46.467Z,simpleanalytics.com,/blog/google-is-tracking-you-even-when-you-use-duck-duck-go,true,dashboard.simpleanalytics.com,,,,,,43,85,TH,Firefox Mobile,155,iOS,18.7,mobile,session-0250
+2026-10-20T10:17:58.805Z,simpleanalytics.com,/,true,,,,,,,4,15,ES,Google Chrome,155,macOS,27.0.1,desktop,session-0251
+2026-10-20T10:18:03.018Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,120,45,ES,Google Chrome,155,macOS,27.0.1,desktop,session-0251
+2026-10-20T10:18:29.036Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,64,100,TH,Firefox Mobile,155,iOS,18.7,mobile,session-0250
+2026-10-20T10:19:15.295Z,simpleanalytics.com,/,true,,,,,,,,,CN,,,,,desktop,session-0252
+2026-10-20T10:19:18.792Z,simpleanalytics.com,/,true,,,,,,,,,CN,,,,,desktop,session-0253
+2026-10-20T10:19:19.884Z,simpleanalytics.com,/,true,google,,,,,,,10,BE,Google Chrome,155,Windows,10.0.0,desktop,session-0254
+2026-10-20T10:19:33.038Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,2,100,TH,Firefox Mobile,155,iOS,18.7,mobile,session-0250
+2026-10-20T10:23:38.519Z,simpleanalytics.com,/,true,,,,,,,,15,FR,Google Chrome,154,macOS,14.6.1,desktop,session-0255
+2026-10-20T10:25:42.450Z,simpleanalytics.com,/,true,,,,,,,,15,NO,Google Chrome,155,macOS,26.2.0,desktop,session-0256
+2026-10-20T10:25:51.973Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0257
+2026-10-20T10:26:13.987Z,simpleanalytics.com,/,true,,,,,,,,15,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0258
+2026-10-20T10:28:33.247Z,simpleanalytics.com,/,true,,,,,,,2,15,PL,Firefox,153,Windows,10,desktop,session-0259
+2026-10-20T10:28:35.981Z,simpleanalytics.com,/,true,,,,,,,2,10,NO,Google Chrome,155,macOS,26.2.0,desktop,session-0260
+2026-10-20T10:28:43.122Z,simpleanalytics.com,/,true,google,,,,,,2,10,BE,Google Chrome,155,Windows,19.0.0,desktop,session-0261
+2026-10-20T10:29:02.253Z,simpleanalytics.com,/,true,google,,,,,,2,10,GB,Google Chrome,154,macOS,26.6.2,desktop,session-0262
+2026-10-20T10:29:23.842Z,simpleanalytics.com,/,true,google,,,,,,1,10,GB,Google Chrome,154,macOS,26.6.2,desktop,session-0263
+2026-10-20T10:33:27.370Z,simpleanalytics.com,/,true,google,,,,,,5,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0264
+2026-10-20T10:33:32.544Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,3,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0264
+2026-10-20T10:33:35.477Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,171,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0264
+2026-10-20T10:33:39.909Z,simpleanalytics.com,/pricing,true,,,,,,,,,MT,Chrome Mobile,152,iOS,27.0,mobile,session-0265
+2026-10-20T10:33:42.986Z,simpleanalytics.com,/,true,,,,,,,3,5,MT,Chrome Mobile,152,iOS,27.0,mobile,session-0266
+2026-10-20T10:34:21.159Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0267
+2026-10-20T10:35:05.369Z,simpleanalytics.com,/,true,,,,,,,,5,BE,iOS Safari,18,iOS,18.7,mobile,session-0268
+2026-10-20T10:35:11.001Z,simpleanalytics.com,/,true,derschoenejunge.de,derschoenejunge.de,,,badge,,15,25,DE,iOS Safari,18,iOS,18.7,mobile,session-0269
+2026-10-20T10:35:38.424Z,simpleanalytics.com,/,true,derschoenejunge.de,derschoenejunge.de,,,badge,,7,5,DE,iOS Safari,18,iOS,18.7,mobile,session-0270
+2026-10-20T10:36:26.661Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,13,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0264
+2026-10-20T10:36:39.838Z,simpleanalytics.com,/adobe-analytics-alternative,false,simpleanalytics.com,,,,,,2,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0264
+2026-10-20T10:38:08.272Z,simpleanalytics.com,/,true,,,,,,,2,5,DE,iOS Safari,18,iOS,18.7,mobile,session-0271
+2026-10-20T10:39:01.043Z,simpleanalytics.com,/,true,google,,,,,,22,25,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0272
+2026-10-20T10:39:06.283Z,simpleanalytics.com,/,true,,,,,,,2,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0273
+2026-10-20T10:39:23.249Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,2,50,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0272
+2026-10-20T10:39:25.738Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,4151,30,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0272
+2026-10-20T10:48:46.234Z,simpleanalytics.com,/,true,,,,,,,3,15,DE,Firefox,158,Windows,10,desktop,session-0274
+2026-10-20T10:48:46.368Z,simpleanalytics.com,/,true,,netlify,,,dashboard,,2,10,DE,Google Chrome,154,Windows,19.0.0,desktop,session-0275
+2026-10-20T10:52:10.274Z,simpleanalytics.com,/,true,,,,,,,10,60,GB,,,,,desktop,session-0276
+2026-10-20T10:52:27.033Z,simpleanalytics.com,/,true,,,,,,,,,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0277
+2026-10-20T10:54:11.483Z,simpleanalytics.com,/,true,,,,,,,10,25,PL,iOS Safari,18,iOS,18.5,mobile,session-0278
+2026-10-20T10:54:27.329Z,simpleanalytics.com,/,true,,,,,,,3,10,GB,,,,,desktop,session-0279
+2026-10-20T10:54:33.585Z,simpleanalytics.com,/pricing,true,,,,,,,4,35,IN,Google Chrome,155,Windows,19.0.0,desktop,session-0280
+2026-10-20T10:58:28.109Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,1,10,NL,Safari,26,macOS,10.15.7,desktop,session-0281
+2026-10-20T10:58:37.188Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Google Chrome,,macOS,26.6.2,desktop,session-0282
+2026-10-20T10:58:37.513Z,simpleanalytics.com,/,true,trustmrr.com,trustmrr,,,,,21,100,DE,Google Chrome,155,Linux,,desktop,session-0283
+2026-10-20T10:58:58.219Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,18557,100,DE,Google Chrome,155,Linux,,desktop,session-0283
+2026-10-20T10:59:56.987Z,simpleanalytics.com,/,true,,,,,,,2,20,GB,Safari,26,macOS,10.15.7,desktop,session-0284
+2026-10-20T11:03:55.049Z,simpleanalytics.com,/,true,google,,,,,,1,10,GB,Google Chrome,155,macOS,27.0.1,desktop,session-0285
+2026-10-20T11:03:58.663Z,simpleanalytics.com,/,true,trustmrr.com,trustmrr,,,,,212,15,DE,Safari,18,macOS,10.15.7,desktop,session-0286
+2026-10-20T11:07:32.594Z,simpleanalytics.com,/,true,,,,,,,1,10,PL,Google Chrome,,macOS,26.6.2,desktop,session-0287
+2026-10-20T11:07:58.490Z,simpleanalytics.com,/,true,,,,,,,2,5,SE,Google Chrome,155,Android,16.0.0,mobile,session-0288
+2026-10-20T11:14:10.908Z,simpleanalytics.com,/,true,,,,,,,,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0289
+2026-10-20T11:15:51.052Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0290
+2026-10-20T11:20:43.576Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Safari,27,macOS,10.15.7,desktop,session-0291
+2026-10-20T11:22:09.040Z,simpleanalytics.com,/,true,google,,,,,,5,10,FR,Google Chrome,153,macOS,26.6.2,desktop,session-0292
+2026-10-20T11:27:29.255Z,simpleanalytics.com,/,true,,,,,,,2,15,AU,Google Chrome,155,Windows,19.0.0,desktop,session-0293
+2026-10-20T11:28:53.878Z,simpleanalytics.com,/,true,,,,,,,2,25,BE,Google Chrome,155,macOS,26.6.2,desktop,session-0294
+2026-10-20T11:29:47.526Z,simpleanalytics.com,/,true,,,,,,,5,20,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0295
+2026-10-20T11:30:24.708Z,simpleanalytics.com,/,true,,,,,,,2,10,CZ,Google Chrome,155,Windows,19.0.0,desktop,session-0296
+2026-10-20T11:31:11.266Z,simpleanalytics.com,/,true,,,,,,,,20,ES,Google Chrome,155,macOS,26.5.2,desktop,session-0297
+2026-10-20T11:36:18.925Z,simpleanalytics.com,/,true,,,,,,,3,15,,Google Chrome,155,Windows,19.0.0,desktop,session-0298
+2026-10-20T11:41:42.356Z,simpleanalytics.com,/,true,,,,,,,3,5,FR,iOS Safari,18,iOS,18.7,mobile,session-0299
+2026-10-20T11:43:40.450Z,simpleanalytics.com,/,true,google,,,,,,5,15,DE,Safari,26,macOS,10.15.7,desktop,session-0300
+2026-10-20T11:43:45.107Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,4,30,DE,Safari,26,macOS,10.15.7,desktop,session-0300
+2026-10-20T11:43:49.276Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,2,20,DE,Safari,26,macOS,10.15.7,desktop,session-0300
+2026-10-20T11:44:07.943Z,simpleanalytics.com,/,true,google,,,,,,5,10,,Firefox,158,Windows,10,desktop,session-0301
+2026-10-20T11:44:11.607Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,9,95,,Firefox,158,Windows,10,desktop,session-0301
+2026-10-20T11:44:20.117Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,1,95,,Firefox,158,Windows,10,desktop,session-0301
+2026-10-20T11:46:04.500Z,simpleanalytics.com,/,true,,,,,,,6,15,MT,Google Chrome,148,macOS,26.5.2,desktop,session-0302
+2026-10-20T11:46:25.348Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0303
+2026-10-20T11:46:55.974Z,simpleanalytics.com,/,true,,,,,,,,10,GB,Google Chrome,155,macOS,26.6.2,desktop,session-0304
+2026-10-20T11:48:24.535Z,simpleanalytics.com,/,true,,,,,,,,15,DE,Google Chrome,155,macOS,26.5.0,desktop,session-0305
+2026-10-20T11:50:46.545Z,simpleanalytics.com,/,true,google,,,,,,20,45,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:50:55.300Z,simpleanalytics.com,/,true,trustmrr.com,trustmrr,,,,,4,10,FR,Brave,153,macOS,26.3.1,desktop,session-0307
+2026-10-20T11:51:06.395Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,11,65,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:51:17.194Z,simpleanalytics.com,/signup,false,simpleanalytics.com,,,,,,6,100,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:51:23.028Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,2,65,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:51:24.746Z,simpleanalytics.com,/signup,false,simpleanalytics.com,,,,,,4,100,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:51:28.400Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,55,85,DE,Google Chrome,,Linux,,desktop,session-0306
+2026-10-20T11:52:10.258Z,simpleanalytics.com,/,true,google,,,,,,2,10,FR,Google Chrome,153,macOS,26.6.2,desktop,session-0308
+2026-10-20T11:52:23.467Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,57,100,FR,Google Chrome,153,macOS,26.6.2,desktop,session-0309
+2026-10-20T11:53:01.037Z,simpleanalytics.com,/,true,,,,,,,84,100,CN,Google Chrome,155,macOS,15.7.9,desktop,session-0310
+2026-10-20T11:53:20.674Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,25,95,FR,Google Chrome,153,macOS,26.6.2,desktop,session-0309
+2026-10-20T11:56:20.778Z,simpleanalytics.com,/blog/risks-of-ignoring-data-privacy-in-companies,false,,,,,,,57,100,PK,Google Chrome,155,Windows,19.0.0,desktop,session-0311
+2026-10-20T11:58:45.996Z,simpleanalytics.com,/,true,,,,,,,,5,NO,iOS Safari,18,iOS,18.7,mobile,session-0312
+2026-10-20T12:10:05.908Z,simpleanalytics.com,/,true,,,,,,,14,5,SE,Google Chrome,155,Android,16.0.0,mobile,session-0313
+2026-10-20T12:10:08.598Z,simpleanalytics.com,/,true,,,,,,,,15,CH,Safari,27,macOS,10.15.7,desktop,session-0314
+2026-10-20T12:10:55.398Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0315
+2026-10-20T12:12:30.976Z,simpleanalytics.com,/,true,bing.com,,,,,,,15,BE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0316
+2026-10-20T12:16:18.466Z,simpleanalytics.com,/,true,,,,,,,2,10,TR,Google Chrome,155,macOS,26.5.1,desktop,session-0317
+2026-10-20T12:16:42.922Z,simpleanalytics.com,/,true,,,,,,,,10,GB,Safari,27,macOS,10.15.7,desktop,session-0318
+2026-10-20T12:17:25.090Z,simpleanalytics.com,/,true,,,,,,,77,15,DK,Google Chrome,155,Windows,19.0.0,desktop,session-0319
+2026-10-20T12:17:29.672Z,simpleanalytics.com,/,true,bing.com,,,,,,2,10,PL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0320
+2026-10-20T12:18:37.703Z,simpleanalytics.com,/,true,google,,,,,,,10,TN,Google Chrome,155,Windows,19.0.0,desktop,session-0321
+2026-10-20T12:19:51.689Z,simpleanalytics.com,/,true,google,,,,,,6,20,FR,Chrome Mobile,155,iOS,26.6,mobile,session-0322
+2026-10-20T12:19:51.846Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0323
+2026-10-20T12:19:57.903Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,11,70,FR,Chrome Mobile,155,iOS,26.6,mobile,session-0322
+2026-10-20T12:20:09.081Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,2,70,FR,Chrome Mobile,155,iOS,26.6,mobile,session-0322
+2026-10-20T12:21:03.619Z,simpleanalytics.com,/,true,,,,,,,1,15,DE,Google Chrome,155,Windows,19.0.0,desktop,session-0324
+2026-10-20T12:21:25.650Z,simpleanalytics.com,/,true,,,,,,,3,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0325
+2026-10-20T12:21:25.650Z,simpleanalytics.com,/,true,,,,,,,57,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0326
+2026-10-20T12:22:26.724Z,simpleanalytics.com,/,true,,,,,,,,,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0327
+2026-10-20T12:23:36.662Z,simpleanalytics.com,/,true,,,,,,,2,5,IT,iOS Safari,18,iOS,18.7,mobile,session-0328
+2026-10-20T12:23:36.664Z,simpleanalytics.com,/,true,,,,,,,,,IT,iOS Safari,18,iOS,18.7,mobile,session-0329
+2026-10-20T12:27:02.476Z,simpleanalytics.com,/,true,,,,,,,3,10,NL,Google Chrome,,Windows,19.0.0,desktop,session-0330
+2026-10-20T12:27:25.659Z,simpleanalytics.com,/,true,,,,,,,3,10,NL,Google Chrome,155,Android,16.0.0,mobile,session-0331
+2026-10-20T12:32:39.326Z,simpleanalytics.com,/,true,google,,,,,,2,20,SK,Google Chrome,155,macOS,27.0.1,desktop,session-0332
+2026-10-20T12:33:36.487Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0333
+2026-10-20T12:37:27.507Z,simpleanalytics.com,/,true,,,,,,,2,20,FI,Google Chrome,155,Windows,19.0.0,desktop,session-0334
+2026-10-20T12:39:37.226Z,simpleanalytics.com,/,true,google,,,,,,2,10,NL,Google Chrome,155,macOS,14.3.0,desktop,session-0335
+2026-10-20T12:40:13.607Z,simpleanalytics.com,/blog/how-to-export-data-from-google-analytics,true,google,,,,,,,,US,Google Chrome,154,macOS,26.5.2,desktop,session-0336
+2026-10-20T12:42:04.926Z,simpleanalytics.com,/badges,true,mail.google.com,,,,,,,,BE,Google Chrome,155,Windows,10.0.0,desktop,session-0337
+2026-10-20T12:42:12.359Z,simpleanalytics.com,/,true,,,,,,,15,5,US,iOS Safari,18,iOS,18.7,mobile,session-0338
+2026-10-20T12:42:27.058Z,simpleanalytics.com,/,false,,,,,,,,5,US,iOS Safari,18,iOS,18.7,mobile,session-0339
+2026-10-20T12:53:34.742Z,simpleanalytics.com,/,true,bing.com,,,,,,1,15,BE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0340
+2026-10-20T12:54:58.281Z,simpleanalytics.com,/,true,,,,,,,,,UA,Google Chrome,155,Windows,19.0.0,desktop,session-0341
+2026-10-20T12:56:51.096Z,simpleanalytics.com,/,true,,,,,,,1,10,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0342
+2026-10-20T12:57:31.063Z,simpleanalytics.com,/,true,,,,,,,1,5,DE,iOS Safari,18,iOS,18.7,mobile,session-0343
+2026-10-20T13:01:39.723Z,simpleanalytics.com,/,true,,,,,,,,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0344
+2026-10-20T13:01:59.310Z,simpleanalytics.com,/,true,,,,,,,12,5,US,iOS Safari,18,iOS,18.7,mobile,session-0345
+2026-10-20T13:02:22.063Z,simpleanalytics.com,/,true,,,,,,,,10,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0346
+2026-10-20T13:03:53.145Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0347
+2026-10-20T13:04:23.189Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0348
+2026-10-20T13:05:50.991Z,simpleanalytics.com,/,true,,,,,,,,10,SK,Google Chrome,155,macOS,26.6.2,desktop,session-0349
+2026-10-20T13:06:05.630Z,simpleanalytics.com,/,true,,,,,,,2,15,HU,Google Chrome,155,Windows,10.0.0,desktop,session-0350
+2026-10-20T13:08:40.517Z,simpleanalytics.com,/,true,,,,,,,3,5,IE,Firefox Mobile,158,Android,16,mobile,session-0351
+2026-10-20T13:08:57.963Z,simpleanalytics.com,/,false,,,,,,,2,5,IE,Firefox Mobile,158,Android,16,mobile,session-0352
+2026-10-20T13:10:39.407Z,simpleanalytics.com,/pricing,true,,,,,,,1,40,,Google Chrome,155,Linux,,desktop,session-0353
+2026-10-20T13:12:11.480Z,simpleanalytics.com,/,true,,,,,,,,15,GB,Google Chrome,155,macOS,26.5.2,desktop,session-0354
+2026-10-20T13:15:05.102Z,simpleanalytics.com,/,true,,,,,,,16,5,PY,Google Chrome,155,Android,12.0.0,mobile,session-0355
+2026-10-20T13:15:24.392Z,simpleanalytics.com,/,false,,,,,,,,,GB,Google Chrome,155,Windows,15.0.0,desktop,session-0356
+2026-10-20T13:15:38.845Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0357
+2026-10-20T13:16:20.408Z,simpleanalytics.com,/,true,,,,,,,2,15,IT,Google Chrome,155,macOS,26.4.1,desktop,session-0358
+2026-10-20T13:16:31.716Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0359
+2026-10-20T13:17:25.800Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0360
+2026-10-20T13:24:06.334Z,simpleanalytics.com,/,true,,,,,,,3,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0361
+2026-10-20T13:26:48.639Z,simpleanalytics.com,/,true,google,,,,,,596,15,DE,Google Chrome,155,macOS,26.5.2,desktop,session-0362
+2026-10-20T13:27:57.556Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0363
+2026-10-20T13:28:59.021Z,simpleanalytics.com,/,true,google,,,,,,1,15,GB,Google Chrome,155,macOS,15.7.3,desktop,session-0364
+2026-10-20T13:29:51.722Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0365
+2026-10-20T13:32:19.818Z,simpleanalytics.com,/,true,google,,,,,,,,HU,Google Chrome,155,Windows,19.0.0,desktop,session-0366
+2026-10-20T13:33:19.866Z,simpleanalytics.com,/,true,,,,,,,1,20,GB,Google Chrome,155,Windows,19.0.0,desktop,session-0367
+2026-10-20T13:33:49.747Z,simpleanalytics.com,/,true,,,,,,,2,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0368
+2026-10-20T13:33:59.058Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0369
+2026-10-20T13:34:18.652Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0370
+2026-10-20T13:36:03.046Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Google Chrome,155,macOS,26.5.2,desktop,session-0371
+2026-10-20T13:37:04.058Z,simpleanalytics.com,/,true,,,,,,,2,20,IE,Firefox,154,macOS,10.15,desktop,session-0372
+2026-10-20T13:37:17.503Z,simpleanalytics.com,/blog/how-to-export-data-from-google-analytics,true,,,,,,,102,95,PL,Microsoft Edge,155,macOS,27.0.1,desktop,session-0373
+2026-10-20T13:39:51.142Z,simpleanalytics.com,/,true,,,,,,,,10,AU,Safari,26,macOS,10.15.7,desktop,session-0374
+2026-10-20T13:41:01.417Z,simpleanalytics.com,/,true,,,,,,,2,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0375
+2026-10-20T13:41:14.521Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,21,45,DE,Google Chrome,155,macOS,26.5.2,desktop,session-0362
+2026-10-20T13:41:33.239Z,simpleanalytics.com,/,true,,,,,,,,15,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0376
+2026-10-20T13:44:10.978Z,simpleanalytics.com,/,true,,,,,,,,15,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0377
+2026-10-20T13:44:26.081Z,simpleanalytics.com,/,true,,,,,,,,,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0378
+2026-10-20T13:44:31.101Z,simpleanalytics.com,/pricing,true,google,,,,,,26,45,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0379
+2026-10-20T13:45:04.776Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Firefox,158,Windows,10,desktop,session-0380
+2026-10-20T13:45:50.029Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Safari,26,macOS,10.15.7,desktop,session-0381
+2026-10-20T13:46:37.749Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0382
+2026-10-20T13:47:40.230Z,simpleanalytics.com,/blog/google-is-tracking-you-even-when-you-use-duck-duck-go,true,duckduckgo.com,,,,,,56,100,US,DuckDuckGo,18,iOS,18.6,mobile,session-0383
+2026-10-20T13:49:03.623Z,simpleanalytics.com,/,true,,,,,,,,15,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0384
+2026-10-20T13:49:13.556Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Firefox,158,Windows,10,desktop,session-0385
+2026-10-20T13:49:38.008Z,simpleanalytics.com,/,true,,,,,,,1,15,PT,Google Chrome,,macOS,26.5.2,desktop,session-0386
+2026-10-20T13:49:47.640Z,simpleanalytics.com,/,true,,,,,,,3,15,BE,Google Chrome,155,macOS,14.5.0,desktop,session-0387
+2026-10-20T13:50:20.108Z,simpleanalytics.com,/,true,,,,,,,2,5,DE,iOS Safari,18,iOS,18.7,mobile,session-0388
+2026-10-20T13:52:03.867Z,simpleanalytics.com,/,true,,,,,,,5,20,NL,Brave,152,macOS,26.6.2,desktop,session-0389
+2026-10-20T13:52:08.942Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,5,100,NL,Brave,152,macOS,26.6.2,desktop,session-0389
+2026-10-20T13:52:13.836Z,simpleanalytics.com,/use-cases/agencies,false,simpleanalytics.com,,,,,,12,100,NL,Brave,152,macOS,26.6.2,desktop,session-0389
+2026-10-20T13:52:25.570Z,simpleanalytics.com,/data-processing-agreement,true,,,,,,,,,DE,Google Chrome,155,macOS,26.5.1,desktop,session-0390
+2026-10-20T13:52:25.979Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,5,100,NL,Brave,152,macOS,26.6.2,desktop,session-0389
+2026-10-20T13:52:30.677Z,simpleanalytics.com,/analytics-without-consent,false,simpleanalytics.com,,,,,,,,NL,Brave,152,macOS,26.6.2,desktop,session-0389
+2026-10-20T13:54:00.577Z,simpleanalytics.com,/,true,,,,,,,2,10,CZ,Google Chrome,155,Windows,19.0.0,desktop,session-0391
+2026-10-20T13:54:46.870Z,simpleanalytics.com,/about,true,,,,,,,1,30,DK,Google Chrome,155,macOS,15.7.4,desktop,session-0392
+2026-10-20T13:57:14.565Z,simpleanalytics.com,/blog/how-we-hit-our-30k-annual-recurring-revenue-milestone,true,,,,,,,5,10,TW,Microsoft Edge,155,Windows,19.0.0,desktop,session-0393
+2026-10-20T13:57:29.946Z,simpleanalytics.com,/,true,,,,,,,,10,BE,Safari,18,macOS,10.15.7,desktop,session-0394
+2026-10-20T13:57:32.341Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,1,50,BE,Safari,18,macOS,10.15.7,desktop,session-0394
+2026-10-20T13:59:13.382Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.4,desktop,session-0395
+2026-10-20T13:59:31.608Z,simpleanalytics.com,/,true,,,,,,,3,10,DE,Safari,27,macOS,10.15.7,desktop,session-0396
+2026-10-20T14:00:36.764Z,simpleanalytics.com,/,true,,,,,,,2,20,NO,Firefox,156,macOS,10.15,desktop,session-0397
+2026-10-20T14:01:45.670Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0398
+2026-10-20T14:02:12.407Z,simpleanalytics.com,/tools/timezone,true,google,,,,,,,,RO,Google Chrome,155,Windows,19.0.0,desktop,session-0399
+2026-10-20T14:03:57.233Z,simpleanalytics.com,/,true,,,,,,,2,10,ES,Google Chrome,155,macOS,15.0.1,desktop,session-0400
+2026-10-20T14:04:11.599Z,simpleanalytics.com,/,true,,,,,,,1,20,PT,Google Chrome,154,macOS,26.6.2,desktop,session-0401
+2026-10-20T14:04:44.122Z,simpleanalytics.com,/data-processing-agreement,true,,,,,,,591,35,DE,Google Chrome,154,macOS,26.6.2,desktop,session-0402
+2026-10-20T14:04:59.012Z,simpleanalytics.com,/,true,,,,,,,,10,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0403
+2026-10-20T14:05:50.032Z,simpleanalytics.com,/,true,,,,,,,36,100,CA,Firefox,158,macOS,10.15,desktop,session-0404
+2026-10-20T14:06:01.085Z,simpleanalytics.com,/,true,,,,,,,74,100,US,iOS Safari,27,iOS,27.0,mobile,session-0405
+2026-10-20T14:06:40.771Z,simpleanalytics.com,/,true,,,,,,,100,30,AT,Safari,26,macOS,10.15.7,desktop,session-0406
+2026-10-20T14:06:51.925Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,1,75,FR,Google Chrome,153,Windows,19.0.0,desktop,session-0104
+2026-10-20T14:06:56.890Z,simpleanalytics.com,/features,false,,,,,,,3,20,FR,Google Chrome,153,Windows,19.0.0,desktop,session-0407
+2026-10-20T14:07:15.409Z,simpleanalytics.com,/general-terms-and-conditions,false,simpleanalytics.com,,,,,,31,100,US,iOS Safari,27,iOS,27.0,mobile,session-0405
+2026-10-20T14:07:37.936Z,simpleanalytics.com,/,true,google,,,,,,96,30,AT,Google Chrome,155,macOS,26.5.2,desktop,session-0408
+2026-10-20T14:08:39.351Z,simpleanalytics.com,/,true,,,,,,,2,10,HU,Safari,26,macOS,10.15.7,desktop,session-0409
+2026-10-20T14:08:53.596Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,22,100,CA,Firefox,158,macOS,10.15,desktop,session-0404
+2026-10-20T14:09:15.432Z,simpleanalytics.com,/changelog,false,simpleanalytics.com,,,,,,4,100,CA,Firefox,158,macOS,10.15,desktop,session-0404
+2026-10-20T14:09:21.018Z,simpleanalytics.com,/,true,google,,,,,,7,20,BE,Google Chrome,155,macOS,27.0.1,desktop,session-0410
+2026-10-20T14:09:27.556Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,5,45,BE,Google Chrome,155,macOS,27.0.1,desktop,session-0410
+2026-10-20T14:09:32.716Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,1,45,BE,Google Chrome,155,macOS,27.0.1,desktop,session-0410
+2026-10-20T14:09:43.808Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Google Chrome,155,macOS,26.7.1,desktop,session-0411
+2026-10-20T14:09:44.554Z,simpleanalytics.com,/,true,,,,,,,2,10,GB,Safari,27,macOS,10.15.7,desktop,session-0412
+2026-10-20T14:09:45.583Z,simpleanalytics.com,/,true,,,,,,,,15,BE,Google Chrome,155,macOS,14.5.0,desktop,session-0413
+2026-10-20T14:10:11.413Z,simpleanalytics.com,/features/ai,true,,producthunt,,,,,3,40,TR,Google Chrome,155,macOS,26.6.2,desktop,session-0414
+2026-10-20T14:11:42.946Z,simpleanalytics.com,/,true,google,,,,,,40,100,NL,Safari,27,macOS,10.15.7,desktop,session-0415
+2026-10-20T14:12:23.056Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,24,100,NL,Safari,27,macOS,10.15.7,desktop,session-0415
+2026-10-20T14:14:44.074Z,simpleanalytics.com,/,true,,,,,,,2,15,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0416
+2026-10-20T14:14:47.872Z,simpleanalytics.com,/,false,,,,,,,9,15,NL,Google Chrome,152,macOS,26.7.0,desktop,session-0417
+2026-10-20T14:14:52.061Z,simpleanalytics.com,/about,false,,,,,,,,,NL,Safari,27,macOS,10.15.7,desktop,session-0418
+2026-10-20T14:18:13.293Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0419
+2026-10-20T14:20:27.887Z,simpleanalytics.com,/,true,google,,,,,,,,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0420
+2026-10-20T14:22:08.728Z,simpleanalytics.com,/demo,true,,,,,,,10,70,NL,Brave,152,macOS,26.6.2,desktop,session-0421
+2026-10-20T14:22:54.776Z,simpleanalytics.com,/,true,google,,,,,,19,50,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0422
+2026-10-20T14:23:01.019Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0423
+2026-10-20T14:23:13.207Z,simpleanalytics.com,/,true,,,,,,,2,10,IT,Google Chrome,,macOS,26.6.2,desktop,session-0424
+2026-10-20T14:23:37.105Z,simpleanalytics.com,/,true,bing.com,,,,,,5,10,DE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0425
+2026-10-20T14:24:00.578Z,simpleanalytics.com,/,false,,,,,,,4,20,HU,Google Chrome,155,Windows,19.0.0,desktop,session-0426
+2026-10-20T14:24:52.011Z,simpleanalytics.com,/,true,,,,,,,65,20,NL,Google Chrome,,macOS,15.8.1,desktop,session-0427
+2026-10-20T14:25:53.037Z,simpleanalytics.com,/,true,,,,,,,2,15,CH,Google Chrome,155,Windows,19.0.0,desktop,session-0428
+2026-10-20T14:25:57.090Z,simpleanalytics.com,/blog,true,cursos.coachgroup-ecuador.net,,,,,,12,25,EC,Opera,137,Windows,14.0.0,desktop,session-0429
+2026-10-20T14:26:55.966Z,simpleanalytics.com,/,true,,,,,,,3,25,FR,Firefox,158,Windows,10,desktop,session-0430
+2026-10-20T14:26:59.000Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,5,90,FR,Firefox,158,Windows,10,desktop,session-0430
+2026-10-20T14:27:03.603Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0431
+2026-10-20T14:27:21.096Z,simpleanalytics.com,/pricing,true,dashboard.simpleanalytics.com,,,,,,10,45,NL,Google Chrome,,macOS,15.8.1,desktop,session-0432
+2026-10-20T14:28:22.728Z,simpleanalytics.com,/pricing,true,dashboard.simpleanalytics.com,,,,,,33,40,NL,Google Chrome,,macOS,15.8.1,desktop,session-0433
+2026-10-20T14:30:10.821Z,simpleanalytics.com,/,true,,,,,,,17,100,,Firefox,156,Linux,,desktop,session-0434
+2026-10-20T14:32:20.705Z,simpleanalytics.com,/,true,google,,,,,,1,15,NL,Google Chrome,155,macOS,26.5.2,desktop,session-0435
+2026-10-20T14:32:22.141Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0436
+2026-10-20T14:32:38.315Z,simpleanalytics.com,/,true,uneed.best,uneed.best,,,,,3,100,NG,Google Chrome,155,Windows,14.0.0,desktop,session-0437
+2026-10-20T14:32:41.079Z,simpleanalytics.com,/privacy-policy,false,simpleanalytics.com,,,,,,6,100,NG,Google Chrome,155,Windows,14.0.0,desktop,session-0437
+2026-10-20T14:33:01.888Z,simpleanalytics.com,/,true,,,,,,,19,15,MK,Google Chrome,152,macOS,26.2.0,desktop,session-0438
+2026-10-20T14:34:29.448Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0439
+2026-10-20T14:35:48.287Z,simpleanalytics.com,/pricing,true,,,,,,,11,40,CA,Google Chrome,,macOS,26.6.0,desktop,session-0440
+2026-10-20T14:38:52.336Z,simpleanalytics.com,/,true,google,,,,,,2,10,IT,Google Chrome,155,Windows,19.0.0,desktop,session-0441
+2026-10-20T14:44:03.949Z,simpleanalytics.com,/,true,,,,,,,3,10,LT,Google Chrome,155,Linux,,desktop,session-0442
+2026-10-20T14:45:18.562Z,simpleanalytics.com,/,true,google,,,,,,5,20,FR,Google Chrome,150,Linux,,desktop,session-0443
+2026-10-20T14:45:23.604Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,19,100,FR,Google Chrome,150,Linux,,desktop,session-0443
+2026-10-20T14:46:38.378Z,simpleanalytics.com,/,true,google,,,,,,,10,CN,Google Chrome,155,Windows,15.0.0,desktop,session-0444
+2026-10-20T14:47:33.482Z,simpleanalytics.com,/demo,false,simpleanalytics.com,,,,,,30,45,CN,Google Chrome,155,Windows,15.0.0,desktop,session-0444
+2026-10-20T14:48:53.558Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,66,100,CN,Google Chrome,155,Windows,15.0.0,desktop,session-0445
+2026-10-20T14:51:08.362Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,33,95,CN,Google Chrome,155,Windows,15.0.0,desktop,session-0445
+2026-10-20T14:51:22.419Z,simpleanalytics.com,/,true,,,,,,,1,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0446
+2026-10-20T14:51:24.214Z,simpleanalytics.com,/signup,true,dashboard.simpleanalytics.com,,,,,,,,RU,Google Chrome,154,Windows,19.0.0,desktop,session-0447
+2026-10-20T14:51:41.751Z,simpleanalytics.com,/signup/add-your-colleagues,false,simpleanalytics.com,,,,,,,,CN,Google Chrome,155,Windows,15.0.0,desktop,session-0445
+2026-10-20T14:52:11.321Z,simpleanalytics.com,/,true,,,,,,,17,20,AE,Google Chrome,155,Windows,19.0.0,desktop,session-0448
+2026-10-20T14:52:27.718Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,29,45,AE,Google Chrome,155,Windows,19.0.0,desktop,session-0448
+2026-10-20T14:52:40.873Z,simpleanalytics.com,/,true,,,,,,,19,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:00.196Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,11,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:11.397Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,-7,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:15.124Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,2,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:17.156Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:19.056Z,simpleanalytics.com,/analytics-without-consent,false,simpleanalytics.com,,,,,,7,100,US,iOS Safari,27,iOS,27.0,mobile,session-0449
+2026-10-20T14:53:55.983Z,simpleanalytics.com,/,true,google,,,,,,1,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0450
+2026-10-20T14:55:23.108Z,simpleanalytics.com,/,true,,,,,,,2,10,BE,Google Chrome,155,macOS,14.6.1,desktop,session-0451
+2026-10-20T14:56:50.269Z,simpleanalytics.com,/,true,bing.com,,,,,,2,10,BE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0452
+2026-10-20T14:58:18.010Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0453
+2026-10-20T14:59:57.310Z,simpleanalytics.com,/,true,,,,,,,2,10,DE,Safari,27,macOS,10.15.7,desktop,session-0454
+2026-10-20T15:00:07.010Z,simpleanalytics.com,/,true,google,,,,,,4,10,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:00:10.643Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,41,60,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:00:30.010Z,simpleanalytics.com,/,true,,,,,,,,5,NO,iOS Safari,18,iOS,18.7,mobile,session-0456
+2026-10-20T15:00:51.590Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,66,100,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:02:23.619Z,simpleanalytics.com,/matomo-alternative,false,simpleanalytics.com,,,,,,47,100,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:03:09.944Z,simpleanalytics.com,/google-analytics-alternative,false,simpleanalytics.com,,,,,,96,100,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:03:50.247Z,simpleanalytics.com,/,true,google,,,,,,33,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0457
+2026-10-20T15:03:57.407Z,simpleanalytics.com,/,true,google,,,,,,42,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0458
+2026-10-20T15:04:04.681Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,,,NL,iOS Safari,18,iOS,18.7,mobile,session-0459
+2026-10-20T15:04:22.344Z,simpleanalytics.com,/,true,,,,,,,,,DE,Safari,27,macOS,10.15.7,desktop,session-0460
+2026-10-20T15:04:22.899Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,95,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0457
+2026-10-20T15:04:36.805Z,simpleanalytics.com,/,true,,,,,,,2,20,PT,Safari,26,macOS,10.15.7,desktop,session-0461
+2026-10-20T15:04:39.125Z,simpleanalytics.com,/about,false,simpleanalytics.com,,,,,,5,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0458
+2026-10-20T15:04:45.726Z,simpleanalytics.com,/matomo-alternative,false,simpleanalytics.com,,,,,,18,100,BD,Google Chrome,155,Windows,10.0.0,desktop,session-0455
+2026-10-20T15:04:50.186Z,simpleanalytics.com,/,true,,,,,,,,,DE,Safari,27,macOS,10.15.7,desktop,session-0462
+2026-10-20T15:05:44.416Z,simpleanalytics.com,/,true,google,,,,,,24,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0463
+2026-10-20T15:06:08.579Z,simpleanalytics.com,/eu-hosted-analytics,false,simpleanalytics.com,,,,,,6,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0463
+2026-10-20T15:06:11.348Z,simpleanalytics.com,/pricing,true,,,,,,,23,50,CA,Google Chrome,155,macOS,27.0.1,desktop,session-0464
+2026-10-20T15:06:14.975Z,simpleanalytics.com,/features,false,simpleanalytics.com,,,,,,6,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0463
+2026-10-20T15:06:20.875Z,simpleanalytics.com,/methodology,false,simpleanalytics.com,,,,,,15,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0463
+2026-10-20T15:06:32.773Z,simpleanalytics.com,/,true,google,,,,,,1,10,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0465
+2026-10-20T15:06:33.641Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,224,100,NL,Microsoft Edge,155,Windows,19.0.0,desktop,session-0465
+2026-10-20T15:06:35.782Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,184,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0463
+2026-10-20T15:06:40.649Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,108,100,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0457
+2026-10-20T15:07:21.027Z,simpleanalytics.com,/,true,google,,,,,,3,10,GB,Google Chrome,155,macOS,15.7.7,desktop,session-0466
+2026-10-20T15:07:44.651Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,1,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0467
+2026-10-20T15:08:08.901Z,simpleanalytics.com,/,true,,,,,,,1,15,DE,Safari,26,macOS,10.15.7,desktop,session-0468
+2026-10-20T15:08:35.138Z,simpleanalytics.com,/,true,google,,,,,,2,15,PL,Google Chrome,155,Windows,10.0.0,desktop,session-0469
+2026-10-20T15:09:35.874Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0470
+2026-10-20T15:09:56.218Z,simpleanalytics.com,/,true,,,,,,,3,15,GB,Safari,26,macOS,10.15.7,desktop,session-0471
+2026-10-20T15:10:22.672Z,simpleanalytics.com,/,true,,,,,,,1,10,DE,Safari,27,macOS,10.15.7,desktop,session-0472
+2026-10-20T15:12:01.475Z,simpleanalytics.com,/,true,,,,,,,,15,DE,Google Chrome,155,macOS,26.5.0,desktop,session-0473
+2026-10-20T15:15:01.148Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0474
+2026-10-20T15:19:11.521Z,simpleanalytics.com,/,true,,,,,,,,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0475
+2026-10-20T15:19:18.952Z,simpleanalytics.com,/,true,,,,,,,2,25,BE,Google Chrome,155,macOS,26.6.2,desktop,session-0476
+2026-10-20T15:21:27.365Z,simpleanalytics.com,/,true,google,,,,,,3,10,SE,Google Chrome,155,Windows,19.0.0,desktop,session-0477
+2026-10-20T15:22:02.040Z,simpleanalytics.com,/badges,true,,,,,,,610,90,BE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0478
+2026-10-20T15:27:13.443Z,simpleanalytics.com,/,true,,,,,,,2,10,BE,Firefox,158,Windows,10,desktop,session-0479
+2026-10-20T15:29:11.533Z,simpleanalytics.com,/,true,,,,,,,2,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0480
+2026-10-20T15:34:38.815Z,simpleanalytics.com,/,true,,,,,,,2,10,AG,Safari,26,macOS,10.15.7,desktop,session-0481
+2026-10-20T15:36:37.079Z,simpleanalytics.com,/,true,,,,,,,,,FR,Google Chrome,154,macOS,14.6.1,desktop,session-0482
+2026-10-20T15:36:44.598Z,simpleanalytics.com,/,true,,,,,,,8,20,BR,Google Chrome,,Linux,,desktop,session-0483
+2026-10-20T15:37:51.013Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0484
+2026-10-20T15:38:02.579Z,simpleanalytics.com,/badges,true,,,,,,,888,100,BE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0485
+2026-10-20T15:41:46.252Z,simpleanalytics.com,/,true,google,,,,,,2,10,IN,Google Chrome,155,Windows,8.0.0,desktop,session-0486
+2026-10-20T15:42:04.642Z,simpleanalytics.com,/,true,,,,,,,3,5,CZ,Google Chrome,155,Android,13.0.0,mobile,session-0487
+2026-10-20T15:42:09.250Z,simpleanalytics.com,/,true,google,,,,,,2,10,IN,Google Chrome,155,Windows,8.0.0,desktop,session-0488
+2026-10-20T15:42:26.742Z,simpleanalytics.com,/pricing,true,,,,,,,,,,Google Chrome,139,macOS,15.7.3,desktop,session-0489
+2026-10-20T15:44:42.061Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,5,15,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0490
+2026-10-20T15:46:00.811Z,simpleanalytics.com,/pricing,true,dashboard.simpleanalytics.com,,,,,,30,40,US,Google Chrome,155,macOS,27.0.1,desktop,session-0491
+2026-10-20T15:46:15.687Z,simpleanalytics.com,/,true,,,,,,,2,10,US,Google Chrome,155,macOS,15.7.9,desktop,session-0492
+2026-10-20T15:47:52.670Z,simpleanalytics.com,/,true,flowjam.com,,,,,,77,100,US,Google Chrome,155,Windows,19.0.0,desktop,session-0493
+2026-10-20T15:50:02.409Z,simpleanalytics.com,/,true,,,,,,,1,10,CZ,Google Chrome,155,macOS,26.6.2,desktop,session-0494
+2026-10-20T15:57:46.200Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0495
+2026-10-20T15:59:20.823Z,simpleanalytics.com,/,false,,,,,,,,,CA,Google Chrome,155,Linux,,desktop,session-0496
+2026-10-20T15:59:30.969Z,simpleanalytics.com,/,true,,,,,,,1,10,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0497
+2026-10-20T15:59:37.721Z,simpleanalytics.com,/,true,,toolify,,,,,,,IN,Microsoft Edge,155,Windows,19.0.0,desktop,session-0498
+2026-10-20T16:02:19.811Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0499
+2026-10-20T16:02:55.376Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0500
+2026-10-20T16:03:55.432Z,simpleanalytics.com,/,true,,,,,,,3,10,DE,Safari,27,macOS,10.15.7,desktop,session-0501
+2026-10-20T16:05:48.427Z,simpleanalytics.com,/blog/does-google-sell-your-data,true,google,,,,,,22,30,MX,Google Chrome,155,Android,15.0.0,mobile,session-0502
+2026-10-20T16:06:31.858Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0503
+2026-10-20T16:08:29.298Z,simpleanalytics.com,/features,false,,,,,,,272,35,DE,Google Chrome,155,Linux,,desktop,session-0504
+2026-10-20T16:08:29.299Z,simpleanalytics.com,/features,false,,,,,,,274,35,DE,Google Chrome,155,Linux,,desktop,session-0505
+2026-10-20T16:10:53.534Z,simpleanalytics.com,/,true,,,,,,,1,10,US,Google Chrome,155,macOS,27.0.1,desktop,session-0506
+2026-10-20T16:11:05.938Z,simpleanalytics.com,/features,true,,,,,,,14,100,,Firefox,156,Linux,,desktop,session-0507
+2026-10-20T16:11:09.307Z,simpleanalytics.com,/,true,,,,,,,6,30,US,Google Chrome,155,macOS,26.5.2,desktop,session-0508
+2026-10-20T16:12:08.197Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,18,iOS,18.7,mobile,session-0509
+2026-10-20T16:12:56.576Z,simpleanalytics.com,/,true,,,,,,,,,CN,Google Chrome,155,macOS,26.5.2,desktop,session-0510
+2026-10-20T16:12:58.085Z,simpleanalytics.com,/,true,,,,,,,1,10,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0511
+2026-10-20T16:14:00.479Z,simpleanalytics.com,/,true,google,,,,,,,,CO,Microsoft Edge,155,Windows,19.0.0,desktop,session-0512
+2026-10-20T16:14:33.447Z,simpleanalytics.com,/,true,,,,,,,1,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0513
+2026-10-20T16:16:07.368Z,simpleanalytics.com,/pricing,true,,,,,,,15,100,,Firefox,156,Linux,,desktop,session-0514
+2026-10-20T16:19:00.163Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Google Chrome,155,macOS,26.5.2,desktop,session-0515
+2026-10-20T16:19:13.888Z,simpleanalytics.com,/,true,,,,,,,1,15,US,Firefox,158,Windows,10,desktop,session-0516
+2026-10-20T16:20:06.830Z,simpleanalytics.com,/,true,google,,,,,,1,10,US,Safari,27,macOS,10.15.7,desktop,session-0517
+2026-10-20T16:21:17.432Z,simpleanalytics.com,/,true,,,,,,,,10,DE,Safari,27,macOS,10.15.7,desktop,session-0518
+2026-10-20T16:23:27.598Z,simpleanalytics.com,/,true,,,,,,,,10,SK,Google Chrome,155,macOS,26.6.2,desktop,session-0519
+2026-10-20T16:23:37.818Z,simpleanalytics.com,/,true,,,,,,,,10,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0520
+2026-10-20T16:25:22.034Z,simpleanalytics.com,/,true,,,,,,,12,5,CO,Google Chrome,155,Android,16.0.0,mobile,session-0521
+2026-10-20T16:26:48.399Z,simpleanalytics.com,/,true,,,,,,,2,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0522
+2026-10-20T16:27:18.716Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0523
+2026-10-20T16:29:23.591Z,simpleanalytics.com,/,true,,,,,,,,5,NO,iOS Safari,18,iOS,18.7,mobile,session-0524
+2026-10-20T16:29:53.126Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0525
+2026-10-20T16:31:51.720Z,simpleanalytics.com,/,true,,,,,,,7,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0526
+2026-10-20T16:32:09.910Z,simpleanalytics.com,/,true,,,,,,,6,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0527
+2026-10-20T16:32:16.580Z,simpleanalytics.com,/,true,,,,,,,5,15,,Firefox,156,Windows,10,desktop,session-0528
+2026-10-20T16:33:10.204Z,simpleanalytics.com,/,true,,,,,,,24,20,NL,Google Chrome,,macOS,15.8.1,desktop,session-0529
+2026-10-20T16:33:34.098Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,61,45,NL,Google Chrome,,macOS,15.8.1,desktop,session-0529
+2026-10-20T16:35:15.305Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0530
+2026-10-20T16:35:23.707Z,simpleanalytics.com,/pricing,false,,,,,,,1,45,NL,Google Chrome,,macOS,15.8.1,desktop,session-0531
+2026-10-20T16:35:24.722Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,88,45,NL,Google Chrome,,macOS,15.8.1,desktop,session-0531
+2026-10-20T16:39:36.273Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0532
+2026-10-20T16:39:36.274Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0533
+2026-10-20T16:41:27.431Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0534
+2026-10-20T16:45:25.804Z,simpleanalytics.com,/,true,,,,,,,2,5,GB,Google Chrome,155,Android,16.0.0,mobile,session-0535
+2026-10-20T16:47:52.177Z,simpleanalytics.com,/,true,google,,,,,,3,10,GB,Google Chrome,154,macOS,26.6.2,desktop,session-0536
+2026-10-20T16:47:54.759Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,,,GB,Google Chrome,154,macOS,26.6.2,desktop,session-0536
+2026-10-20T16:48:25.096Z,simpleanalytics.com,/,true,google,,,,,,1,15,US,Google Chrome,,macOS,26.5.2,desktop,session-0537
+2026-10-20T16:58:13.751Z,simpleanalytics.com,/,true,,,,,,,3,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0538
+2026-10-20T17:01:02.589Z,simpleanalytics.com,/,true,,,,,,,,,GB,Google Chrome,,Android,16.0.0,mobile,session-0539
+2026-10-20T17:01:12.077Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0540
+2026-10-20T17:06:24.764Z,simpleanalytics.com,/,true,,,,,,,3,5,IE,Firefox Mobile,158,Android,16,mobile,session-0541
+2026-10-20T17:06:59.499Z,simpleanalytics.com,/,true,,,,,,,2,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0542
+2026-10-20T17:09:31.155Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0543
+2026-10-20T17:11:27.000Z,simpleanalytics.com,/,true,away.vk.ru,,,,,,,,RU,Google Chrome,155,Windows,19.0.0,desktop,session-0544
+2026-10-20T17:15:12.808Z,simpleanalytics.com,/pricing,false,,,,,,,120,30,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0545
+2026-10-20T17:15:12.814Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0546
+2026-10-20T17:16:06.940Z,simpleanalytics.com,/,true,,,,,,,3,10,US,Safari,26,macOS,10.15.7,desktop,session-0547
+2026-10-20T17:16:34.183Z,simpleanalytics.com,/,true,,,,,,,2,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0548
+2026-10-20T17:20:28.120Z,simpleanalytics.com,/guides/track-scroll-depth,false,,,,,,,,,ID,Google Chrome,155,Windows,19.0.0,desktop,session-0549
+2026-10-20T17:20:50.599Z,simpleanalytics.com,/blog/the-eu-wants-to-kill-cookie-banners-by-moving-consent-to-your-browser,true,dashboard.simpleanalytics.com,,,,,,,,NL,Safari,26,macOS,10.15.7,desktop,session-0550
+2026-10-20T17:33:49.480Z,simpleanalytics.com,/,true,,,,,,,,5,US,iOS Safari,18,iOS,18.7,mobile,session-0551
+2026-10-20T17:33:49.486Z,simpleanalytics.com,/,true,binarytricks.com,binarytricks.com,,,badge,,9,20,ES,Google Chrome,155,macOS,27.0.1,desktop,session-0552
+2026-10-20T17:33:55.180Z,simpleanalytics.com,/,true,,,,,,,,,ES,Google Chrome,155,macOS,27.0.1,desktop,session-0553
+2026-10-20T17:34:28.686Z,simpleanalytics.com,/,true,,,,,,,9,5,PL,iOS Safari,18,iOS,18.7,mobile,session-0554
+2026-10-20T17:36:14.075Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Safari,27,macOS,10.15.7,desktop,session-0555
+2026-10-20T17:36:47.644Z,simpleanalytics.com,/,true,,,,,,,3,10,IE,Google Chrome,155,macOS,26.5.2,desktop,session-0556
+2026-10-20T17:38:39.396Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0557
+2026-10-20T17:38:40.082Z,simpleanalytics.com,/pricing,false,,,,,,,72,30,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0558
+2026-10-20T17:47:39.460Z,simpleanalytics.com,/pricing,false,,,,,,,,,NL,Google Chrome,155,Windows,19.0.0,desktop,session-0559
+2026-10-20T17:51:36.447Z,simpleanalytics.com,/,true,,,,,,,3,10,GB,Safari,27,macOS,10.15.7,desktop,session-0560
+2026-10-20T17:54:07.380Z,simpleanalytics.com,/tools/cookie-scanner,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0561
+2026-10-20T17:54:08.320Z,simpleanalytics.com,/pricing,false,,,,,,,,,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0562
+2026-10-20T17:58:59.860Z,simpleanalytics.com,/,true,,,,,,,4,5,IT,iOS Safari,18,iOS,18.7,mobile,session-0563
+2026-10-20T18:00:48.508Z,simpleanalytics.com,/,true,,,,,,,3,5,DE,Chrome Mobile,155,iOS,26.6,mobile,session-0564
+2026-10-20T18:03:01.934Z,simpleanalytics.com,/,true,google,,,,,,,20,US,Safari,27,macOS,10.15.7,desktop,session-0565
+2026-10-20T18:03:13.464Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,15,50,US,Safari,27,macOS,10.15.7,desktop,session-0565
+2026-10-20T18:03:28.575Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,20,20,US,Safari,27,macOS,10.15.7,desktop,session-0565
+2026-10-20T18:06:16.181Z,simpleanalytics.com,/,true,,,,,,,,10,CZ,Google Chrome,155,Windows,19.0.0,desktop,session-0566
+2026-10-20T18:08:05.545Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0567
+2026-10-20T18:09:46.492Z,simpleanalytics.com,/,true,google,,,,,,22,95,PL,iOS Safari,18,iOS,18.7,mobile,session-0568
+2026-10-20T18:15:16.041Z,simpleanalytics.com,/,true,,,,,,,,5,SK,iOS Safari,18,iOS,18.7,mobile,session-0569
+2026-10-20T18:17:57.644Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0570
+2026-10-20T18:18:24.907Z,simpleanalytics.com,/,true,,,,,,,,15,DE,Google Chrome,155,macOS,26.5.0,desktop,session-0571
+2026-10-20T18:19:04.453Z,simpleanalytics.com,/,true,,,,,,,1,10,DK,Google Chrome,155,Windows,19.0.0,desktop,session-0572
+2026-10-20T18:27:34.089Z,simpleanalytics.com,/,true,,,,,,,1,15,US,Firefox,158,Windows,10,desktop,session-0573
+2026-10-20T18:28:42.872Z,simpleanalytics.com,/,true,,chatgpt.com,,,,,7,15,LT,Google Chrome,155,Windows,19.0.0,desktop,session-0574
+2026-10-20T18:30:17.747Z,simpleanalytics.com,/,true,,,,,,,2,5,GB,Google Chrome,155,Android,16.0.0,mobile,session-0575
+2026-10-20T18:30:31.737Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0576
+2026-10-20T18:31:32.274Z,simpleanalytics.com,/web-analytics-tools,true,,,,,,,,15,CN,Google Chrome,112,Linux,5.4.241,desktop,session-0577
+2026-10-20T18:32:54.372Z,simpleanalytics.com,/,true,,,,,,,,,BE,Google Chrome,154,macOS,26.6.2,desktop,session-0578
+2026-10-20T18:33:03.776Z,simpleanalytics.com,/,true,,,,,,,11,15,US,Google Chrome,155,Windows,19.0.0,desktop,session-0579
+2026-10-20T18:33:10.874Z,simpleanalytics.com,/blog,true,,,,,,,,,,,,,,desktop,session-0580
+2026-10-20T18:34:44.993Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0581
+2026-10-20T18:37:50.597Z,simpleanalytics.com,/,true,,,,,,,16,15,US,Safari,26,macOS,10.15.7,desktop,session-0582
+2026-10-20T18:37:59.546Z,simpleanalytics.com,/,true,,,,,,,,15,LV,Google Chrome,153,macOS,26.4.1,desktop,session-0583
+2026-10-20T18:38:06.764Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,467,45,US,Safari,26,macOS,10.15.7,desktop,session-0582
+2026-10-20T18:38:29.803Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,1,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0584
+2026-10-20T18:38:39.323Z,simpleanalytics.com,/,true,google,,,,,,1755,15,US,Google Chrome,155,macOS,26.6.2,desktop,session-0585
+2026-10-20T18:39:47.170Z,simpleanalytics.com,/,true,,,,,,,2,15,GB,Google Chrome,,Windows,10.0.0,desktop,session-0586
+2026-10-20T18:42:43.995Z,simpleanalytics.com,/,true,,,,,,,,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0587
+2026-10-20T18:47:48.270Z,simpleanalytics.com,/,true,,,,,,,2,5,PY,Google Chrome,155,Android,12.0.0,mobile,session-0588
+2026-10-20T18:50:06.768Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Safari,27,macOS,10.15.7,desktop,session-0589
+2026-10-20T18:52:33.233Z,simpleanalytics.com,/,true,,,,,,,2,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0590
+2026-10-20T18:53:15.192Z,simpleanalytics.com,/general-terms-and-conditions,true,dashboard.simpleanalytics.com,,,,,,57,95,GB,Google Chrome,154,macOS,26.6.2,desktop,session-0591
+2026-10-20T18:57:16.537Z,simpleanalytics.com,/about,true,google,,,,,,,,NL,iOS Safari,18,iOS,18.7,mobile,session-0592
+2026-10-20T18:57:38.033Z,simpleanalytics.com,/,true,trustmrr.com,trustmrr,,,,,11,100,IT,Google Chrome,155,macOS,27.0.1,desktop,session-0593
+2026-10-20T19:03:39.117Z,simpleanalytics.com,/,true,,,,,,,2,10,US,Google Chrome,154,macOS,15.6.1,desktop,session-0594
+2026-10-20T19:04:03.806Z,simpleanalytics.com,/,true,,,,,,,3,5,DE,Chrome Mobile,155,iOS,26.6,mobile,session-0595
+2026-10-20T19:06:38.655Z,simpleanalytics.com,/,true,,,,,,,2,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0596
+2026-10-20T19:07:20.170Z,simpleanalytics.com,/,true,google,,,,,,1,15,TR,Google Chrome,155,Windows,19.0.0,desktop,session-0597
+2026-10-20T19:07:21.273Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,11,100,TR,Google Chrome,155,Windows,19.0.0,desktop,session-0597
+2026-10-20T19:07:31.733Z,simpleanalytics.com,/integrations,false,simpleanalytics.com,,,,,,4,100,TR,Google Chrome,155,Windows,19.0.0,desktop,session-0597
+2026-10-20T19:07:35.693Z,simpleanalytics.com,/web-analytics,false,simpleanalytics.com,,,,,,22,100,TR,Google Chrome,155,Windows,19.0.0,desktop,session-0597
+2026-10-20T19:07:58.072Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,16,100,TR,Google Chrome,155,Windows,19.0.0,desktop,session-0597
+2026-10-20T19:08:14.223Z,simpleanalytics.com,/,true,,,,,,,,,US,Google Chrome,155,macOS,27.0.1,desktop,session-0598
+2026-10-20T19:12:09.065Z,simpleanalytics.com,/,true,,,,,,,1,10,US,Google Chrome,154,macOS,14.7.7,desktop,session-0599
+2026-10-20T19:20:46.690Z,simpleanalytics.com,/,true,,,,,,,1,10,IT,Google Chrome,,macOS,26.6.2,desktop,session-0600
+2026-10-20T19:22:19.861Z,simpleanalytics.com,/,true,bing.com,,,,,,3,10,US,Microsoft Edge,155,Windows,19.0.0,desktop,session-0601
+2026-10-20T19:27:48.736Z,simpleanalytics.com,/,true,google,,,,,,,,DE,iOS Safari,18,iOS,18.7,mobile,session-0602
+2026-10-20T19:31:11.904Z,simpleanalytics.com,/,true,google,,,,,,49,60,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0603
+2026-10-20T19:32:00.293Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,23,60,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0603
+2026-10-20T19:32:23.328Z,simpleanalytics.com,/signup,false,simpleanalytics.com,,,,,,36,100,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0603
+2026-10-20T19:32:59.062Z,simpleanalytics.com,/signup/get-to-know-each-other,false,simpleanalytics.com,,,,,,46,100,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0603
+2026-10-20T19:33:45.296Z,simpleanalytics.com,/signup/add-your-colleagues,false,simpleanalytics.com,,,,,,19,100,FR,Google Chrome,155,Windows,19.0.0,desktop,session-0603
+2026-10-20T19:34:35.381Z,simpleanalytics.com,/,true,waarneming.nl,,,,badge,,8,10,NL,Safari,26,macOS,10.15.7,desktop,session-0604
+2026-10-20T19:35:18.421Z,simpleanalytics.com,/,true,dashboard.simpleanalytics.com,,,,,,6,10,IN,Microsoft Edge,155,Windows,19.0.0,desktop,session-0605
+2026-10-20T19:36:35.109Z,simpleanalytics.com,/,false,,,,,,,1,85,DE,iOS Safari,18,iOS,18.7,mobile,session-0606
+2026-10-20T19:38:41.144Z,simpleanalytics.com,/,true,,,,,,,2,5,IE,iOS Safari,18,iOS,18.7,mobile,session-0607
+2026-10-20T19:41:07.140Z,simpleanalytics.com,/,true,,,,,,,1,20,GB,Google Chrome,155,Windows,10.0.0,desktop,session-0608
+2026-10-20T19:41:33.859Z,simpleanalytics.com,/,true,google,,,,,,10,15,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0609
+2026-10-20T19:41:44.025Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,23,40,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0609
+2026-10-20T19:42:06.900Z,simpleanalytics.com,/badges,false,simpleanalytics.com,,,,,,29,100,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0609
+2026-10-20T19:42:35.682Z,simpleanalytics.com,/methodology,false,simpleanalytics.com,,,,,,31,100,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0609
+2026-10-20T19:43:06.442Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,1,100,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0609
+2026-10-20T19:43:37.179Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0610
+2026-10-20T19:45:26.619Z,simpleanalytics.com,/blog/4-privacy-friendly-google-analytics-alternatives,true,google,,,,,,,70,NL,Firefox,157,macOS,10.15,desktop,session-0611
+2026-10-20T19:46:53.919Z,simpleanalytics.com,/,true,docs.simpleanalytics.com,,,,,,103,85,PT,Google Chrome,155,macOS,26.6.2,desktop,session-0612
+2026-10-20T19:48:39.673Z,simpleanalytics.com,/blog/does-google-sell-your-data,true,bing.com,,,,,,,,CA,Microsoft Edge,155,Windows,19.0.0,desktop,session-0613
+2026-10-20T19:48:41.580Z,simpleanalytics.com,/,true,,,,,,,,,DE,iOS Safari,18,iOS,18.7,mobile,session-0614
+2026-10-20T19:50:45.167Z,simpleanalytics.com,/,true,,,,,,,71,40,PE,Microsoft Edge,155,Windows,19.0.0,desktop,session-0615
+2026-10-20T19:53:01.162Z,simpleanalytics.com,/,true,,,,,,,1,15,GB,Google Chrome,155,macOS,26.6.2,desktop,session-0616
+2026-10-20T19:54:14.124Z,simpleanalytics.com,/,true,,,,,,,3,5,NL,iOS Safari,18,iOS,18.6,mobile,session-0617
+2026-10-20T19:56:26.269Z,simpleanalytics.com,/,true,,,,,,,1,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0618
+2026-10-20T19:57:23.112Z,simpleanalytics.com,/,true,google,,,,,,47,100,NL,Google Chrome,154,macOS,26.6.2,desktop,session-0619
+2026-10-20T19:58:09.844Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,13,100,NL,Google Chrome,154,macOS,26.6.2,desktop,session-0619
+2026-10-20T19:58:22.369Z,simpleanalytics.com,/badges,false,simpleanalytics.com,,,,,,19,100,NL,Google Chrome,154,macOS,26.6.2,desktop,session-0619
+2026-10-20T20:00:45.203Z,simpleanalytics.com,/,true,,,,,,,3,10,US,Safari,26,macOS,10.15.7,desktop,session-0620
+2026-10-20T20:01:00.957Z,simpleanalytics.com,/,true,,,,,,,4,5,BE,Chrome Mobile,155,iOS,26.5,mobile,session-0621
+2026-10-20T20:01:32.004Z,simpleanalytics.com,/,false,,,,,,,1,5,US,iOS Safari,18,iOS,18.7,mobile,session-0622
+2026-10-20T20:01:40.147Z,simpleanalytics.com,/fathom-alternative,true,google,,,,,,,,US,Google Chrome,154,Linux,,desktop,session-0623
+2026-10-20T20:04:07.785Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Safari,27,macOS,10.15.7,desktop,session-0624
+2026-10-20T20:05:03.031Z,simpleanalytics.com,/,true,google,,,,,,,,PE,iOS Safari,18,iOS,18.7,mobile,session-0625
+2026-10-20T20:06:16.221Z,simpleanalytics.com,/,true,,,,,,,2,10,CZ,Google Chrome,155,macOS,26.2.0,desktop,session-0626
+2026-10-20T20:06:21.198Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Firefox,158,macOS,10.15,desktop,session-0627
+2026-10-20T20:07:01.048Z,simpleanalytics.com,/,true,,,,,,,4,5,PL,Google Chrome,155,Android,17.0.0,mobile,session-0628
+2026-10-20T20:10:44.002Z,simpleanalytics.com,/,true,,,,,,,,,PL,iOS Safari,18,iOS,18.7,mobile,session-0629
+2026-10-20T20:12:02.316Z,simpleanalytics.com,/,true,,,,,,,1,15,DE,Google Chrome,147,Linux,,desktop,session-0630
+2026-10-20T20:14:17.965Z,simpleanalytics.com,/,true,,,,,,,3,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0631
+2026-10-20T20:15:14.405Z,simpleanalytics.com,/,true,,,,,,,1,5,GB,Google Chrome,155,Android,16.0.0,mobile,session-0632
+2026-10-20T20:17:50.453Z,simpleanalytics.com,/,true,,,,,,,4,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0633
+2026-10-20T20:18:12.000Z,simpleanalytics.com,/,true,,,,,,,2,15,GB,Safari,26,macOS,10.15.7,desktop,session-0634
+2026-10-20T20:18:49.845Z,simpleanalytics.com,/,true,,,,,,,,15,GB,Safari,26,macOS,10.15.7,desktop,session-0635
+2026-10-20T20:19:46.925Z,simpleanalytics.com,/,true,,,,,,,1,15,GB,Safari,26,macOS,10.15.7,desktop,session-0636
+2026-10-20T20:21:40.939Z,simpleanalytics.com,/privacy-policy,true,,,,,,,1,20,CN,Google Chrome,151,Windows,19.0.0,desktop,session-0637
+2026-10-20T20:24:42.024Z,simpleanalytics.com,/,true,,,,,,,1,10,NL,Safari,27,macOS,10.15.7,desktop,session-0638
+2026-10-20T20:24:47.684Z,simpleanalytics.com,/,true,,,,,,,,,US,Google Chrome,153,Linux,,desktop,session-0639
+2026-10-20T20:25:09.791Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0640
+2026-10-20T20:35:15.568Z,simpleanalytics.com,/,true,,,,,,,1,15,GB,Safari,26,macOS,10.15.7,desktop,session-0641
+2026-10-20T20:35:35.517Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0642
+2026-10-20T20:35:41.343Z,simpleanalytics.com,/,true,,,,,,,3,15,GB,Safari,26,macOS,10.15.7,desktop,session-0643
+2026-10-20T20:35:49.030Z,simpleanalytics.com,/,true,,,,,,,1,15,GB,Safari,26,macOS,10.15.7,desktop,session-0644
+2026-10-20T20:35:50.502Z,simpleanalytics.com,/,true,,,,,,,,15,GB,Safari,26,macOS,10.15.7,desktop,session-0645
+2026-10-20T20:36:00.642Z,simpleanalytics.com,/,true,,,,,,,1,10,CH,Google Chrome,150,macOS,12.1.0,desktop,session-0646
+2026-10-20T20:36:11.270Z,simpleanalytics.com,/about,false,,,,,,,,,NL,iOS Safari,18,iOS,18.7,mobile,session-0647
+2026-10-20T20:41:48.030Z,simpleanalytics.com,/,true,,,,,,,,,FR,Google Chrome,154,macOS,14.6.1,desktop,session-0648
+2026-10-20T20:42:41.801Z,simpleanalytics.com,/,true,,,,,,,12,15,US,Firefox,158,Windows,10,desktop,session-0649
+2026-10-20T20:43:09.261Z,simpleanalytics.com,/,true,,,,,,,17,100,FR,Safari,26,macOS,10.15.7,desktop,session-0650
+2026-10-20T20:50:25.322Z,simpleanalytics.com,/,true,google,,,,,,3,15,NL,Google Chrome,155,macOS,27.0.1,desktop,session-0651
+2026-10-20T20:50:28.605Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,4,35,NL,Google Chrome,155,macOS,27.0.1,desktop,session-0651
+2026-10-20T20:50:32.218Z,simpleanalytics.com,/,false,simpleanalytics.com,,,,,,,15,NL,Google Chrome,155,macOS,27.0.1,desktop,session-0651
+2026-10-20T20:51:22.126Z,simpleanalytics.com,/demo,false,,,,,,,,,TR,Opera GX Android,3,Android,16.0.0,mobile,session-0652
+2026-10-20T20:51:33.326Z,simpleanalytics.com,/,true,,,,,,,11,5,IT,iOS Safari,18,iOS,18.7,mobile,session-0653
+2026-10-20T21:01:36.637Z,simpleanalytics.com,/,true,,,,,,,,,US,iOS Safari,27,iOS,27.0,mobile,session-0654
+2026-10-20T21:02:15.336Z,simpleanalytics.com,/,true,,,,,,,1,15,BE,Google Chrome,155,macOS,15.7.3,desktop,session-0655
+2026-10-20T21:02:32.820Z,simpleanalytics.com,/,true,,,,,,,1,5,ID,Google Chrome,155,Android,15.0.0,mobile,session-0656
+2026-10-20T21:03:54.275Z,simpleanalytics.com,/pricing,true,humblytics.com,,,,,,39,15,PK,Chrome Mobile,155,iOS,27.0,mobile,session-0657
+2026-10-20T21:04:33.028Z,simpleanalytics.com,/methodology,false,simpleanalytics.com,,,,,,41,50,PK,Chrome Mobile,155,iOS,27.0,mobile,session-0657
+2026-10-20T21:04:46.880Z,simpleanalytics.com,/,true,google,,,,,,6,10,CA,Safari,16,macOS,10.15.7,desktop,session-0658
+2026-10-20T21:04:55.573Z,simpleanalytics.com,/,true,google,,,,,,1,10,CA,Safari,16,macOS,10.15.7,desktop,session-0659
+2026-10-20T21:05:00.654Z,simpleanalytics.com,/,true,,,,,,,2,10,NL,Safari,27,macOS,10.15.7,desktop,session-0660
+2026-10-20T21:05:53.593Z,simpleanalytics.com,/,true,google,,,,,,3,10,CA,Google Chrome,125,macOS,13.3.0,desktop,session-0661
+2026-10-20T21:05:58.272Z,simpleanalytics.com,/,false,,,,,,,1,10,CA,Google Chrome,125,macOS,13.3.0,desktop,session-0662
+2026-10-20T21:07:03.197Z,simpleanalytics.com,/,true,,,,,,,5,15,DE,Google Chrome,155,macOS,26.6.2,desktop,session-0663
+2026-10-20T21:07:50.186Z,simpleanalytics.com,/,true,,,,,,,,10,FR,Google Chrome,154,macOS,14.6.1,desktop,session-0664
+2026-10-20T21:14:00.258Z,simpleanalytics.com,/,true,,,,,,,,,NL,iOS Safari,18,iOS,18.7,mobile,session-0665
+2026-10-20T21:19:28.200Z,simpleanalytics.com,/,false,,,,,,,,,CA,Google Chrome,155,Linux,,desktop,session-0666
+2026-10-20T21:19:59.760Z,simpleanalytics.com,/,true,,,,,,,1,10,DK,Google Chrome,155,Windows,19.0.0,desktop,session-0667
+2026-10-20T21:20:22.113Z,simpleanalytics.com,/,true,,,,,,,4,20,PL,Google Chrome,155,macOS,14.5.0,desktop,session-0668
+2026-10-20T21:22:25.164Z,simpleanalytics.com,/,true,,,,,,,1,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0669
+2026-10-20T21:22:26.125Z,simpleanalytics.com,/,true,,,,,,,3,5,NL,iOS Safari,18,iOS,18.7,mobile,session-0670
+2026-10-20T21:26:30.539Z,simpleanalytics.com,/google-analytics-alternative,true,,,,,,,12,20,US,iOS Safari,18,iOS,18.7,mobile,session-0671
+2026-10-20T21:31:36.645Z,simpleanalytics.com,/,true,,,,,,,3,5,GB,iOS Safari,18,iOS,18.7,mobile,session-0672
+2026-10-20T21:37:09.073Z,simpleanalytics.com,/,true,,,,,,,1,15,US,Google Chrome,155,macOS,27.0.1,desktop,session-0673
+2026-10-20T21:38:15.770Z,simpleanalytics.com,/,true,,,,,,,2,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0674
+2026-10-20T21:38:15.770Z,simpleanalytics.com,/,true,,,,,,,288,5,CA,iOS Safari,18,iOS,18.7,mobile,session-0675
+2026-10-20T21:39:51.934Z,simpleanalytics.com,/,true,,,,,,,1,15,RS,Google Chrome,155,Windows,10.0.0,desktop,session-0676
+2026-10-20T21:40:06.125Z,simpleanalytics.com,/,true,google,,,,,,4,5,NL,Chrome Mobile,155,iOS,26.5,mobile,session-0677
+2026-10-20T21:40:49.528Z,simpleanalytics.com,/,true,,,,,,,2,10,GB,Google Chrome,155,macOS,26.6.2,desktop,session-0678
+2026-10-20T21:43:04.725Z,simpleanalytics.com,/,true,learn-anything.xyz,,,,,,24,40,RU,Google Chrome,155,Android,16.0.0,mobile,session-0679
+2026-10-20T21:48:38.124Z,simpleanalytics.com,/,true,,,,,,,2,15,GB,Safari,26,macOS,10.15.7,desktop,session-0680
+2026-10-20T21:50:53.447Z,simpleanalytics.com,/,true,joostdevree.nl,,,,,,1,5,NL,Google Chrome,155,Android,16.0.0,mobile,session-0681
+2026-10-20T21:53:24.142Z,simpleanalytics.com,/,true,search.brave.com,,,,,,45,100,ES,Google Chrome,154,macOS,27.0.1,desktop,session-0682
+2026-10-20T21:54:09.152Z,simpleanalytics.com,/pricing,false,simpleanalytics.com,,,,,,8,100,ES,Google Chrome,154,macOS,27.0.1,desktop,session-0682
+2026-10-20T21:54:52.205Z,simpleanalytics.com,/,true,google,,,,,,18,5,MA,Google Chrome,155,Windows,15.0.0,desktop,session-0683
+2026-10-20T21:58:34.159Z,simpleanalytics.com,/subprocessors,false,,,,,,,176,90,NL,Brave,152,macOS,26.6.2,desktop,session-0684
+2026-10-20T21:59:19.499Z,simpleanalytics.com,/,true,,,,,,,24,10,US,Google Chrome,,Linux,,desktop,session-0685

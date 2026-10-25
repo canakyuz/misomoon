@@ -37,6 +37,11 @@ built-in MCP server. You have no server to run and nothing to patch.
   <img src="docs/images/overview-light.png" alt="The misomoon dashboard: visitors, visits, pageviews, bounce rate, and visit duration over 30 days, with top sources and pages">
 </picture>
 
+A $29 payment lands the night a post goes viral. The 30-second film shows how misomoon
+traces it back to the visit that brought the buyer.
+
+<a href="https://misomoon.com/film/misomoon-film.mp4"><img src="docs/images/film-poster.jpg" alt="Watch the 30-second misomoon film: where did the $29 come from?" width="640"></a>
+
 ## Set it up in about 5 minutes
 
 You need a Cloudflare account and a GitHub or GitLab account. You don't need a server,
@@ -74,8 +79,9 @@ pnpm --filter @misomoon/api exec wrangler login
 pnpm --filter @misomoon/api run deploy
 ```
 
-Before the deploy, set `SIGNUPS` to `invite` so that only the first account can sign up.
-The [command-line steps](docs/self-hosting.md#deploy-from-the-command-line) show where.
+Only the first account can sign up, and everyone after it needs an invitation. The
+[command-line steps](docs/self-hosting.md#deploy-from-the-command-line) explain what the
+deploy creates.
 
 ## Why misomoon
 
@@ -118,7 +124,7 @@ project, and it also has every feature on every plan.
 | | Deploy to Cloudflare button | Command line |
 | --- | --- | --- |
 | What you need | A browser, and a GitHub or GitLab account | Node.js 22.5 or later, pnpm 10, and git |
-| Who can sign up | Only the first account | Only the first account, after you set `SIGNUPS` to `invite` |
+| Who can sign up | Only the first account | Only the first account |
 | Shards | 2 | Any number, with `SHARD_COUNT`, and per data region with `SHARD_REGIONS` |
 | Change the code | No. Your copy holds the built files. | Yes. Edit any package, and deploy. |
 | Deploys run from | Cloudflare, on each push to your copy | Your machine, or your own CI |
@@ -136,10 +142,10 @@ than two shards, or deploy from your own CI.
 | Who holds the data | You | Google | You | You |
 | Cookies | None | `_ga`, for 2 years | None | None |
 | Funnels and revenue | Yes | Yes | Cloud Business plan only | Yes |
-| Built-in MCP server | Yes | Experimental | Third-party only | Yes |
+| Built-in MCP server | Yes | Experimental | Not in its docs | Yes |
 | Tracker, gzipped | 987 bytes core, 1.9 KB Light, 4.8 KB everything | 157 KB | 1.3 KB basic, 2.5 KB current | 2.3 KB |
 
-Checked on 2026-10-24.
+Checked on 2026-10-25.
 [The full comparison](docs/comparison.md) covers DataFast, Mixpanel, Microsoft Clarity,
 Matomo, PostHog, Fathom, Vercel Web Analytics, Simple Analytics, Pirsch, Cloudflare Web
 Analytics, Swetrix, GoatCounter, and Rybbit, with a source for every cell.

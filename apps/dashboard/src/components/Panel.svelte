@@ -249,6 +249,12 @@
 	.row.on {
 		box-shadow: inset 0 0 0 1.5px var(--edge);
 	}
+	/* the selected style sets its own shadow, so the focus ring is added back on top of it */
+	.row.on:focus-visible {
+		box-shadow:
+			inset 0 0 0 1.5px var(--edge),
+			var(--focus);
+	}
 	.key {
 		display: flex;
 		align-items: center;

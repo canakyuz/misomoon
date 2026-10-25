@@ -10,10 +10,11 @@ import { acceptBeacon, writeEvents } from './ingest'
 import { fillSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
-import { deleteImport, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
+import { deleteImport, expireImports, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
+import { runImportJobs, startApiImport } from './jobs'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
 import { expireAttribution, handleWebhook, listSources, removeSource, saveSource } from './revenue'
-import { checkout, polarWebhook, portal, teamBilling, withBilling } from './billing'
+import { checkout, polarWebhook, portal, reconcileBilling, teamBilling, withBilling } from './billing'
 import { handleMcp } from './mcp'
 import { buildReport, emailConfigured, reportPdf, runAlerts, runReports, sendEmail, withPdf } from './reports'
 import { dailyCap } from './usage'
@@ -172,8 +173,8 @@ app.get('/api/v1/me', async (c) => {
 		/** days of data a site keeps: the server's longest, and what a site that sets none keeps; 0 is no limit */
 		retention: server,
 		imported: imported.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id)),
-		/** sites with Google Search Console connected */
-		search: search.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id)),
+		/** sites with Google Search Console connected, where `who` is on the team: search terms are for the team only */
+		search: search.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id && s.role)),
 		share: who.share ? { slug: who.share.slug, segment: who.share.filters } : null,
 	})
 })
@@ -391,10 +392,14 @@ app.delete('/api/v1/sites/:id/imports/:import', async (c) => {
 	await deleteImport(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.param('import'))
 	return c.body(null, 204)
 })
-app.post('/api/v1/sites/:id/imports/google/connect', async (c) => {
-	return c.json(await googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), new URL(c.req.url).origin, 'import'))
+app.post('/api/v1/sites/:id/imports/api', async (c) => {
+	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
+	return c.json(await startApiImport(c.env, c.executionCtx as ExecutionContext, site, await c.req.json()), 202)
 })
-app.get('/api/v1/google/callback', (c) => googleCallback(c.env, new URL(c.req.url)))
+app.post('/api/v1/sites/:id/imports/google/connect', async (c) => {
+	return googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.raw, 'import')
+})
+app.get('/api/v1/google/callback', (c) => googleCallback(c.env, c.req.raw))
 app.get('/api/v1/sites/:id/imports/google/properties', async (c) => {
 	return c.json(await googleProperties(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.query('grant') ?? ''))
 })
@@ -407,7 +412,7 @@ app.post('/api/v1/sites/:id/imports/google', async (c) => {
 
 app.get('/api/v1/sites/:id/search-console', async (c) => c.json(await searchStatus(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'))))
 app.post('/api/v1/sites/:id/search-console/connect', async (c) => {
-	return c.json(await googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), new URL(c.req.url).origin, 'search'))
+	return googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.raw, 'search')
 })
 app.get('/api/v1/sites/:id/search-console/properties', async (c) => {
 	return c.json(await searchProperties(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.query('grant') ?? ''))
@@ -495,6 +500,11 @@ app.post('/api/v1/share/:slug', async (c) => {
 
 // ---------------------------------------------------------------- email reports and alerts
 
+// Anyone who can edit a site can send to any address, so a site gets a few test reports
+// an hour and a bounded list of recipients (docs/reports.md#limits).
+const MAX_REPORT_TESTS = 10
+const MAX_SUBSCRIPTIONS = 20
+
 app.get('/api/v1/sites/:id/reports', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const { results } = await c.env.CONTROL.prepare('SELECT id, email, kind, threshold, last_sent_at FROM email_reports WHERE site_id = ? ORDER BY kind, email').bind(site.id).all()
@@ -511,9 +521,13 @@ app.post('/api/v1/sites/:id/reports', async (c) => {
 	if (body.kind === 'spike' && t != null && !(whole && t >= 1)) throw new HttpError(400, 'threshold for spike is a whole number of visitors, 1 or more')
 	// reports have no threshold
 	const threshold = body.kind === 'drop' || body.kind === 'spike' ? (t ?? null) : null
+	const email = body.email.trim().toLowerCase()
+	// changing the threshold of a subscription the site has is not a new one
+	const others = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM email_reports WHERE site_id = ? AND NOT (email = ? AND kind = ?)').bind(site.id, email, body.kind).first<number>('n')
+	if ((others ?? 0) >= MAX_SUBSCRIPTIONS) throw new HttpError(400, `a site has at most ${MAX_SUBSCRIPTIONS} report and alert subscriptions`)
 	const id = crypto.randomUUID()
 	await c.env.CONTROL.prepare('INSERT INTO email_reports (id, site_id, email, kind, threshold, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (site_id, email, kind) DO UPDATE SET threshold = excluded.threshold')
-		.bind(id, site.id, body.email.trim().toLowerCase(), body.kind, threshold, Date.now())
+		.bind(id, site.id, email, body.kind, threshold, Date.now())
 		.run()
 	return c.json({ ok: true }, 201)
 })
@@ -536,6 +550,11 @@ app.post('/api/v1/sites/:id/reports/test', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const body = await c.req.json<{ email?: string; kind?: string }>()
 	if (!body.email) throw new HttpError(400, 'email is required')
+	const now = Date.now()
+	const sent = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM report_tests WHERE site_id = ? AND sent_at > ?').bind(site.id, now - 3_600_000).first<number>('n')
+	if ((sent ?? 0) >= MAX_REPORT_TESTS) throw new HttpError(429, `a site sends at most ${MAX_REPORT_TESTS} test reports an hour; try again later`)
+	// counted before the send: a failed send still printed the PDF
+	await c.env.CONTROL.prepare('INSERT INTO report_tests (site_id, sent_at) VALUES (?, ?)').bind(site.id, now).run()
 	const ok = await sendEmail(c.env, body.email, await withPdf(c.env, await buildReport(c.env, site, body.kind === 'monthly' ? 'monthly' : 'weekly')))
 	if (!ok) throw new HttpError(503, emailConfigured(c.env) ? 'the email provider refused the message' : 'set up an email provider to send email (docs/configuration.md)')
 	return c.json({ ok })
@@ -619,7 +638,18 @@ app.all('/mcp', async (c) => {
 
 // Everything else is the dashboard (a single-page app in ASSETS).
 app.all('/api/*', (c) => c.json({ error: 'not found' }, 404))
-app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
+app.all('*', async (c) => {
+	const asset = await c.env.ASSETS.fetch(c.req.raw)
+	const res = new Response(asset.body, asset)
+	res.headers.set('X-Content-Type-Options', 'nosniff')
+	res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+	// the landing frames the demo, and a shared link may sit in a page; nothing signed in is framed
+	if (!/^\/(demo|share)(\/|$)/.test(c.req.path)) {
+		res.headers.set('Content-Security-Policy', "frame-ancestors 'self'")
+		res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+	}
+	return res
+})
 
 app.onError((err, c) => {
 	if (err instanceof HttpError) return c.json(err.code ? { error: err.message, code: err.code } : { error: err.message }, err.status as 400)
@@ -639,7 +669,7 @@ const USAGE_DAYS = 400
 const CLEANUP_HOUR = 3
 
 /**
- * Hourly: expires old salts, sign-ins and reset links, records each shard's size (placement weighs by free space)
+ * Hourly: expires old salts, sign-ins, reset links and stopped imports, records each shard's size (placement weighs by free space)
  * and drains shards past their soft limit. With `cleanup`, once a day, it first deletes
  * what retention no longer keeps. Retention counts in days, so a daily run is enough.
  */
@@ -650,10 +680,15 @@ async function maintenance(env: Env, cleanup: boolean) {
 	await env.CONTROL.batch([
 		env.CONTROL.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(Date.now()),
 		env.CONTROL.prepare('DELETE FROM password_resets WHERE expires_at < ?').bind(Date.now()),
+		// test sends count for an hour (MAX_REPORT_TESTS)
+		env.CONTROL.prepare('DELETE FROM report_tests WHERE sent_at <= ?').bind(Date.now() - 3_600_000),
 	])
 	await expireAttribution(env)
+	await expireImports(env)
 	// with plans on, the monthly event emails of the last 3 months are kept (plan_notices)
 	if (cleanup && plansEnforced(env)) await env.CONTROL.prepare('DELETE FROM plan_notices WHERE month < ?').bind(utcMonth(Date.now()) - 2).run()
+	// with billing, plans whose paid period ended without a webhook saying how, read from Polar
+	if (cleanup) await reconcileBilling(env).catch((e) => console.error(JSON.stringify({ msg: 'polar reconcile failed', error: String(e) })))
 	const limit = shardLimit(env)
 	const all = cleanup ? await listSites(env) : []
 	// with plans on, each team's plan; a team that has none set, on the trial or lapsed, keeps the trial plan's
@@ -704,10 +739,11 @@ export default {
 		}
 	},
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
-		// every 5 minutes: spike alerts, moving data off retiring shards, the sample site's
-		// traffic; hourly: maintenance, email reports, quiet alerts; daily: retention cleanup
+		// every 5 minutes: spike alerts, moving data off retiring shards, API imports, the
+		// sample site's traffic; hourly: maintenance, email reports, quiet alerts; daily: retention cleanup
 		ctx.waitUntil(runAlerts(env))
 		ctx.waitUntil(retireShards(env))
+		ctx.waitUntil(runImportJobs(env).catch((e) => console.error(JSON.stringify({ msg: 'import jobs failed', error: String(e) }))))
 		ctx.waitUntil(fillSample(env).catch((e) => console.error(JSON.stringify({ msg: 'sample traffic failed', error: String(e) }))))
 		// a cron other than the five-minute one (a test, or a manual trigger) runs everything
 		const other = controller.cron !== '*/5 * * * *'

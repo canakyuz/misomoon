@@ -1,10 +1,26 @@
 # Configuration reference
 
-The API Worker (`apps/api`) reads all of its settings from `apps/api/wrangler.jsonc`
-and from Worker secrets. This page lists every binding, variable, and secret it reads.
-To change a variable, edit `vars` in `wrangler.jsonc` and deploy again. To set a secret,
+The API Worker (`apps/api`) reads all of its settings from a wrangler config file and
+from Worker secrets. This page lists every binding, variable, and secret it reads.
+To change a variable, edit `vars` in the config file and deploy again. To set a secret,
 run `wrangler secret put <NAME>` in `apps/api`. Locally, put secrets in
 `apps/api/.dev.vars`, which git ignores.
+
+`apps/api` holds two config files:
+
+| File | What it is | Deployed by |
+| --- | --- | --- |
+| `wrangler.jsonc` | The self-hosted template, and the file that `pnpm --filter @misomoon/api dev` and `pnpm bundle` read. Its database ids are placeholders until the first deploy creates the databases. It has a `workers.dev` address and no route, and its `vars` hold what a self-hosted server needs: `SIGNUPS` set to `invite`, no demo or sample site, no retention limit, and no plans, `PUBLIC_URL`, or Polar settings. | `pnpm --filter @misomoon/api run deploy` |
+| `wrangler.cloud.jsonc` | misomoon Cloud's own config, with its databases, the `app.misomoon.com` route, `PLANS=on`, and `PUBLIC_URL`. | `pnpm --filter @misomoon/api run deploy:cloud` |
+
+The deploy script and `pnpm db:migrate` read `wrangler.jsonc` unless `--config <file>`
+or the environment variable `WRANGLER_CONFIG` names another file. A relative path is
+read from `apps/api`. The deploy passes the same file to every `wrangler` command it
+runs. For example, to see what a deploy of misomoon Cloud would change:
+
+```sh
+pnpm --filter @misomoon/api run deploy:cloud -- --plan
+```
 
 ## Bindings
 
@@ -28,17 +44,19 @@ deletes usage rows older than 400 days.
 
 ## Variables
 
-Set these in `vars` in `apps/api/wrangler.jsonc`.
+Set these in `vars` in `apps/api/wrangler.jsonc`. The **Default** column shows
+misomoon Cloud's value where `wrangler.cloud.jsonc` sets one, and otherwise what an
+unset variable means. Where `wrangler.jsonc` sets another value, the row says so.
 
 | Variable | Default | What it does |
 | --- | --- | --- |
-| `PUBLIC_URL` | unset | The public origin of your dashboard, for example `https://analytics.example.com`. Links in emails use it. Invitations and password resets fall back to the address of the request. Email reports are sent by the cron job, which has no request, so they fall back to `https://misomoon.com`. Set it if you send reports. misomoon Cloud sets it; the deploy bundle leaves it unset. |
-| `SIGNUPS` | `open` | `invite` turns off open sign-up after the first account. While no account exists, one person can sign up and own the instance. After that, new people join only through an invitation from a team owner or admin. `closed` turns off sign-up completely, including the first account. Invitations still work. The deploy bundle sets `invite`. |
-| `DEMO_SITE` | `demo` | The id of a public site that the dashboard opens first for people who can see it, such as signed-out visitors. The deploy bundle sets it empty, so the dashboard opens your first site. |
-| `SAMPLE_SITE` | `acme` | The id of the sample site that the [demo dashboard](dashboard.md#the-demo-dashboard) at `/demo` shows. The first cron run creates it as Acme (`acme.example`), a public site on a team called **Sample sites** that has no members, with goals, two funnels, and 90 days of retention. Every five minutes the cron then writes its made-up traffic up to now through the normal write path, starting with the last 62 days, one day per run, so the history fills in about six hours. The traffic is the same on every run, so nothing is stored twice. If a site with this id already belongs to another team, the cron logs `sample site skipped` and writes nothing. Empty or unset turns it off. The deploy bundle sets it empty. |
-| `RETENTION_DAYS` | `1825` | The longest any site keeps its events, visits, and payments, in days. The daily cleanup at 03:15 UTC deletes older ones, even on a site whose **Keep stats for** is longer, and the API refuses a longer `retention_days`. `0` sets no limit. The deploy bundle sets `0`, so your own server keeps everything until you set it ([privacy settings](compliance.md#privacy-settings)). |
-| `RETENTION_DEFAULT_DAYS` | `761` | How long a site keeps its data when its **Keep stats for** is **Default**, in days. 761 days is 25 months. Unset, or longer than `RETENTION_DAYS`, means `RETENTION_DAYS`. With both `0`, a site without a setting keeps everything. With `PLANS=on`, a site without a setting keeps this or its plan's longest, whichever is shorter ([Plans](#plans)). The deploy bundle leaves it unset. |
-| `PLANS` | `on` | `on` enforces the misomoon Cloud plans: the free trial, how many sites a team can have, how long its sites can keep their stats, and how many events they record a month. See [Plans](#plans). Unset, or any other value, enforces no plan. The deploy bundle leaves it out, so a self-hosted server has no plan limits. |
+| `PUBLIC_URL` | unset | The public origin of your dashboard, for example `https://analytics.example.com`. Links in emails use it. Invitations and password resets fall back to the address of the request. Email reports are sent by the cron job, which has no request, so they fall back to `https://misomoon.com`. Set it if you send reports. misomoon Cloud sets it; `wrangler.jsonc` and the deploy bundle leave it unset. |
+| `SIGNUPS` | `open` | `invite` turns off open sign-up after the first account. While no account exists, one person can sign up and own the instance. After that, new people join only through an invitation from a team owner or admin. `closed` turns off sign-up completely, including the first account. Invitations still work. `wrangler.jsonc` and the deploy bundle set `invite`. Local dev sets `open` in `.dev.vars`. |
+| `DEMO_SITE` | `demo` | The id of a public site that the dashboard opens first for people who can see it, such as signed-out visitors. `wrangler.jsonc` and the deploy bundle set it empty, so the dashboard opens your first site. Local dev sets `demo` in `.dev.vars`. |
+| `SAMPLE_SITE` | `acme` | The id of the sample site that the [demo dashboard](dashboard.md#the-demo-dashboard) at `/demo` shows. The first cron run creates it as Acme (`acme.example`), a public site on a team called **Sample sites** that has no members, with goals, two funnels, and 90 days of retention. Every five minutes the cron then writes its made-up traffic up to now through the normal write path, starting with the last 62 days, one day per run, so the history fills in about six hours. The traffic is the same on every run, so nothing is stored twice. If a site with this id already belongs to another team, the cron logs `sample site skipped` and writes nothing. Empty or unset turns it off. `wrangler.jsonc` and the deploy bundle set it empty. |
+| `RETENTION_DAYS` | `1825` | The longest any site keeps its events, visits, and payments, in days. The daily cleanup at 03:15 UTC deletes older ones, even on a site whose **Keep stats for** is longer, and the API refuses a longer `retention_days`. `0` sets no limit. `wrangler.jsonc` and the deploy bundle set `0`, so your own server keeps everything until you set it ([privacy settings](compliance.md#privacy-settings)). |
+| `RETENTION_DEFAULT_DAYS` | `761` | How long a site keeps its data when its **Keep stats for** is **Default**, in days. 761 days is 25 months. Unset, or longer than `RETENTION_DAYS`, means `RETENTION_DAYS`. With both `0`, a site without a setting keeps everything. With `PLANS=on`, a site without a setting keeps this or its plan's longest, whichever is shorter ([Plans](#plans)). `wrangler.jsonc` and the deploy bundle leave it unset. |
+| `PLANS` | `on` | `on` enforces the misomoon Cloud plans: the free trial, how many sites a team can have, how long its sites can keep their stats, and how many events they record a month. See [Plans](#plans). Unset, or any other value, enforces no plan. `wrangler.jsonc` and the deploy bundle leave it out, so a self-hosted server has no plan limits. |
 | `SHARD_SOFT_LIMIT_MB` | `8000` | The size at which a shard stops taking new sites and starts draining. D1's hard limit is 10 GB per database. |
 | `INGEST_DAILY_CAP` | unset | The most events a site can store per UTC day, unless the site has its own cap. Unset means no cap. A value that is not a positive whole number also means no cap. See [Daily ingest cap](#daily-ingest-cap). |
 | `EMAIL_PROVIDER` | unset | `cloudflare` or `ses`. Unset picks the `EMAIL` binding when it is bound, then SES. A provider named here that is not set up sends nothing; email does not go out through another provider. |
@@ -236,8 +254,8 @@ With `PLANS=on`, teams can pay for their plan by card through Polar, the merchan
 record ([Pay for misomoon Cloud](billing.md)). Billing is on when every setting below is
 set. With one missing, `GET /api/v1/me` says `"billing": false`, the dashboard shows no
 billing, and the billing routes answer `501` with the names of the missing settings.
-Without `PLANS=on`, they answer `404`. The deploy bundle leaves out every `POLAR_*`
-setting, so a self-hosted server has no billing.
+Without `PLANS=on`, they answer `404`. `wrangler.jsonc` and the deploy bundle leave out
+every `POLAR_*` setting, so a self-hosted server has no billing.
 
 | Name | Kind | What it does |
 | --- | --- | --- |
@@ -283,7 +301,7 @@ settings:
 
 | Name | Kind | Required | What it does |
 | --- | --- | --- | --- |
-| `CONTENT` | D1 database | For the blog | Blog posts, pages, and authors (`apps/landing/migrations`). Without it, the blog is empty and the content API answers `503`. |
+| `CONTENT` | D1 database | For the blog | Blog posts, pages, and authors (`apps/landing/migrations`). Without it, the blog is empty, the nav shows no **Blog** link, and the content API answers `503`. |
 | `CONTENT_TOKEN` | Secret | For writes | The bearer token for `PUT` and `DELETE` on the content API, and for reading drafts. Without it, writes answer `503`. |
 | `PUBLIC_APP_URL` | Variable | No | Where the dashboard lives, for **Sign in** and the live demo. `wrangler.jsonc` sets `https://app.misomoon.com`. Unset, the links go to `http://localhost:8787`, the API Worker in `wrangler dev`. |
 | `PUBLIC_DOCS_URL` | Variable | No | Where the docs site lives. Unset, docs links open the Markdown on GitHub. |

@@ -40,9 +40,9 @@ export const FEATURE_PAGES: FeaturePage[] = [
 		answer:
 			'misomoon’s heatmap counts the clicks on every element of a page and draws them over the page itself, with rage clicks and dead clicks marked. It sets no cookies and records no sessions: the tracker sends which element was clicked, never what anyone typed. It is on every misomoon Cloud plan and in the open-source version.',
 		shows: [
-			{ name: 'Clicks per element', what: 'Each clicked element, with its clicks, the visitors who clicked it, and its share of the page’s clicks.' },
-			{ name: 'Rage clicks', what: 'The third click on one element within a second, counted for each element.' },
-			{ name: 'Dead clicks', what: 'A click on something that looks clickable, after which nothing on the page changed for a second.' },
+			{ name: 'Clicks per element', what: 'Each clicked element, with its clicks, the visitors who clicked it, and a bar sized against the most-clicked element.' },
+			{ name: 'Rage clicks', what: 'The third click on one element within a second and 30 pixels of the first two, counted for each element.' },
+			{ name: 'Dead clicks', what: 'A click on something that looks clickable, other than a link or a form field, after which nothing on the page changed for a second.' },
 			{ name: 'On your page', what: '**Show on your site** opens the page in a new tab and draws a box on each clicked element, darker the more clicks it got.' },
 		],
 		steps: [
@@ -86,7 +86,7 @@ export const FEATURE_PAGES: FeaturePage[] = [
 			{ name: 'Reached, by tenth', what: 'The share of visits that scrolled at least 10%, 20%, and so on, down to 100% of the page.' },
 			{ name: 'Average depth', what: 'The average of each visit’s deepest scroll on the page.' },
 			{ name: 'On your page', what: '**Show on your site** shades the page in bands, darker where fewer visits got, with a line at each tenth that says how many did.' },
-			{ name: 'Time on page', what: 'The **Pages** list shows time on page, counted only while the page has focus, and the share read.' },
+			{ name: 'Time on page', what: 'On the overview, the **What they read** list shows each page’s time on page, counted only while the page has focus, and how far it was read on average.' },
 		],
 		steps: [
 			'Install the tracker. Scroll depth is on for every site, with nothing to tick.',

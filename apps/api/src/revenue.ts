@@ -144,21 +144,30 @@ const newPass = (): Pass => ({ left: MAX_SETTLE, busy: new Set(), moved: new Map
  * Credits a payment to the visit behind its strongest known key. When that moves it, the
  * links it teaches lead to the new visit, and the payments credited through them follow.
  * The payment's own row is written last, so a pass that fails part way is redone on retry.
+ * That write holds only if the row is still as this pass read it. When another pass (a
+ * webhook and a beacon at once) moved it first, this one settles again from that row and
+ * rewrites what it changed, so the stronger key wins whichever pass ends last.
  */
-async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass) {
+async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass, again = false): Promise<void> {
 	const id = `${r.provider}:${r.id}`
 	if (pass.busy.has(id)) return
 	const now = pass.moved.get(id)
 	const by = now ? now.key : r.attributed_by
+	const was = now ? now.visit : r.visit
 	const p = toPayment(r)
 	const hit = await findVisit(env, siteId, p.keys)
 	// nothing known yet, or a stronger key expired: never move to a weaker one
-	if (!hit || (by && p.keys.indexOf(hit.key) > p.keys.indexOf(by))) return
+	if (!hit || (by && p.keys.indexOf(hit.key) > p.keys.indexOf(by))) {
+		// the event may hold the visit the losing pass wrote
+		if (again && r.visit && p.kind !== 'link') await updateRow(env, siteId, p, r.amount, JSON.parse(r.visit))
+		return
+	}
 	const visit = JSON.stringify(hit.visit)
-	if (hit.key === by && visit === (now ? now.visit : r.visit)) return
+	if (!again && hit.key === by && visit === was) return
 	// moves already written stay; the retry carries on from them
 	if (pass.left-- <= 0) throw new Error(`payment chain too long: ${siteId} ${id}`)
 	pass.busy.add(id)
+	let lost = false
 	try {
 		if (p.kind !== 'link') await updateRow(env, siteId, p, r.amount, hit.visit)
 		if (p.links.length) {
@@ -167,14 +176,27 @@ async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass) {
 			for (const k of fresh) pass.claimed.set(k, visit)
 			await claim(env, siteId, fresh, pass)
 		}
-		await env.CONTROL.batch([
-			env.CONTROL.prepare('UPDATE payments SET attributed_by = ?, visit = ? WHERE site_id = ? AND provider = ? AND id = ?').bind(hit.key, visit, siteId, p.provider, p.id),
+		const [moved] = await env.CONTROL.batch([
+			env.CONTROL.prepare('UPDATE payments SET attributed_by = ?, visit = ? WHERE site_id = ? AND provider = ? AND id = ? AND attributed_by IS ? AND visit IS ?').bind(
+				hit.key,
+				visit,
+				siteId,
+				p.provider,
+				p.id,
+				by,
+				was,
+			),
 			...pendingStmts(env, siteId, p, p.keys.indexOf(hit.key)),
 		])
-		pass.moved.set(id, { key: hit.key, visit })
+		lost = !moved.meta.changes
+		if (!lost) pass.moved.set(id, { key: hit.key, visit })
 	} finally {
 		pass.busy.delete(id)
 	}
+	if (!lost) return
+	pass.moved.delete(id)
+	const fresh = await env.CONTROL.prepare('SELECT * FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<PaymentRow>()
+	if (fresh) await settle(env, siteId, fresh, pass, true)
 }
 
 /**
@@ -202,6 +224,7 @@ async function claim(env: Env, siteId: string, keys: string[], pass: Pass) {
  * Returns true when this call wrote the payment's event (for a link: stored it).
  */
 export async function applyPayment(env: Env, siteId: string, p: Payment): Promise<boolean> {
+	if (p.failed) return voidRefund(env, siteId, p)
 	const now = Date.now()
 	const cols = 'site_id, provider, id, kind, amount, currency, ts, keys, links, billing, refund_of, created_at'
 	const rest = [p.currency, p.ts, JSON.stringify(p.keys), JSON.stringify(p.links), p.billing ?? null, p.refundedTotalOf ?? null, now]
@@ -217,13 +240,32 @@ export async function applyPayment(env: Env, siteId: string, p: Payment): Promis
 		: env.CONTROL.prepare(`INSERT OR IGNORE INTO payments (${cols}) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(siteId, p.provider, p.id, p.kind, p.kind === 'refund' ? -p.amount : p.amount, ...rest)
 	const inserted = !!(await insert.run()).meta.changes
 	const stored = await env.CONTROL.prepare('SELECT * FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<PaymentRow>()
-	// a refund that adds nothing to the refunded total
-	if (!stored) return false
+	// a refund that adds nothing to the refunded total, or one that failed (voidRefund)
+	if (!stored || (p.kind === 'refund' && stored.amount === 0)) return false
 	const written = p.kind === 'link' ? inserted : await writeRow(env, paymentRow(p, siteId, stored.visit ? JSON.parse(stored.visit) : null, Math.abs(stored.amount)))
 	// it waits for every key until one leads to a visit
 	if (!stored.attributed_by) await env.CONTROL.batch(pendingStmts(env, siteId, p, p.keys.length))
 	await settle(env, siteId, stored, newPass())
 	return written
+}
+
+/**
+ * A refund that failed or was canceled: its event goes, and its row stays with no money,
+ * so a refund.created that comes again, or late, counts nothing. Returns false: it writes
+ * no event.
+ */
+async function voidRefund(env: Env, siteId: string, p: Payment): Promise<false> {
+	const prior = await env.CONTROL.prepare('SELECT ts FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<{ ts: number }>()
+	await env.CONTROL.batch([
+		env.CONTROL.prepare(
+			`INSERT INTO payments (site_id, provider, id, kind, amount, currency, ts, keys, links, created_at) VALUES (?, ?, ?, 'refund', 0, ?, ?, ?, '[]', ?)
+				ON CONFLICT (site_id, provider, id) DO UPDATE SET amount = 0`,
+		).bind(siteId, p.provider, p.id, p.currency, p.ts, JSON.stringify(p.keys), Date.now()),
+		env.CONTROL.prepare('DELETE FROM payment_keys WHERE site_id = ? AND provider = ? AND payment_id = ?').bind(siteId, p.provider, p.id),
+	])
+	const db = prior && (await readShard(env, siteId, prior.ts))
+	if (db) await db.prepare('DELETE FROM events WHERE site_id = ? AND event_id = ?').bind(siteId, paymentRow(p, siteId, null).event_id).run()
+	return false
 }
 
 /** POST /api/webhooks/:provider/:site */
@@ -281,14 +323,15 @@ export async function listSources(env: Env, siteId: string, origin: string) {
 	return { sources: results.map((r) => ({ ...r, webhook_url: webhookUrl(origin, r.provider, siteId) })), last_30_days: totals ?? { payments: 0, attributed: 0 } }
 }
 
-const SECRET_FORMAT: Partial<Record<Provider, RegExp>> = { stripe: /^whsec_[A-Za-z0-9]{8,}$/, polar: /^whsec_\S{8,}$/, dodo: /^whsec_[A-Za-z0-9+/=]{8,}$/ }
+// `polar webhook listen` signs what it forwards with a 32-character secret of its own
+const SECRET_FORMAT: Partial<Record<Provider, RegExp>> = { stripe: /^whsec_[A-Za-z0-9]{8,}$/, polar: /^(whsec_\S{8,}|[A-Za-z0-9]{32})$/, dodo: /^whsec_[A-Za-z0-9+/=]{8,}$/ }
 
 /** Saves a provider's signing secret. Lemon Squeezy and custom webhooks get one made here when none is given. */
 export async function saveSource(env: Env, siteId: string, provider: string, secret: unknown, userId: string | null, origin: string) {
 	if (!isProvider(provider)) throw new HttpError(404, 'unknown provider')
 	const given = typeof secret === 'string' ? secret.trim() : ''
 	const format = SECRET_FORMAT[provider]
-	if (format && !format.test(given)) throw new HttpError(400, `paste the ${provider === 'stripe' ? 'Stripe' : provider === 'polar' ? 'Polar' : 'Dodo Payments'} signing secret, which starts with whsec_`)
+	if (format && !format.test(given)) throw new HttpError(400, `paste the ${provider === 'stripe' ? 'Stripe' : provider === 'polar' ? 'Polar' : 'Dodo Payments'} signing secret, which starts with whsec_${provider === 'polar' ? ', or the secret polar webhook listen prints' : ''}`)
 	if (!format && given && given.length < 16) throw new HttpError(400, 'a signing secret needs at least 16 characters')
 	const made = !format && !given
 	const value = made ? [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('') : given

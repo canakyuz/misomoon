@@ -582,6 +582,22 @@ describe('shards', () => {
 	})
 })
 
+describe('dashboard pages', () => {
+	it('refuse to load in a frame on another site, except the demo and shared links', async () => {
+		const env = fakeEnv()
+		const head = async (path: string) => {
+			const { res } = await call(env, 'GET', path)
+			return [path, res.headers.get('content-security-policy'), res.headers.get('x-frame-options'), res.headers.get('x-content-type-options'), res.headers.get('referrer-policy')]
+		}
+		expect(await Promise.all(['/', '/shop-com/settings', '/demo', '/share/abc'].map(head))).toEqual([
+			['/', "frame-ancestors 'self'", 'SAMEORIGIN', 'nosniff', 'strict-origin-when-cross-origin'],
+			['/shop-com/settings', "frame-ancestors 'self'", 'SAMEORIGIN', 'nosniff', 'strict-origin-when-cross-origin'],
+			['/demo', null, null, 'nosniff', 'strict-origin-when-cross-origin'],
+			['/share/abc', null, null, 'nosniff', 'strict-origin-when-cross-origin'],
+		])
+	})
+})
+
 describe('proxy hostnames (F9)', () => {
 	const proxied = () => {
 		const env = fakeEnv({ PROXY_CNAME_TARGET: 'proxy.misomoon.test' })
@@ -634,6 +650,14 @@ describe('mcp', () => {
 		expect((await (await rpc(env, Array.from({ length: 20 }, (_, i) => ping(i)))).json())).toHaveLength(20)
 		const over = await rpc(env, Array.from({ length: 21 }, (_, i) => ping(i)))
 		expect([over.res.status, await over.json()]).toEqual([400, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'a batch is limited to 20 requests' } }])
+	})
+
+	it('marks only add_annotation as a tool that writes', async () => {
+		const r = await rpc(fakeEnv(), { jsonrpc: '2.0', id: 1, method: 'tools/list' })
+		const { result } = (await r.json()) as { result: { tools: { name: string; annotations: Record<string, boolean> }[] } }
+		const writes = result.tools.filter((t) => !t.annotations.readOnlyHint)
+		expect(writes.map((t) => [t.name, t.annotations])).toEqual([['add_annotation', { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }]])
+		expect(result.tools.length).toBeGreaterThan(10)
 	})
 
 	it('refuses a body over 64 KB (F12)', async () => {
@@ -847,6 +871,25 @@ describe('account deletion', () => {
 		expect(Number(env.SHARD_0.rows("SELECT COUNT(*) AS n FROM events WHERE site_id = 'ana-com'")[0].n) + Number(env.SHARD_1.rows("SELECT COUNT(*) AS n FROM events WHERE site_id = 'ana-com'")[0].n)).toBe(0)
 		// the old session no longer signs in
 		expect((await call(env, 'GET', '/api/v1/me', undefined, ana.auth)).res.status).toBe(401)
+	})
+
+	it('refuses to delete a team, or the account that is its only member, while its Polar plan still renews', async () => {
+		const env = fakeEnv()
+		const ana = await signup(env, 'ana@example.com')
+		const team = env.CONTROL.rows('SELECT team_id FROM team_members WHERE user_id = ?', ana.id)[0].team_id as string
+		const name = env.CONTROL.rows('SELECT name FROM teams WHERE id = ?', team)[0].name as string
+		env.CONTROL.db
+			.prepare("INSERT INTO polar_subscriptions (id, team_id, customer_id, plan, status, live, plan_status, period_end, started_at, modified_at) VALUES ('sub1', ?, 'cus1', 'growth', 'active', 1, 'active', 9e12, 0, 0)")
+			.run(team)
+		const message = `cancel the plan of ${name} first, under Settings > Team > Manage billing; the team can go once it stops renewing`
+		const asTeam = await call(env, 'DELETE', `/api/v1/teams/${team}`, undefined, ana.auth)
+		expect([asTeam.res.status, (await asTeam.res.json()).error]).toEqual([409, message])
+		const asAccount = await remove(env, ana.auth)
+		expect([asAccount.res.status, (await asAccount.res.json()).error]).toEqual([409, message])
+		expect([n(env, 'users WHERE id = ?', ana.id), n(env, 'teams WHERE id = ?', team)]).toEqual([1, 1])
+		// canceled at the end of its period, it bills no more
+		env.CONTROL.db.prepare("UPDATE polar_subscriptions SET plan_status = 'canceled'").run()
+		expect((await remove(env, ana.auth)).res.status).toBe(204)
 	})
 
 	it('refuses while the account is the only owner of a team that has other members', async () => {

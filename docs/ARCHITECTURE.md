@@ -2,10 +2,8 @@
 
 Privacy-first web analytics built entirely on Cloudflare: Workers for compute, D1 for
 storage, Queues for buffered ingest, static assets for the dashboard.
-`dupuu-api/services/analytics` was the reference for metric
-definitions (visits, bounce, funnels, goals); nothing is shared with it at runtime.
 
-```
+```text
                        ┌──────────────────────────── apps/api (Worker) ───────────────────────────┐
  site ──m.js──▶ POST /api/event ─▶ enrich (cf geo, UA, bot, salt hash) ─▶ Queue ─▶ consumer ─┐   │
                        │                                   (no queue bound → write inline)     │   │
@@ -26,7 +24,7 @@ definitions (visits, bounce, funnels, goals); nothing is shared with it at runti
 | `packages/core` | Pure TypeScript shared by every runtime: event schema, UA parsing, channel classification, filter grammar, SQL builders, shard planning and result merging. Unit tested against `node:sqlite`. |
 | `packages/tracker` | `m.js`, the core tracker, under 1 KB gzipped, and the feature parts in `src/x/` that the Worker adds to it per site. No cookies; it only reads the `misomoon_ignore` key from localStorage. `overlay.js` draws clicks and scroll on a page the dashboard opens. |
 | `packages/sdk` | `@misomoon/sdk`, published to npm: `m.js` for bundled browser apps and React, and a client for React Native and servers. |
-| `packages/brand` | Design tokens (`tokens.css`), logo, fonts. Used by landing and dashboard. |
+| `packages/brand` | Design tokens (`tokens.css`), logo, fonts. Used by the landing, the dashboard, and the docs site. |
 | `apps/api` | The single Worker: ingest, queue consumer, stats API, MCP server, dashboard assets. |
 | `apps/dashboard` | Svelte 5 SPA. |
 | `apps/landing` | SvelteKit with `adapter-cloudflare`. |
@@ -41,7 +39,9 @@ data never lives in one database.
 * **Shard databases** (`SHARD_0` … `SHARD_n`) hold `events`, `sessions` and
   `imported`. Their count is one number: `SHARD_COUNT=<n> pnpm run deploy`
   (`apps/api/scripts/deploy.ts`). Growing creates the missing D1 databases, binds them
-  in `wrangler.jsonc`, migrates every database and deploys; a bound shard registers
+  in the config (`apps/api/wrangler.jsonc`, the self-hosted template, or misomoon Cloud's
+  `wrangler.cloud.jsonc` through `pnpm run deploy:cloud`), migrates every database and
+  deploys; a bound shard registers
   itself in `shards` once its schema is there, and never before. Shrinking marks the
   extra shards `retiring`. Every five minutes the Worker closes their sites' open
   ranges onto other shards, then copies each closed range (settled for two days) to
@@ -365,7 +365,7 @@ the dashboard number.
   previous) page after a path, with `(exit)` and `(entrance)` for visit ends. Reloads fold.
 * `POST /api/v2/query`: Stats API v2 (metrics, dimensions, filters,
   date_range, order_by, pagination).
-* `.../imports` (CSV upload, Google OAuth import), `.../shared` (shared links),
+* `.../imports` (CSV upload, Google OAuth import, imports from another tool's API), `.../shared` (shared links),
   `.../reports` (email reports and alerts), `.../annotations` (chart notes; any
   non-shared API key may post, so CI can mark deploys).
 * Stats endpoints are rate limited per API key, or per IP without one (`STATS_LIMIT`).
@@ -376,6 +376,20 @@ CSV exports and Google reports land in each shard's `imported` table, one row pe
 local day, dimension and key. Rows route to shards by
 day like events, so the window fan-out stays the same. They are added only to unfiltered
 reports (filters can't be applied to pre-aggregated rows) and `imported=0` hides them.
+
+An import from another tool's API (`packages/core/src/importers`, run by
+`apps/api/src/jobs.ts`) is a row in the control database's `import_jobs`, which holds the
+form's fields until it ends. It reads one day at a time from the newest back, in the
+request that starts it for 20 seconds and then in each five-minute cron run, and writes
+seven days at a time. Each day's rows are deleted before they are written, so a run cut
+off before saving its place counts a day once. A lease keeps two runs off one job.
+
+Another tool's own export files are told apart by what they hold
+(`packages/core/src/importers/files.ts`). Raw event exports become hits, which
+`importers/raw.ts` sorts by time and counts into visits in memory, as the tracker counts
+them: a 30-minute gap or the tool's own visit id, source and place from the first hit, and
+a bounce for one page view with nothing else. All raw files of one upload are counted
+together, up to 50 MB, so an event can join a visit from another file.
 
 ### Google Search Console
 
@@ -440,10 +454,10 @@ to the inviter either way; `SIGNUPS=invite` closes open sign-up.
 
 Plans belong to teams. `teams.plan` holds a plan id from `packages/core/src/plans.ts`, or
 NULL for none. Polar's subscription webhooks set it, and support sets it by hand for a team
-without a subscription. Only `PLANS=on` reads it; misomoon Cloud
-sets that, and the deploy bundle leaves it out. `apps/api/src/plans.ts` resolves a team's
-plan. The site limit is a condition inside the `INSERT` of `createSite` and the `UPDATE`
-of a site transfer, so two requests at once can't both pass it, and only the team's own
+without a subscription. Only `PLANS=on` reads it; misomoon Cloud sets that in
+`wrangler.cloud.jsonc`, and `wrangler.jsonc` and the deploy bundle leave it out.
+`apps/api/src/plans.ts` resolves a team's plan. The site limit is a condition inside the
+`INSERT` of `createSite` and the `UPDATE` of a site transfer, so two requests at once can't both pass it, and only the team's own
 sites count. Retention under a plan is `planRetention` in core: the longest is the smaller
 of `RETENTION_DAYS` and the plan's, and the default the smaller of `RETENTION_DEFAULT_DAYS`
 and that. The PATCH route, `/me`, and the daily cleanup all use it. A team moved to a

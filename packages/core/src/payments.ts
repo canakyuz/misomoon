@@ -37,6 +37,8 @@ export interface Payment {
 	billing?: 'one_time' | 'new' | 'renewal'
 	/** set when `amount` is the payment's refunded total so far, not this refund alone */
 	refundedTotalOf?: string
+	/** a refund that failed or was canceled: it takes back nothing, even one counted before */
+	failed?: true
 }
 
 export interface Parsed {
@@ -140,18 +142,33 @@ function stripe(e: Json, now: number): Parsed {
 						...m,
 						ts: paid,
 						keys: keys(ref(subMeta[REF_KEY]), ref(meta[REF_KEY]), link('stripe', 'invoice', id), sub, cus),
-						links: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge), sub, cus),
+						// API versions before 2025-03-31 name the payment here; later ones in
+						// invoice_payment.paid, which finds this payment's visit through `paid`
+						links: keys(link('stripe', 'paid', id), link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge), sub, cus),
 						billing: o.billing_reason === 'subscription_create' ? 'new' : 'renewal',
 					},
 				],
 			}
 		}
-		case 'refund.created': {
+		case 'invoice_payment.paid': {
+			// ties the invoice to the payment intent or charge that paid it, which its refunds name
 			const id = str(o.id)
-			if (!id || o.status === 'failed' || o.status === 'canceled') return { test, payments: [] }
+			const pay = obj(o.payment)
+			const paidBy = keys(link('stripe', 'pi', pay.payment_intent), link('stripe', 'charge', pay.charge))
+			if (!id || !paidBy.length) return { test, payments: [] }
+			return { test, payments: [{ provider: 'stripe', kind: 'link', id, amount: 0, currency: '', ts: at, keys: keys(link('stripe', 'paid', o.invoice)), links: paidBy }] }
+		}
+		// a refund counts from refund.created; it can still fail weeks later
+		case 'refund.created':
+		case 'refund.updated':
+		case 'refund.failed': {
+			const id = str(o.id)
+			const failed = o.status === 'failed' || o.status === 'canceled'
+			if (!id || (!failed && e.type !== 'refund.created')) return { test, payments: [] }
 			const m = money('stripe', o.amount, o.currency)
 			if (!m) return { test, payments: [] }
-			return { test, payments: [{ provider: 'stripe', kind: 'refund', id, ...m, ts: at, keys: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge)), links: [] }] }
+			const refund: Payment = { provider: 'stripe', kind: 'refund', id, ...m, ts: at, keys: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge)), links: [] }
+			return { test, payments: [failed ? { ...refund, failed: true } : refund] }
 		}
 	}
 	return { test, payments: [] }
@@ -187,10 +204,12 @@ function polar(e: Json, now: number): Parsed {
 			],
 		}
 	}
-	if ((e.type === 'refund.created' || e.type === 'refund.updated') && o.status === 'succeeded') {
+	const failed = o.status === 'failed' || o.status === 'canceled'
+	if ((e.type === 'refund.created' || e.type === 'refund.updated') && (o.status === 'succeeded' || failed)) {
 		const m = money('polar', (int(o.amount) ?? 0) + (int(o.tax_amount) ?? 0), o.currency)
 		if (!m) return { test: false, payments: [] }
-		return { test: false, payments: [{ provider: 'polar', kind: 'refund', id, ...m, ts: time(o.modified_at, at), keys: keys(link('polar', 'order', o.order_id), sub, cus), links: [] }] }
+		const refund: Payment = { provider: 'polar', kind: 'refund', id, ...m, ts: time(o.modified_at, at), keys: keys(link('polar', 'order', o.order_id), sub, cus), links: [] }
+		return { test: false, payments: [failed ? { ...refund, failed: true } : refund] }
 	}
 	return { test: false, payments: [] }
 }

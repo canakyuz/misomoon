@@ -85,6 +85,11 @@ export default {
 				'user-agent': request.headers.get('user-agent') ?? '',
 				'${H.ip}': request.headers.get('cf-connecting-ip') ?? '',
 			})
+			// the browser's privacy signals and language, which misomoon reads as the visitor's
+			for (const k of ['sec-gpc', 'dnt', 'accept-language']) {
+				const v = request.headers.get(k)
+				if (v) headers.set(k, v)
+			}
 			const geo = { country: cf.country, region: cf.region, city: cf.city, continent: cf.continent, timezone: cf.timezone, 'as-org': cf.asOrganization }
 			for (const [k, v] of Object.entries(geo)) if (v) headers.set('x-misomoon-' + k, encodeURIComponent(v))
 			return fetch(UPSTREAM + '/api/event', { method: 'POST', headers, body: request.body })
@@ -214,6 +219,11 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress, 
 		'user-agent': request.headers.get('user-agent') ?? '',
 		'${H.ip}': getClientAddress(),
 	})
+	// the browser's privacy signals and language, which misomoon reads as the visitor's
+	for (const k of ['sec-gpc', 'dnt', 'accept-language']) {
+		const v = request.headers.get(k)
+		if (v) headers.set(k, v)
+	}
 	// on Cloudflare Pages/Workers the visitor's location is on platform.cf
 	const cf = (platform as { cf?: Record<string, string> } | undefined)?.cf
 	if (cf) {
