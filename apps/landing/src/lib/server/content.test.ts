@@ -37,6 +37,12 @@ describe('Markdown', () => {
 		expect(html).not.toContain('<img')
 	})
 
+	it('drops a link that starts with a backslash after the slash, which browsers send to another host', () => {
+		const { html } = render('[x](/\\evil.com) [y](/blog)')
+		expect(html).not.toContain('evil.com"')
+		expect(html).toContain('<a href="/blog">y</a>')
+	})
+
 	it('keeps one h1 per page: a # heading becomes an h2, with a unique id in the contents', () => {
 		const r = render('# Setup\n\ntext\n\n## Setup\n\n### Details\n\n#### Deep')
 		expect(r.html).toContain('<h2 id="setup">')
@@ -195,5 +201,11 @@ describe('parseAuthor', () => {
 		expect(parseAuthor({})).toMatchObject({ ok: false, error: expect.stringMatching(/^name/) })
 		expect(parseAuthor({ name: 'A', sameAs: ['ftp://x'] })).toMatchObject({ ok: false, error: expect.stringMatching(/^sameAs/) })
 		expect(parseAuthor({ name: 'A' })).toEqual({ ok: true, warnings: [], value: { name: 'A', bio: '', avatar: null, sameAs: [] } })
+	})
+
+	it('refuses a profile link the pages cannot parse, and an avatar path that leaves the site', () => {
+		expect(parseAuthor({ name: 'A', sameAs: ['https://github.com:abc'] })).toMatchObject({ ok: false, error: expect.stringMatching(/^sameAs/) })
+		expect(parseAuthor({ name: 'A', avatar: '/\\evil.com/a.png' })).toMatchObject({ ok: false, error: expect.stringMatching(/^avatar/) })
+		expect(parseAuthor({ name: 'A', avatar: '/images/a.png', sameAs: ['https://github.com/a'] })).toMatchObject({ ok: true })
 	})
 })

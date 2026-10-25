@@ -84,7 +84,7 @@ export function slugProblem(kind: Kind, slug: string): string | null {
 	return null
 }
 
-const isUrl = (v: string, paths = false) => (paths && /^\/(?!\/)/.test(v)) || /^https:\/\/[^\s/]+/i.test(v)
+const isUrl = (v: string, paths = false) => (paths && /^\/(?![/\\])/.test(v)) || (/^https:\/\/[^\s/]+/i.test(v) && URL.canParse(v))
 const isDate = (v: string) => /^\d{4}-\d{2}-\d{2}(T[\d:.]+(Z|[+-]\d{2}:\d{2}))?$/.test(v) && !Number.isNaN(Date.parse(v))
 
 type Result<T> = { ok: true; value: T; warnings: string[] } | { ok: false; error: string }
