@@ -161,7 +161,7 @@ misomoon('Signup')
 		])
 	})
 
-	it('highlights code under a bar with its language and a copy button, and wraps tables to scroll', () => {
+	it('hands code to the highlighter under a bar with its language and a copy button, and wraps tables to scroll', () => {
 		expect(page.html).toContain(`<div class="code"><div class="code-bar"><span>js</span><button type="button" data-copy>Copy</button></div><pre>misomoon('Signup')</pre></div>`)
 		expect(page.html).toContain('<div class="table"><table>')
 		expect(page.html).toContain('<td><code>clicks</code></td>')

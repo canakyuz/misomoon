@@ -16,8 +16,8 @@ export const pages: NavPage[] = nav.sections.flatMap((s) => s.pages).filter((p) 
 /** The files of docs/ this site builds a page for. */
 export const built = [...sources.keys()].filter((f) => f !== 'README.md' && !MOVED[f])
 
-const LANGS = ['html', 'js', 'jsx', 'ts', 'tsx', 'json', 'jsonc', 'sh', 'shellscript', 'svelte', 'css', 'sql', 'yaml', 'toml', 'nginx', 'diff', 'http']
-const ALIASES: Record<string, string> = { bash: 'sh', shell: 'sh', zsh: 'sh', console: 'sh', caddyfile: 'text', text: 'text', txt: 'text', '': 'text' }
+export const LANGS = ['html', 'js', 'jsx', 'ts', 'tsx', 'json', 'jsonc', 'sh', 'shellscript', 'svelte', 'css', 'sql', 'yaml', 'toml', 'nginx', 'diff', 'http', 'markdown', 'php']
+export const ALIASES: Record<string, string> = { bash: 'sh', shell: 'sh', zsh: 'sh', console: 'sh', md: 'markdown', caddyfile: 'text', text: 'text', txt: 'text', '': 'text' }
 
 let ready: Promise<Map<string, Rendered>> | undefined
 /** Every page in docs/, rendered once per build. */

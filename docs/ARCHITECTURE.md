@@ -2,10 +2,8 @@
 
 Privacy-first web analytics built entirely on Cloudflare: Workers for compute, D1 for
 storage, Queues for buffered ingest, static assets for the dashboard.
-`dupuu-api/services/analytics` was the reference for metric
-definitions (visits, bounce, funnels, goals); nothing is shared with it at runtime.
 
-```
+```text
                        ┌──────────────────────────── apps/api (Worker) ───────────────────────────┐
  site ──m.js──▶ POST /api/event ─▶ enrich (cf geo, UA, bot, salt hash) ─▶ Queue ─▶ consumer ─┐   │
                        │                                   (no queue bound → write inline)     │   │
@@ -26,7 +24,7 @@ definitions (visits, bounce, funnels, goals); nothing is shared with it at runti
 | `packages/core` | Pure TypeScript shared by every runtime: event schema, UA parsing, channel classification, filter grammar, SQL builders, shard planning and result merging. Unit tested against `node:sqlite`. |
 | `packages/tracker` | `m.js`, the core tracker, under 1 KB gzipped, and the feature parts in `src/x/` that the Worker adds to it per site. No cookies; it only reads the `misomoon_ignore` key from localStorage. `overlay.js` draws clicks and scroll on a page the dashboard opens. |
 | `packages/sdk` | `@misomoon/sdk`, published to npm: `m.js` for bundled browser apps and React, and a client for React Native and servers. |
-| `packages/brand` | Design tokens (`tokens.css`), logo, fonts. Used by landing and dashboard. |
+| `packages/brand` | Design tokens (`tokens.css`), logo, fonts. Used by the landing, the dashboard, and the docs site. |
 | `apps/api` | The single Worker: ingest, queue consumer, stats API, MCP server, dashboard assets. |
 | `apps/dashboard` | Svelte 5 SPA. |
 | `apps/landing` | SvelteKit with `adapter-cloudflare`. |

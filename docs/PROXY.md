@@ -11,7 +11,7 @@ in the **Proxy** card, filled in for the current site.
 
 The site adds one DNS record:
 
-```
+```text
 stats.example.com  CNAME  proxy.misomoon.com
 ```
 
@@ -47,7 +47,7 @@ API (needs the edit permission, so an editor's session or an API key for the sit
    "misomoon.com" }` to `routes` in `apps/api/wrangler.jsonc`, after the app's own route.
 3. Set `CF_ZONE_ID` and `PROXY_CNAME_TARGET` as vars and `CF_API_TOKEN` as a secret
    (token permission: *SSL and Certificates: Edit* on that zone).
-4. Apply the control migrations. `migrations/control/0002_sites.sql` creates the `proxy_domains` table.
+4. Apply the control migrations. [`apps/api/migrations/control/0002_sites.sql`](../apps/api/migrations/control/0002_sites.sql) creates the `proxy_domains` table.
 
 Without these settings `GET …/proxy` reports `available: false`, `PUT` answers 501
 and the dashboard points to the snippets.

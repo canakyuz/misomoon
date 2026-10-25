@@ -33,7 +33,9 @@ Write the docs as plain Markdown that also reads well on GitHub:
 
 - Link to other pages by file name (`[the API](api.md#filters)`) and to repo files by
   relative path. The build fails on a link to a page or heading that doesn't exist.
-- Code blocks name their language (`sh`, `html`, `js`, `ts`, `tsx`, `json`, `jsonc`).
+- Code blocks name a language the highlighter loads (`sh`, `html`, `js`, `ts`, `tsx`,
+  `json`, `jsonc`, `md`; `LANGS` in `apps/docs/src/lib/server/docs.ts` lists all), or
+  `text` for a diagram. `pnpm test` fails on any other.
 - Images live in `docs/images/` and are linked as `images/name.png`.
 - Every page is also served as Markdown (`/page.md`). misomoon.com's `/llms.txt`,
   `/llms-full.txt`, and `/sitemap-docs.xml` list them; the docs site keeps only docs.
