@@ -272,6 +272,8 @@ export async function listEntries(db: D1Database, o: ListOptions): Promise<Page<
 }
 
 const encodeCursor = (at: string, id: number) => btoa(`${at}|${id}`).replace(/=+$/, '')
+/** Whether `c` is a cursor that listEntries handed out. */
+export const isCursor = (c: string) => decodeCursor(c) !== null
 function decodeCursor(c: string): { at: string; id: number } | null {
 	try {
 		const [at, id] = atob(c).split('|')
