@@ -97,7 +97,7 @@ const plausible: Alternative = {
 	switching: [
 		'Add the misomoon script next to the Plausible one and run both for two weeks.',
 		'Recreate your goals in misomoon. Custom events with the same names keep working.',
-		'Bring your history: import a Google Analytics property, or upload CSV files in the format on the import page.',
+		'Bring your history: upload the CSV export from Plausible’s site settings, without the days misomoon already counted.',
 	],
 	faq: [
 		['Is misomoon a drop-in Plausible replacement?', 'For counting, yes: one script tag, no cookies, and the same kinds of reports. Your goals and dashboards need setting up again in misomoon.'],
@@ -301,7 +301,7 @@ const ga: Alternative = {
 		{ label: 'Tracker, gzipped', us: OUR_TRACKER, them: '157 KB (`gtag.js`)', edge: 'us', src: MEASURED, checked: C },
 	],
 	switching: [
-		'Sign in with Google under Settings > Import and import your GA4 property’s history.',
+		'Under Settings > Integrations, connect Google and import your GA4 property’s history.',
 		'Add the misomoon script and run it next to GA4 for a few weeks. Expect lower numbers: misomoon drops bots and models nothing.',
 		'Connect Search Console to keep your Google search terms.',
 	],
