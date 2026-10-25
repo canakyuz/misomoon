@@ -175,7 +175,7 @@
 
 <Seo
 	title="misomoon: cookieless web analytics with heatmaps and revenue"
-	description={`Cookieless web analytics with revenue by source, heatmaps, scroll maps, form drop-off, errors and Web Vitals. Try misomoon Cloud free for ${TRIAL_DAYS} days, no card needed.`}
+	description={`Cookieless web analytics with revenue by source, heatmaps, scroll maps, form drop-off, errors, Web Vitals. Try misomoon Cloud free for ${TRIAL_DAYS} days, no card needed.`}
 	path="/"
 	schema={[organization(origin), website(origin), software(origin), faq(faqs)]}
 />
