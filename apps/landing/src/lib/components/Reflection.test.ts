@@ -8,6 +8,6 @@ describe('Reflection', () => {
 		const { body } = render(Reflection, { props: { days: [{ t: day, visitors: 4 }, { t: day + 864e5, visitors: 6 }] } })
 		expect(body).toContain('10 visitors in the last 30 days')
 		expect(body.match(/<li>/g)).toHaveLength(2)
-		expect(body).toContain('Tue, 20 Oct: 4')
+		expect(body).toContain('Tue 20 Oct: 4')
 	})
 })
