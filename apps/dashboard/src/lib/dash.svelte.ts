@@ -1,7 +1,8 @@
 import { can } from '@misomoon/core/roles'
 import { createContext, untrack } from 'svelte'
 import { liveDemo } from './account'
-import { demoPath, emailLink, get, signupLink, type Me, type Site } from './api'
+import { demoPath, embedded, emailLink, get, signupLink, type Me, type Site } from './api'
+import { themeMessage } from './embed'
 import { filterProblem, readUrlState, serializeFilters, VIEWS, type Filter, type FilterOp, type MetricKey, type View } from './url'
 
 export { PERIODS, VIEWS } from './url'
@@ -39,6 +40,8 @@ export class Dash {
 
 	/** the demo dashboard at /demo: the sample site with made-up data, read-only, no settings */
 	readonly isSample = demoPath
+	/** inside the landing's fig. 1: no top bar or view tabs, and the landing's theme */
+	readonly isEmbed = !!embedded
 	sites = $derived(this.isSample ? (this.me?.sites ?? []).filter((s) => s.id === this.me?.sample) : (this.me?.sites ?? []))
 	current = $derived<Site | null>(this.sites.find((s) => s.id === this.site) ?? null)
 	isDemo = $derived(liveDemo(this.me, this.site))
@@ -86,9 +89,17 @@ export class Dash {
 		this.metric = u.metric
 		try {
 			const t = localStorage.getItem('misomoon.theme')
-			this.theme = t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+			this.theme = embedded?.theme ?? (t === 'light' || t === 'dark' ? t : matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
 		} catch {}
 		this.applyTheme()
+		// embedded, the page around follows its own day and night switch; this one isn't saved
+		if (embedded)
+			addEventListener('message', (e) => {
+				const t = themeMessage(e.data)
+				if (!t) return
+				this.theme = t
+				this.applyTheme()
+			})
 
 		$effect.root(() => {
 			$effect(() => {
