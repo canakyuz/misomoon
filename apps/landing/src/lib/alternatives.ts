@@ -138,6 +138,7 @@ const umami: Alternative = {
 	],
 	switching: [
 		'Add the misomoon script next to Umami’s and compare the numbers for a few weeks.',
+		'Import your Umami history under Settings > Integrations, with the website ID and an API key or a sign-in.',
 		'Recreate your events as goals. The `data-misomoon-event` attribute works like a tagged button.',
 		'Turn on email reports under Settings so the weekly numbers come to you.',
 	],

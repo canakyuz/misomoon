@@ -130,8 +130,9 @@ calls.
 
 ## Sources
 
-Checked on 2026-10-25. The import was tested on one day of Umami Cloud's public demo,
-read on 2026-10-26.
+Checked on 2026-10-25.
+
+The import was tested on one day of Umami Cloud's public demo, read on 2026-10-26.
 
 - Umami: [export data](https://docs.umami.is/docs/cloud/export-data),
   [API](https://docs.umami.is/docs/api),
