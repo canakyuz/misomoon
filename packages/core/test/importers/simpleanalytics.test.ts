@@ -106,6 +106,11 @@ describe("the Simple Analytics raw export, on a real day of Simple Analytics' pu
 		expect(dim(list, '')['']).toMatchObject({ visitors: 200_000, visits: 200_000, pageviews: 200_000 })
 	})
 
+	it('leaves out an event row without a name, rather than count it as a page view', () => {
+		const text = 'added_iso,datapoint,path,session_id\n2026-10-20T10:00:00.000Z,,/,s1\n2026-10-20T10:00:01.000Z,click,/,s1\n'
+		expect(simpleAnalyticsHits(text).map((h) => h.event)).toEqual(['click'])
+	})
+
 	it('asks for session_id when the export has none', () => {
 		const text = 'added_iso,path,is_unique\n2026-10-20T10:00:00.000Z,/,true\n'
 		expect(() => simpleAnalyticsHits(text)).toThrow('this Simple Analytics export has no session_id column; export it again with session_id among the fields')

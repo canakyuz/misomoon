@@ -111,8 +111,9 @@ describe("Mixpanel's Raw Event Export, on the lines Mixpanel and its users publi
 		])
 	})
 
-	it('names the line that is not JSON', () => {
+	it('names the line that is not JSON, and skips one that is no event', () => {
 		expect(() => mixpanelHits(`${line('$mp_web_page_view', 1)}\n{oops\n`)).toThrow("line 2 of this Mixpanel export isn't JSON")
+		expect(mixpanelHits(`null\n[]\n${line('$mp_web_page_view', 1)}\n`)).toHaveLength(1)
 	})
 
 	it("reads an ad click id and the ref and source tags in the page's URL, as the tracker does", () => {

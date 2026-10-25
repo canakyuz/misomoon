@@ -80,5 +80,5 @@ export function simpleAnalyticsHits(text: string): RawHit[] {
 			...(events ? {} : { counted: get('is_unique') !== 'false' }),
 		})
 	}
-	return out.filter((h) => !h.event || h.event.trim())
+	return out.filter((h) => h.event === undefined || h.event.trim())
 }

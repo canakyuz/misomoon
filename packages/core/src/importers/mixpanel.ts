@@ -69,8 +69,9 @@ export function mixpanelHits(text: string): RawHit[] {
 		} catch {
 			throw new Error(`line ${n} of this Mixpanel export isn't JSON`)
 		}
-		const name = str(e.event)
-		const p = e.properties ?? {}
+		// a line of JSON that is no object, such as null, is no event
+		const name = str(e?.event)
+		const p = e?.properties ?? {}
 		if (!name || (name !== PAGE_VIEW && /^(\$|mp_)/.test(name))) continue
 		const time = Number(p.time)
 		// exported with time_in_ms=true, or in seconds
