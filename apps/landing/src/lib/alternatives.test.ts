@@ -51,8 +51,8 @@ describe('the alternatives data', () => {
 
 	it('prints the same tracker sizes as docs/comparison.md', () => {
 		const doc = readFileSync(join(root, 'docs/comparison.md'), 'utf8')
-		expect(doc).toContain('998 bytes core, 1.8 KB with the Light preset, 4.8 KB with every feature')
-		expect([OURS.coreKb, OURS.lightKb, OURS.fullKb]).toEqual([1.0, 1.8, 4.8])
+		expect(doc).toContain('987 bytes core, 1.9 KB with the Light preset, 4.8 KB with every feature')
+		expect([OURS.coreKb, OURS.lightKb, OURS.fullKb]).toEqual([1.0, 1.9, 4.8])
 		for (const a of ALTERNATIVES) expect(doc, a.slug).toContain(`${a.trackerKb} KB`)
 	})
 

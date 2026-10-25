@@ -38,7 +38,7 @@ need a tool that runs on your own hardware, a Docker-based option fits better.
 | Official MCP server | Yes, built in | No (third-party only) | Yes | Yes | Yes | Yes |
 | Import from Google | Yes | Yes | No | Yes | Manual, through BigQuery | No |
 | First-party proxy | Managed subdomain or self-run, with one-click deploys | Self-run (managed on Enterprise) | Self-run | Self-run | Managed on their cloud | Self-run |
-| Tracker size, gzipped | 998 bytes core, 1.8 KB with the Light preset, 4.8 KB with every feature (measured) | 1.3 KB for `script.js`, 2.5 KB for the current per-site script (measured) | 2.3 KB (measured) | 28 KB (measured) | 106 KB (measured, full bundle) | 11 KB (measured) |
+| Tracker size, gzipped | 987 bytes core, 1.9 KB with the Light preset, 4.8 KB with every feature (measured) | 1.3 KB for `script.js`, 2.5 KB for the current per-site script (measured) | 2.3 KB (measured) | 28 KB (measured) | 106 KB (measured, full bundle) | 11 KB (measured) |
 | GitHub stars | New | 29.6k | 39.6k | 22.0k | 40.4k | 13.2k |
 
 "Measured" means we downloaded the script with gzip on 2026-10-24. Sizes depend on the
@@ -62,7 +62,7 @@ same size covers fewer pageviews if your sites also send custom events.
 | Custom events and UTM | Yes | Yes | Yes | Yes | No |
 | Official MCP server | Yes | Yes, "Experimental" | No (community only) | No | A general Cloudflare GraphQL server |
 | Data retention | Cloud: 2 years on Starter, 3 years on Growth and Scale. Self-hosted: no limit | 2 or 14 months for explorations | While you subscribe | 1 month on the free plan; paid plans don't say | 6 months, sampled after 7 days |
-| Tracker size, gzipped | 998 bytes core, 1.8 KB with the Light preset, 4.8 KB with every feature (measured) | 157 KB (measured, `gtag.js`) | 2.1 KB (measured) | 3.9 KB (measured) | 10 KB (measured) |
+| Tracker size, gzipped | 987 bytes core, 1.9 KB with the Light preset, 4.8 KB with every feature (measured) | 157 KB (measured, `gtag.js`) | 2.1 KB (measured) | 3.9 KB (measured) | 10 KB (measured) |
 
 ## More hosted tools
 
@@ -82,7 +82,7 @@ Checked on 2026-10-25.
 | Official MCP server | Yes | Yes | No, an unsupported community project | Vercel MCP can query Web Analytics |
 | Open source | MIT | Not found | AGPL-3.0 core library; on-premise on Enterprise | Only the client package (MIT) |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | Not found | Not found | SOC 2 Type 2, ISO 27001:2022 |
-| Tracker size, gzipped | 998 bytes core, 1.8 KB Light (measured) | 5.3 KB (measured) | 3.5 KB (measured, `pa.js`) | 2 KB (measured, 2,029 bytes) |
+| Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 5.3 KB (measured) | 3.5 KB (measured, `pa.js`) | 2 KB (measured, 2,029 bytes) |
 
 ## More open-source tools
 
@@ -100,7 +100,7 @@ Checked on 2026-10-25.
 | Session replay | No | No | Plus plan ($39/month) |
 | Import from Google | GA4 | No, web server logfiles | GA4 |
 | Two-factor sign-in | No | Not found | Yes |
-| Tracker size, gzipped | 998 bytes core, 1.8 KB Light (measured) | 3.3 KB (measured, `count.js`) | 6.7 KB (measured) |
+| Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 3.3 KB (measured, `count.js`) | 6.7 KB (measured) |
 | GitHub stars | New | 6.1k | 1.2k |
 
 ## Product analytics and session replay
@@ -120,7 +120,7 @@ experiments and feature flags, which misomoon doesn't. Checked on 2026-10-25.
 | Official MCP server | Yes | Yes | Yes, 10 requests a day over the last 3 days of data |
 | Open source | MIT | Not found: hosted only | Only the tracking script |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | SOC 2 Type II, ISO 27001 and 27701 | Not found |
-| Tracker size, gzipped | 998 bytes core, 1.8 KB Light (measured) | 34 KB (measured, `mixpanel-2-latest.min.js`) | 26 KB (measured, `clarity.js` 0.8.73) |
+| Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 34 KB (measured, `mixpanel-2-latest.min.js`) | 26 KB (measured, `clarity.js` 0.8.73) |
 
 ## Tracker size, feature for feature
 
@@ -131,7 +131,7 @@ and revenue, outbound links, file downloads, form submissions, and tagged events
 
 | Script | Gzipped |
 | --- | --- |
-| misomoon, core only | 998 bytes |
+| misomoon, core only | 987 bytes |
 | misomoon, Light preset | 1,846 bytes |
 | misomoon, every feature | 4,763 bytes |
 | Plausible, `script.js` (pageviews only) | 1,280 bytes |

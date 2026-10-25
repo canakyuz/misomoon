@@ -70,7 +70,7 @@
 
 <section class="wrap weigh-wrap" {@attach reveal()}>
 	<WeighIn caption="The weigh-in: tracker size, gzipped, as we measured it" {rows} />
-	<p class="note">Every byte of the tracker loads on every page of your site. misomoon’s Light preset keeps the signals most sites read and weighs 1.8 KB.</p>
+	<p class="note">Every byte of the tracker loads on every page of your site. misomoon’s Light preset keeps the signals most sites read and weighs 1.9 KB.</p>
 </section>
 
 {#each groups as [kind, heading, lede] (kind)}

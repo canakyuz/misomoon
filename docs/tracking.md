@@ -146,8 +146,8 @@ site has every feature on. Three presets set the boxes for you:
 | Preset | Features | `m.js`, gzipped |
 | --- | --- | --- |
 | Everything (the default) | All of the table below | 4.8 KB |
-| Light | Outbound links, downloads, form submits, and tagged events | 1.8 KB |
-| Pageviews only | None | 998 bytes |
+| Light | Outbound links, downloads, form submits, and tagged events | 1.9 KB |
+| Pageviews only | None | 987 bytes |
 
 The id in brackets is the name that `data-disable` on the script tag and the API's
 `features` field take.
@@ -157,17 +157,17 @@ The id in brackets is the name that `data-disable` on the script tag and the API
 | Outbound links (`outbound`) | An `Outbound link` event for a click or middle click on a link to another host, without its query string | 0.2 KB |
 | Downloads (`downloads`) | A `Download` event for a click or middle click on a link to a file such as `.pdf` or `.zip`, or on a link with a `download` attribute, without its query string; `data-download-ext="sketch,fig"` on the script tag adds extensions | 0.4 KB |
 | Form submits (`forms`) | A `Form sent` event for each form, named by its `id` or `name` | 0.2 KB |
-| Tagged events (`events`) | Clicks and submits on elements with `data-misomoon-event`, with props and revenue ([custom events](#send-custom-events)) | 0.3 KB |
+| Tagged events (`events`) | Clicks and submits on elements with `data-misomoon-event`, with props and revenue ([custom events](#send-custom-events)) | 0.4 KB |
 | Payments (`payments`) | Tags payment links and hands out `misomoon.ref()`, so a checkout finds its visit ([Connect payments](revenue.md)). Connecting a provider ticks it | 0.5 KB |
 | Web Vitals (`vitals`) | LCP, INP, CLS, FCP, and TTFB from real visits | 0.6 KB |
 | Clicks (`clicks`) | Each clicked element, with rage and dead clicks | 1.0 KB |
 | JavaScript errors (`errors`) | Uncaught errors and rejected promises. A script from another origin reports only `Script error.` unless its tag has `crossorigin`, and those are left out | 0.4 KB |
-| Form fields (`fields`) | The fields a visit used and the one it left a form at | 0.4 KB, plus 0.3 KB shared |
+| Form fields (`fields`) | The fields a visit used and the one it left a form at | 0.3 KB, plus 0.3 KB shared |
 | Video and audio (`media`) | Plays of `<video>` and `<audio>`, and how far they got | 0.3 KB, plus 0.3 KB shared |
 | Content blocks (`content`) | Views and clicks on elements with `data-misomoon-content` | 0.3 KB, plus 0.3 KB shared |
 | Site search (`search`) | The search term in the page URL | nothing: the server reads it |
 
-Sizes were measured on 2026-10-24 as the growth of the gzipped file. Form fields, media,
+Sizes were measured on 2026-10-25 as the growth of the gzipped file. Form fields, media,
 and content share 0.3 KB of code, so ticking all three costs it once. `m.js` with every
 feature is 4.8 KB.
 

@@ -46,10 +46,10 @@ const C = CHECKED
 const C25 = '2026-10-25'
 
 /** misomoon's own tracker, gzipped, as measured for docs/comparison.md */
-export const OURS = { coreKb: 1.0, lightKb: 1.8, fullKb: 4.8 }
+export const OURS = { coreKb: 1.0, lightKb: 1.9, fullKb: 4.8 }
 /** Tracker sizes are our own measurement: the method is on this page. */
 export const MEASURED = 'https://github.com/jackzard/misomoon/blob/main/docs/comparison.md#tracker-size-feature-for-feature'
-const OUR_TRACKER = '1.0 KB core, 1.8 KB Light, 4.8 KB with every feature'
+const OUR_TRACKER = '1.0 KB core, 1.9 KB Light, 4.8 KB with every feature'
 // misomoon's own side comes from pricing.ts, which reads @misomoon/core/plans. A misomoon
 // event is a pageview or a custom event, so a claim that puts our events next to another
 // tool's pageviews says so.
@@ -102,7 +102,7 @@ const plausible: Alternative = {
 	],
 	faq: [
 		['Is misomoon a drop-in Plausible replacement?', 'For counting, yes: one script tag, no cookies, and the same kinds of reports. Your goals and dashboards need setting up again in misomoon.'],
-		['Which one is lighter on the page?', 'The misomoon core is 1.0 KB gzipped and the Light preset is 1.8 KB. Plausible’s per-site script is 2.5 KB. With every feature on, misomoon is 4.8 KB.'],
+		['Which one is lighter on the page?', 'The misomoon core is 1.0 KB gzipped and the Light preset is 1.9 KB. Plausible’s per-site script is 2.5 KB. With every feature on, misomoon is 4.8 KB.'],
 		['Can I self-host both?', 'Yes. Plausible Community Edition runs on your server with Docker. misomoon runs in your Cloudflare account, with no server.'],
 	],
 }
@@ -567,7 +567,7 @@ const goatcounter: Alternative = {
 		'Connect your payment provider under Settings > Revenue.',
 	],
 	faq: [
-		['Is misomoon as simple as GoatCounter?', 'The install is the same: one script tag. The dashboard has more in it, such as funnels and revenue. The Light preset keeps the tracker at 1.8 KB.'],
+		['Is misomoon as simple as GoatCounter?', 'The install is the same: one script tag. The dashboard has more in it, such as funnels and revenue. The Light preset keeps the tracker at 1.9 KB.'],
 		['Can I keep my GoatCounter history?', 'Not directly. misomoon imports a Google Analytics property, or CSV files in the format on the import page.'],
 		['Is misomoon open source too?', 'Yes, under the MIT license.'],
 	],
@@ -706,12 +706,12 @@ const mixpanel: Alternative = {
 	short: 'Mixpanel',
 	kind: 'product',
 	answer:
-		'Mixpanel is product analytics with session replay, experiments and feature flags, free up to 1M events a month. Its JavaScript SDK keeps a cookie for 365 days by default and weighs 34 KB gzipped. misomoon is web analytics with no cookies, a 1.8 KB Light tracker, and revenue from your payment provider.',
+		'Mixpanel is product analytics with session replay, experiments and feature flags, free up to 1M events a month. Its JavaScript SDK keeps a cookie for 365 days by default and weighs 34 KB gzipped. misomoon is web analytics with no cookies, a 1.9 KB Light tracker, and revenue from your payment provider.',
 	description: 'misomoon and Mixpanel compared for web analytics: cookies, tracker size, price, replay, experiments, certifications, MCP, and data location.',
 	trackerKb: 34,
 	pickUs: [
 		{ text: 'You want no cookies. Mixpanel’s SDK keeps one for 365 days by default.', src: 'https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript', checked: C25 },
-		{ text: 'You care about page weight: the Mixpanel SDK measured 34 KB gzipped, misomoon’s Light preset 1.8 KB.', src: MEASURED, checked: C25 },
+		{ text: 'You care about page weight: the Mixpanel SDK measured 34 KB gzipped, misomoon’s Light preset 1.9 KB.', src: MEASURED, checked: C25 },
 		{ text: 'You want the code, or to run it in your own Cloudflare account.', src: 'https://mixpanel.com/pricing', checked: C25 },
 	],
 	pickThem: [
@@ -739,7 +739,7 @@ const mixpanel: Alternative = {
 	faq: [
 		['Is misomoon a product analytics tool like Mixpanel?', 'No. misomoon is web analytics: visits, sources, goals, funnels and revenue. It doesn’t track signed-in users across devices, run experiments or record sessions.'],
 		['Can I use both?', 'Yes. A common setup is misomoon on the marketing site, with no cookies, and Mixpanel inside the signed-in product.'],
-		['Why is misomoon’s tracker so much smaller?', 'It sends visits and the events you turn on, and nothing else. The core is 1.0 KB gzipped and the Light preset 1.8 KB.'],
+		['Why is misomoon’s tracker so much smaller?', 'It sends visits and the events you turn on, and nothing else. The core is 1.0 KB gzipped and the Light preset 1.9 KB.'],
 	],
 }
 
