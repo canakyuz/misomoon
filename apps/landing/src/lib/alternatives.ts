@@ -181,14 +181,14 @@ const matomo: Alternative = {
 		{ label: 'SOC 2 or ISO 27001', us: 'No (Cloudflare has both)', them: 'ISO 27001', edge: 'them', src: 'https://matomo.org/blog/2025/09/matomo-iso-27001-certification-2025/', checked: C },
 	],
 	switching: [
-		'Import your Google Analytics history into misomoon if you came to Matomo from there.',
+		'Import your Matomo history under Settings > Integrations, with Matomo’s address, the site ID and an auth token.',
 		'Add the misomoon script and remove the Matomo tag once the numbers line up.',
 		'If you only kept a consent banner for Matomo’s cookies, check whether you still need one. This is not legal advice.',
 	],
 	faq: [
 		['Does misomoon need a consent banner like Matomo with cookies?', 'misomoon sets no cookies, the usual reason for a banner, and stores nothing on the device unless a visitor opts out of being counted. Whether you need one depends on your country and the rest of your site.'],
 		['Is misomoon as complete as Matomo?', 'No. Matomo has years of plugins, an audit log and ISO 27001. misomoon covers the reports most sites read, with funnels, revenue and Web Vitals in the free version.'],
-		['Can I move my Matomo history?', 'Not directly. misomoon imports a Google Analytics property, or CSV files in the format on the import page.'],
+		['Can I move my Matomo history?', 'Yes. misomoon reads it from Matomo’s Reporting API, a day at a time, on Matomo Cloud and On-Premise. Goals, ecommerce revenue and custom dimensions stay behind.'],
 	],
 }
 

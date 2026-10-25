@@ -2,6 +2,7 @@ import { IMPORTERS } from '@misomoon/core'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { invalidate } from '../src/control'
 import { fakeCtx, fakeEnv, OWNER, type FakeEnv } from './fake'
+import matomoDay from '../../../packages/core/test/importers/fixtures/matomo-day.json'
 
 vi.mock('@misomoon/tracker/m.min.js', () => ({ default: '/* m.js */' }))
 const { default: worker } = await import('../src/index')
@@ -196,5 +197,27 @@ describe('API imports', () => {
 		expect(imports(env)[0]).toMatchObject({ status: 'importing' })
 		expect((await call(env, 'DELETE', `/api/v1/sites/shop-com/imports/${id}`)).status).toBe(204)
 		expect([imports(env), jobs(env)]).toEqual([[], []])
+	})
+
+	it(`imports a real day of ${IMPORTERS.matomo.name}'s public demo, as it answered`, async () => {
+		const env = await site()
+		vi.setSystemTime(Date.UTC(2026, 9, 21, 12))
+		const matomoRate = IMPORTERS.matomo.rate
+		IMPORTERS.matomo.rate = undefined
+		vi.stubGlobal('fetch', async (_: string, init: RequestInit) => {
+			const form = Object.fromEntries(new URLSearchParams(String(init.body)))
+			const hit = matomoDay.calls.find((c) => c.form.method === form.method && c.form['urls[0]'] === form['urls[0]'])
+			return Response.json(hit ? hit.answer : { result: 'error', message: 'not recorded' })
+		})
+		try {
+			const res = await start(env, { importer: 'matomo', input: { url: 'https://demo.matomo.cloud', site: '1', token: 'anonymous' }, from: '2026-10-20' })
+			expect(res.status).toBe(202)
+		} finally {
+			IMPORTERS.matomo.rate = matomoRate
+		}
+		expect(imports(env)).toEqual([{ source: 'matomo', label: `${IMPORTERS.matomo.name}: Demo Site`, status: 'done', error: null, from_day: '2026-10-20', to_day: '2026-10-20', skipped_days: 0 }])
+		expect(totals(env)).toEqual({ '2026-10-20': 11994 })
+		const pages = [...env.SHARD_0.rows("SELECT SUM(pageviews) AS n FROM imported WHERE dim = 'page'"), ...env.SHARD_1.rows("SELECT SUM(pageviews) AS n FROM imported WHERE dim = 'page'")] as { n: number | null }[]
+		expect(pages.reduce((a, r) => a + (r.n ?? 0), 0)).toBe(28947)
 	})
 })

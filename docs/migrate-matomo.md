@@ -1,9 +1,9 @@
 # Switch from Matomo
 
-Matomo has no export in the layout that misomoon's [CSV import](import.md#csv-format)
-reads, but its Reporting API gives daily totals per report, with unique visitors,
-bounces, and visit durations. You turn those into misomoon's files, on Matomo Cloud and
-on Matomo On-Premise alike. Your tracking calls change from `_paq.push()` arrays to
+misomoon imports your Matomo history from Matomo's Reporting API: pick Matomo under
+**Settings** > **Integrations**, and give it Matomo's address, the site ID, and an auth
+token. It reads daily reports with unique visitors, bounces, and visit durations, on
+Matomo Cloud and Matomo On-Premise alike. Your tracking calls change from `_paq.push()` arrays to
 `misomoon()` calls. Goals, ecommerce revenue, and custom dimensions stay behind.
 
 ## Add misomoon next to Matomo
@@ -42,65 +42,84 @@ already collected, so you can add it at any time.
 
 ## Bring your history
 
-Call Matomo's Reporting API once per report, with `period=day`. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for a
-range that ends today, or end it the day before you added misomoon to make fewer requests.
-Matomo Cloud and On-Premise both process unique visitors for single days.
+misomoon reads your Matomo history from Matomo's Reporting API, on Matomo Cloud and
+Matomo On-Premise alike.
 
-### Matomo Cloud and On-Premise
+1. In Matomo, open **Personal** > **Security** > **Auth tokens** and create a token for a
+   user who can view the site. Matomo asks whether the token only works for secure
+   requests. Either works: misomoon sends the token in the body of a `POST`.
+2. In misomoon, open **Settings** > **Integrations**, and in the **Import history** card,
+   pick Matomo in **Import from another tool**.
+3. Fill in:
+   - **Matomo address**: the address you open Matomo at, such as
+     `https://example.matomo.cloud`. A page of Matomo, such as
+     `https://matomo.example.com/index.php`, works too.
+   - **Site ID**: the number in Matomo's **Administration** > **Websites** > **Manage**.
+   - **Auth token**: the token from step 1.
+4. Leave **From** and **To** empty to import every day from the day you added the site in
+   Matomo to the day before misomoon started counting. Set them to import less.
+5. Click **Import**.
 
-1. In Matomo, open **Personal** > **Security** > **Auth tokens** and create a token.
-2. Call each method in the table below. This call gets `VisitsSummary.get` from the first
-   day you want to the day before you added misomoon, here 2026-10-11:
+misomoon signs in while you wait. A wrong token or a site the user can't view stops the
+import there, with Matomo's answer, such as `Matomo answered: You can't access this
+resource as it requires 'view' access for the website id = 1.` Then the import runs on
+the server, from the newest day back, so you can close the page. Its row shows
+**Importing…** and the days read so far
+([Import from another tool](import.md#import-from-another-tool)).
 
-   ```sh
-   curl -d "token_auth=$MATOMO_TOKEN" "https://matomo.example.com/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=2024-01-01,2026-10-11&format=json&flat=1&filter_limit=-1" > VisitsSummary.get.json
-   ```
+misomoon reads the visits of 90 days in one request and skips the days without any. A day
+with visits takes two more requests, of at most 10 reports each, the most Matomo allows in
+one. misomoon makes two requests a second at most. A year with visits on every day
+usually takes under an hour. On a server that builds reports when they're asked for,
+instead of with Matomo's archiving cron job, each request takes longer. misomoon deletes
+the token when the import ends.
 
-   The answer holds the rows of each day under the day's date. `filter_limit=-1` returns
-   every row, where the default is 100. For a large site, ask for one month per call.
-3. Write each day's rows into the file and columns that the table names, with the day in
-   `date`.
+misomoon skips the days it already counted
+([Days that count once](import.md#days-that-count-once)). Matomo counts each day in the
+time zone set for the site in Matomo. misomoon stores it under the same date, so set the
+misomoon site's **Timezone** to the same one ([Sites](settings.md#sites)).
 
-Every report row carries the same visit columns. They go into misomoon's visit columns
-like this:
+For each day, it asks for these reports, with `period=day`, the period whose unique
+visitors Matomo always processes:
 
-| Matomo | misomoon |
+| Matomo report | Goes into |
 | --- | --- |
-| `nb_uniq_visitors` | `visitors` |
-| `nb_visits` | `visits` |
-| `bounce_count` | `bounces` |
-| `sum_visit_length` | `visit_duration` |
-| `nb_actions` | `pageviews`, if you accept a higher count. `nb_actions` also counts downloads, outlinks, and site searches. Otherwise leave `pageviews` empty. |
+| `VisitsSummary.get` and `Actions.get` | Visitors, visits, page views, bounces, and visit duration for the day |
+| `Actions.getPageUrls` | Pages, with time on page, entry pages with their bounces, and exit pages. Paths lose a trailing slash and the query, as misomoon stores them. |
+| `Referrers.getReferrerType` | `Direct` for Matomo's direct entries |
+| `Referrers.getSearchEngines`, `getSocials`, `getAIAssistants`, `getWebsites` | Sources, referrers, and channels: `Organic Search`, `Organic Social`, `AI Assistants`, and for websites the channel misomoon gives the site. A known site gets misomoon's name, such as `Bing` for `bing.com`. |
+| `Referrers.getCampaigns` | UTM campaigns |
+| `UserCountry.getCountry` | Countries |
+| `DevicesDetection.getBrowsers`, `getOsFamilies`, `getOsVersions`, `getType` | Browsers, operating systems and their versions, and devices, with misomoon's names: `Chrome Mobile` becomes `Chrome`, `Mac 10.15` becomes `macOS` 10.15, and `Smartphone` becomes `Mobile` |
+| `Events.getCategory` with the event action | Custom events, named `Category: Action`, with the visitors who sent each |
 
-| misomoon file | Matomo method | Columns besides the visit columns |
-| --- | --- | --- |
-| `imported_visitors.csv` | `VisitsSummary.get` | None |
-| `imported_sources.csv` | `Referrers.getAll` | The label as `source`, and for a website, as `referrer` too. A campaign row has no source. Write its label in `utm_campaign`, and misomoon counts it under `Direct`. |
-| `imported_locations.csv` | `UserCountry.getCountry` and `UserCountry.getRegion` | The country's `code` as `country` on one set of rows, and the region code as `region` on another |
-| `imported_browsers.csv` | `DevicesDetection.getBrowsers` | The label as `browser` |
-| `imported_operating_systems.csv` | `DevicesDetection.getOsFamilies` | The label as `operating_system` |
-| `imported_devices.csv` | `DevicesDetection.getType` | The label as `device`. Write `Smartphone` and `Phablet` as `Mobile`. |
-| `imported_custom_events.csv` | `Events.getCategory` or `Events.getName` | The event name you picked as `name`, `nb_events` as `events`, and `nb_uniq_visitors` as `visitors`. This file takes no other visit columns. |
+Some numbers are worked out, because Matomo's reports don't hold them:
 
-A row with an empty `country` adds nothing to countries, and one with an empty `region`
-adds nothing to regions, so the two sets of location rows don't count twice.
+- Visitors from a search engine. Matomo gives search engines visits but no unique
+  visitors, so each engine gets visitors in the same share of its visits as all search
+  engines have together.
+- Page views per source, country, browser, operating system, device, and entry page.
+  Matomo counts actions there, which hold downloads, outlinks, and site searches too. Each
+  row gets the day's share of page views among actions.
 
-Write each value the way misomoon names it ([Dimensions](metrics.md#dimensions)), or it
-sits on a row of its own next to misomoon's. For a source, write the name misomoon gives a
-known site, such as `Google`, and the domain for any other site
-([Sources and referrers](metrics.md#sources-and-referrers)).
+A report of a plugin that is off, such as **Events**, or one an older Matomo doesn't have,
+such as AI assistants before Matomo 5.4, is left out, and the rest of the day imports.
 
-`Actions.getPageUrls`, `Actions.getEntryPageUrls`, and `Actions.getExitPageUrls` hold
-the pages for `imported_pages.csv`, `imported_entry_pages.csv`, and
-`imported_exit_pages.csv`. Matomo's API reference doesn't list the columns of these three
-reports, so this page doesn't map them. Read the column names from one day's answer and
-match them to the [CSV format](import.md#csv-format).
+### Without the importer
 
-These misomoon columns have no source in the table and stay empty:
+To pick the numbers yourself, call the same reports and upload them as
+[CSV files](import.md#csv-format). This call gets `VisitsSummary.get` from the first day
+you want to the day before you added misomoon, here 2026-10-11:
 
-- `browser_version` and `operating_system_version`. The version reports split the same
-  visits again, so rows from them would count each browser twice.
-- `utm_source`, `utm_medium`, `utm_content`, and `utm_term` of `imported_sources.csv`.
+```sh
+curl -d "token_auth=$MATOMO_TOKEN" "https://matomo.example.com/index.php?module=API&method=VisitsSummary.get&idSite=1&period=day&date=2024-01-01,2026-10-11&format=json&filter_limit=-1" > VisitsSummary.get.json
+```
+
+The answer holds the rows of each day under the day's date. `filter_limit=-1` returns
+every row, where the default is 100. Write `nb_uniq_visitors` as `visitors`, `nb_visits`
+as `visits`, `bounce_count` as `bounces`, and `sum_visit_length` as `visit_duration`, in
+the files the table above names, with the day in `date`. Zip the files and pick the zip
+under **Upload CSV or zip** in the **Import history** card.
 
 ### On-Premise database
 
@@ -108,26 +127,10 @@ On-Premise also keeps raw visits in MySQL or MariaDB: one row per visit in `log_
 one row per action in `log_link_visit_action`, and the URLs and names in `log_action`
 ([database schema](https://developer.matomo.org/guides/database-schema)). misomoon reads
 daily totals, so raw rows need you to count visits per day yourself. The Reporting API has
-done that already.
+done that already, and the importer reads it.
 
 Matomo Cloud's Data Warehouse Connector, a paid add-on, exports the same raw tables. The
-Reporting API is the shorter path there too.
-
-### Upload the files
-
-1. Zip the files:
-
-   ```sh
-   zip matomo-history.zip imported_*.csv
-   ```
-
-2. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and
-   pick `matomo-history.zip`.
-
-Include `imported_visitors.csv`, the only file that fills the top-line numbers and the
-chart. Imported days appear only in reports without filters
-([What imported data fills](import.md#what-imported-data-fills)). If you uploaded the
-wrong files, [delete the import](import.md#delete-an-import) and upload again.
+importer is the shorter path there too.
 
 ## Remove Matomo
 
@@ -143,18 +146,22 @@ Once the import shows in misomoon, remove Matomo's tracking code, the block betw
 - Rows past Matomo's archive limits. With On-Premise's default settings, a day keeps
   1,000 referrers and 500 rows of most other reports. Matomo adds the rest into one
   `Others` row, which misomoon imports as a value of its own.
-- UTM source and medium. `Referrers.getAll` names the campaign only. The
+- UTM source and medium. `Referrers.getCampaigns` names the campaign only. The
   MarketingCampaignsReporting plugin, which Matomo Cloud's Business and Enterprise plans
   include, reports more, and this page doesn't map it.
-- Region names. Matomo gives region codes, and misomoon's own data names the region, such
-  as California. The two sit on separate rows in **Regions**.
-- Exact page views per source, country, or browser, since `nb_actions` counts more than
-  page views.
+- Regions. Matomo gives region codes, and misomoon names the region, such as California,
+  so the importer leaves them out.
+- Visits of an unknown country, or of a device that isn't a desktop, phone, or tablet,
+  such as a TV or a console, in **Countries** and **Devices**. The day's totals hold them.
+- Exact page views per source, country, or browser, which the importer works out from
+  actions.
 - User ids from `setUserId`.
 
 ## Sources
 
 Checked on 2026-10-25.
+
+The importer was tested on one day of Matomo's public demo, read on 2026-10-26.
 
 - Matomo: [export methods](https://matomo.org/faq/how-to/faq_24574/),
   [export a report](https://matomo.org/faq/how-to/faq_26727/),

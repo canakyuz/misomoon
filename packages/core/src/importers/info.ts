@@ -41,6 +41,16 @@ export const IMPORTER_INFO: ImporterInfo[] = [
 			{ name: 'password', label: 'Password', kind: 'secret', when: { field: 'url', set: true } },
 		],
 	},
+	{
+		id: 'matomo',
+		name: 'Matomo',
+		guide: 'migrate-matomo',
+		fields: [
+			{ name: 'url', label: 'Matomo address', kind: 'url', placeholder: 'https://example.matomo.cloud', help: 'The address you open Matomo at, on Matomo Cloud or your own server.' },
+			{ name: 'site', label: 'Site ID', kind: 'text', placeholder: '1', help: 'In Matomo, under Administration > Websites > Manage.' },
+			{ name: 'token', label: 'Auth token', kind: 'secret', help: 'In Matomo, under Personal > Security > Auth tokens, for a user who can view the site.' },
+		],
+	},
 ]
 
 export const importerInfo = (id: string) => IMPORTER_INFO.find((i) => i.id === id)
