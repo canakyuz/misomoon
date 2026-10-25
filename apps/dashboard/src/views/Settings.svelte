@@ -32,6 +32,7 @@
 	import { DEFAULT_SEARCH_PARAMS, FEATURES, LIGHT_FEATURES, searchParams, siteFeatures, type Feature } from '@misomoon/core/features'
 	import { OPT_OUT_SNIPPET, privacyPolicy, retentionDays } from '@misomoon/core/privacy'
 	import { getDash, Resource } from '../lib/dash.svelte'
+	import { googleError } from '../lib/google'
 
 	const dash = getDash()
 	const origin = location.origin
@@ -43,7 +44,14 @@
 	let newKey = $state<{ id: string; site: string; key: string } | null>(null)
 	/** the key whose Rotate button was pressed once, waiting for the second press */
 	let confirmRotate = $state<string | null>(null)
-	let error = $state<string | null>(null)
+	// a Google sign-in that failed comes back here with google_error=; say why once, then drop it from the URL
+	const signInError = googleError(location.search)
+	let error = $state<string | null>(signInError)
+	if (signInError) {
+		const u = new URL(location.href)
+		u.searchParams.delete('google_error')
+		history.replaceState(history.state, '', u)
+	}
 	/** the action now running, so a double click cannot send it twice */
 	let busy = $state<string | null>(null)
 	/** asks once more before removing a working proxy hostname */

@@ -27,6 +27,8 @@ instance first needs [Google sign-in](#set-up-google-sign-in-on-your-instance).
    within an hour of the click, in the same browser. A sign-in that ends in another
    browser stops at a page that says "This Google sign-in was started in another
    browser." Click **Connect Google** again in the browser you use misomoon in.
+   If you cancel, take more than an hour, or Google refuses, **Settings** shows why, for
+   example "The Google sign-in was canceled, so nothing was connected."
 4. Back in **Settings**, pick the property in **Google property**. The list shows each
    property as `Account: Property`.
 5. In **To**, set the day before misomoon started collecting.
@@ -113,7 +115,8 @@ Without it, the **Google Search Console** card says **Not enabled on this server
 2. In the **Google Search Console** card, click **Connect Search Console**.
 3. Sign in with a Google account that has the site in Search Console, and allow access,
    in the same browser. A sign-in that ends in another browser stops at a page that says
-   "This Google sign-in was started in another browser."
+   "This Google sign-in was started in another browser." If you cancel, take more than
+   an hour, or Google refuses, **Settings** shows why.
 4. Back in **Settings**, pick the property in **Search Console property**. Properties
    for the site's domain come first and say **matches this site**.
 5. Click **Connect**.
