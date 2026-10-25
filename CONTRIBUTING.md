@@ -52,7 +52,8 @@ You need Node.js 22.5 or later and pnpm 10.
    script prints.
 
 The marketing site is in `apps/landing`. Start it with
-`pnpm --filter @misomoon/landing dev` on port 5174. You don't need it to work on the
+`pnpm --filter @misomoon/landing dev` on port 5174. The docs site is in `apps/docs`, on
+port 5175 with `pnpm --filter @misomoon/docs dev`. You don't need either to work on the
 product.
 
 ## Where the code lives
@@ -61,9 +62,13 @@ product.
 | --- | --- |
 | `packages/core` | The event schema, filters, SQL builders, the shard planner, and merges |
 | `packages/tracker` | `m.js`, the browser script |
+| `packages/sdk` | `@misomoon/sdk`, for bundled browser apps, React, React Native, and servers |
+| `packages/brand` | Design tokens, fonts, and the logo |
 | `apps/api` | The Cloudflare Worker: ingest, the APIs, MCP, and cron jobs |
 | `apps/dashboard` | The Svelte 5 dashboard |
 | `apps/landing` | The marketing site (SvelteKit) |
+| `apps/docs` | The docs site, built from `docs/` (SvelteKit) |
+| `plugins/wordpress` | The WordPress plugin |
 | `templates` | One-click proxy templates for Cloudflare and Vercel |
 
 Read [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) before you change ingest, queries,
@@ -103,6 +108,10 @@ Keep the first line under 72 characters.
 The docs are in `docs/`. They follow the writing rules in
 `.claude/skills/technical-writing/SKILL.md`: short sentences, one instruction for each
 step, sentence-case headings, and code font for names.
+
+A change that adds something a user sees or sets, such as a route, a setting, or an env
+var, documents it in the same pull request. `pnpm test` reads these from the code and
+fails with a list of what the docs miss.
 
 ## License
 
