@@ -53,7 +53,7 @@
 	})
 
 	function zoom(from: number, to: number) {
-		if (!ts.data || ts.data.interval === 'minute' || ts.data.interval === 'hour') return
+		if (!ts.data) return
 		// Through the end of the last bucket, so a zoom on weeks or months keeps all of the last one.
 		const r = zoomRange([from, to], 0, 1, ts.data.interval, tz)
 		dash.setPeriod('custom', r.from, r.to)
@@ -171,7 +171,7 @@
 				{partialFrom}
 				metricLabel={meta.label}
 				inverse={meta.inverse}
-				onrange={zoom}
+				onrange={ts.data.interval === 'minute' || ts.data.interval === 'hour' ? undefined : zoom}
 				{marks}
 			/>
 		{:else}
