@@ -18,6 +18,8 @@
 	const signup = $derived(signupUrl(data.appUrl))
 	// null on a cold edge cache: the page prints its evergreen edition
 	const live = $derived(data.live)
+	/** the real demo dashboard has loaded in fig. 1 */
+	let demoReady = $state(false)
 	const DAY = 86_400_000
 	// time until the next edition goes to press, at midnight UTC; unknown (placeholders) until the browser runs
 	let now = $state<number | null>(null)
@@ -219,9 +221,13 @@
 	<div class="wrap">
 		<div class="stage-label mono">
 			<span>fig. 1</span>
-			{live ? 'The live demo dashboard, drawn from this site’s real numbers' : 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
+			{demoReady
+				? 'The real dashboard on Acme, a sample store that gets new visits every few minutes. Click around.'
+				: live
+					? 'The live demo dashboard, drawn from this site’s real numbers'
+					: 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
 		</div>
-		<HeroProduct {live} />
+		<HeroProduct {live} demo="{data.appUrl}/demo" bind:ready={demoReady} />
 	</div>
 </section>
 

@@ -1,11 +1,19 @@
 <script lang="ts">
+	import { embedUrl, themeMessage, type Theme } from '#lib/embed.ts'
 	import type { Live } from '#lib/live.ts'
 
 	// A faithful, lightweight rendition of the dashboard for the hero. It is drawn
 	// with HTML and SVG (not a screenshot) so it stays crisp at any size. With
 	// `live` it shows the demo site's real numbers; without (a cold edge cache or
-	// the API down) it shows a sample and says so.
-	let { live = null }: { live?: Live | null } = $props()
+	// the API down) it shows a sample, dated back from `now`, and says so.
+	// With `demo`, the real dashboard on its sample store replaces the drawing once the
+	// figure is near the screen and the browser is idle: only then does its iframe load.
+	let {
+		live = null,
+		demo = null,
+		now = Date.now(),
+		ready = $bindable(false),
+	}: { live?: Live | null; demo?: string | null; now?: number; ready?: boolean } = $props()
 
 	const SAMPLE = {
 		visitors: 3234,
@@ -16,7 +24,6 @@
 		now: 12,
 		series: [96, 104, 88, 112, 120, 108, 132, 126, 118, 140, 152, 138, 129, 147, 288, 236, 171, 158, 166, 149, 162, 178, 171, 190, 184, 176, 198, 206, 194, 212],
 		prev: [88, 92, 85, 90, 101, 95, 98, 104, 97, 108, 112, 106, 101, 115, 118, 112, 121, 117, 124, 119, 126, 131, 124, 133, 138, 129, 141, 137, 144, 149],
-		days: [] as number[],
 		channels: [
 			['Organic Search', 33],
 			['Direct', 31],
@@ -27,9 +34,12 @@
 		vitals: { lcp: 2100, inp: 142, cls: 0.04, ttfb: 310 } as Live['vitals'],
 	}
 
+	const DAY = 86_400_000
 	const sample = $derived(!live || live.days.length < 2)
 	const d = $derived.by(() => {
-		if (sample || !live) return SAMPLE
+		// the sample's 30 days end today
+		const today = Math.floor(now / DAY) * DAY
+		if (sample || !live) return { ...SAMPLE, days: SAMPLE.series.map((_, i) => today - (SAMPLE.series.length - 1 - i) * DAY) }
 		return {
 			...live,
 			series: live.days.map((p) => p.visitors),
@@ -60,7 +70,7 @@
 	const peak = $derived(d.series.indexOf(Math.max(...d.series)))
 	const peakPrev = $derived(d.prev[peak])
 	const peakDate = $derived(
-		d.days[peak] != null ? new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d.days[peak]) : 'Thu, Oct 8',
+		new Intl.DateTimeFormat('en', { weekday: 'short', month: 'short', day: 'numeric', timeZone: 'UTC' }).format(d.days[peak] ?? now),
 	)
 	const peakNote = $derived(
 		sample ? 'Hacker News · ↑ 144%' : peakPrev ? `${d.series[peak] >= peakPrev ? '↑' : '↓'} ${Math.round(Math.abs((d.series[peak] - peakPrev) / peakPrev) * 100)}% vs a month before` : 'busiest day',
@@ -86,14 +96,112 @@
 	const POOR = { lcp: 4000, inp: 500, cls: 0.25, ttfb: 1800 }
 	const grade = (name: keyof Live['vitals'], v: number | null) => (v == null ? '' : v <= GOOD[name] ? 'g' : v > POOR[name] ? 'p' : 'n')
 	const topShare = $derived(Math.max(1, ...d.channels.map(([, v]) => v)))
+
+	/** the real dashboard's address, once its iframe is in the page */
+	let src = $state<string | null>(null)
+	let frame = $state<HTMLIFrameElement>()
+	let win = $state<HTMLElement>()
+	let toggle = $state<HTMLButtonElement>()
+	/** the figure fills the screen; `held` keeps its place in the page meanwhile */
+	let open = $state(false)
+	let held = $state(0)
+	const pageTheme = (): Theme => (document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light')
+
+	/** Asks whether the server has a sample store to show, then adds the iframe. */
+	let asked = false
+	function load() {
+		if (!demo || asked) return
+		asked = true
+		const url = demo
+		fetch(new URL('/api/v1/me', url), { credentials: 'omit', signal: AbortSignal.timeout(5000) })
+			.then((r) => (r.ok ? r.json() : null))
+			.then((me: { sample?: string | null } | null) => {
+				if (me?.sample) src = embedUrl(url, pageTheme())
+			})
+			.catch(() => {})
+	}
+	/**
+	 * Adds the iframe once the figure is within a screen of view and the browser is idle,
+	 * and only when the server has a sample store to show: otherwise, or with the API down,
+	 * the drawing stays. Never for Save-Data.
+	 */
+	function whenNear(node: HTMLElement) {
+		if (!demo || (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) return
+		const idle = window.requestIdleCallback ?? ((f: () => void) => setTimeout(f, 200))
+		const io = new IntersectionObserver(
+			(entries) => {
+				if (!entries.some((e) => e.isIntersecting)) return
+				io.disconnect()
+				idle(load)
+			},
+			{ rootMargin: '100% 0px' },
+		)
+		io.observe(node)
+		return () => io.disconnect()
+	}
+
+	// the dashboard follows the page's day and night switch without reloading
+	$effect(() => {
+		if (!src || !demo) return
+		const origin = new URL(demo).origin
+		const watch = new MutationObserver(() => frame?.contentWindow?.postMessage(themeMessage(pageTheme()), origin))
+		watch.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] })
+		return () => watch.disconnect()
+	})
+
+	/** Fills the screen with the same window, so the dashboard keeps where it was clicked to. */
+	function expand() {
+		held = win?.offsetHeight ?? 0
+		open = true
+		// opened before the figure was near: load the dashboard now
+		if (demo && !(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData) load()
+	}
+	function close() {
+		open = false
+		toggle?.focus({ preventScroll: true })
+	}
+	$effect(() => {
+		if (!open) return
+		const root = document.documentElement
+		const overflow = root.style.overflow
+		root.style.overflow = 'hidden'
+		toggle?.focus({ preventScroll: true })
+		const key = (e: KeyboardEvent) => e.key === 'Escape' && close()
+		addEventListener('keydown', key)
+		return () => {
+			root.style.overflow = overflow
+			removeEventListener('keydown', key)
+		}
+	})
 </script>
 
-<div class="window">
+<div class="slot" style:height={open ? `${held}px` : null}>
+{#if open}<button class="backdrop" aria-label="Close the full-screen demo" tabindex="-1" onclick={close}></button>{/if}
+<div
+	class="window"
+	class:open
+	bind:this={win}
+	role={open ? 'dialog' : null}
+	aria-modal={open ? 'true' : null}
+	aria-label={open ? 'The misomoon dashboard on Acme' : null}
+	{@attach whenNear}
+>
 	<div class="chrome">
 		<span></span><span></span><span></span>
-		<div class="url mono">app.misomoon.com/?site=demo</div>
+		<!-- core's SAMPLE.domain: the store the demo shows -->
+		<div class="url mono">acme.example</div>
+		<button class="size" bind:this={toggle} aria-label={open ? 'Close the full-screen demo' : 'Open the demo full screen'} onclick={() => (open ? close() : expand())}>
+			{#if open}
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8" /></svg>
+			{:else}
+				<svg viewBox="0 0 16 16" aria-hidden="true"><path d="M9.5 2.5h4v4M13.5 2.5 9 7M6.5 13.5h-4v-4M2.5 13.5 7 9" /></svg>
+			{/if}
+		</button>
 	</div>
-	<div class="body">
+	{#if src}
+		<iframe bind:this={frame} {src} title="The misomoon dashboard on Acme, a sample store: click through every report" loading="lazy" class:ready onload={() => (ready = true)}></iframe>
+	{/if}
+	<div class="body" class:gone={ready} inert={ready} aria-hidden={ready}>
 		<aside>
 			<div class="site"><i></i>misomoon.com</div>
 			<div class="live"><b></b>{fmt.format(d.now)} {d.now === 1 ? 'person' : 'people'} here now</div>
@@ -152,8 +260,63 @@
 		</main>
 	</div>
 </div>
+</div>
 
 <style>
+	.slot {
+		position: relative;
+	}
+	.backdrop {
+		position: fixed;
+		inset: 0;
+		z-index: 90;
+		border: 0;
+		padding: 0;
+		background: rgb(0 0 0 / 0.55);
+		cursor: zoom-out;
+	}
+	.window.open {
+		position: fixed;
+		inset: 16px;
+		z-index: 91;
+		box-shadow: 6px 6px 0 var(--ink);
+		display: flex;
+		flex-direction: column;
+	}
+	.window.open .body {
+		flex: 1;
+		min-height: 0;
+	}
+	.size {
+		display: grid;
+		place-items: center;
+		width: 26px;
+		height: 26px;
+		padding: 0;
+		border-radius: 7px;
+		border: 1.5px solid var(--ink);
+		background: var(--surface);
+		color: var(--text);
+		cursor: pointer;
+	}
+	.size:hover {
+		background: var(--mustard);
+		--ink: var(--ink-print);
+		color: var(--ink-print);
+	}
+	.size:focus-visible {
+		outline: 2px solid var(--vermilion);
+		outline-offset: 2px;
+	}
+	.size svg {
+		width: 14px;
+		height: 14px;
+		fill: none;
+		stroke: currentColor;
+		stroke-width: 1.8;
+		stroke-linecap: round;
+		stroke-linejoin: round;
+	}
 	.window {
 		position: relative;
 		border-radius: 14px;
@@ -163,6 +326,31 @@
 		overflow: hidden;
 		text-align: left;
 		font-size: 12px;
+	}
+	iframe {
+		position: absolute;
+		inset: 40px 0 0;
+		width: 100%;
+		height: calc(100% - 40px);
+		border: 0;
+		background: var(--surface);
+		/* above the drawing's own layers, such as the tooltip */
+		z-index: 5;
+		opacity: 0;
+		transition: opacity 0.4s ease;
+	}
+	iframe.ready {
+		opacity: 1;
+	}
+	/* the drawing goes once the dashboard has faded in over it */
+	.body.gone {
+		visibility: hidden;
+		transition: visibility 0s 0.4s;
+	}
+	@media (prefers-reduced-motion: reduce) {
+		iframe {
+			transition: none;
+		}
 	}
 	.chrome {
 		display: flex;
