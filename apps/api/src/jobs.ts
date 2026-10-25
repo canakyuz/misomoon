@@ -30,6 +30,8 @@ const START_RUN_MS = 20_000
 const CRON_RUN_MS = 4 * 60_000
 /** a job a run holds, as long as the longest run */
 const LEASE_MS = 6 * 60_000
+/** a run's last request starts this long before its hold ends, so it ends inside it (requests time out after 30 seconds) */
+const LEASE_MARGIN_MS = 60_000
 /** requests a run makes, under the Workers Paid limit of 10,000 a run with room for the cron's other work */
 const RUN_CALLS = 2_000
 /** an error the tool may get over, such as a 503, is tried again this many runs in a row */
@@ -53,8 +55,11 @@ function fields(imp: Importer, input: unknown): Record<string, string> {
 	return out
 }
 
-/** The `call` an importer gets: JSON in and out, the tool's rate kept, and its errors sorted. */
-export function caller(imp: Importer, now = () => Date.now()): ApiCall & { count: number } {
+/**
+ * The `call` an importer gets: JSON in and out, the tool's rate kept, and its errors sorted.
+ * No request starts at or after `stop`, even part way through a day.
+ */
+export function caller(imp: Importer, now = () => Date.now(), stop = Infinity): ApiCall & { count: number } {
 	const sent: number[] = []
 	const call = async (url: string, init: CallInit = {}) => {
 		if (call.count >= RUN_CALLS) throw new RetryLater(0, 'this run made all its requests')
@@ -62,11 +67,13 @@ export function caller(imp: Importer, now = () => Date.now()): ApiCall & { count
 			while (sent.length >= imp.rate.calls) {
 				const wait = sent[sent.length - imp.rate.calls] + imp.rate.ms - now()
 				if (wait <= 0) break
+				if (now() + wait >= stop) throw new RetryLater(0, 'this run is out of time')
 				await new Promise((r) => setTimeout(r, wait))
 			}
 			sent.push(now())
 			if (sent.length > imp.rate.calls) sent.shift()
 		}
+		if (now() >= stop) throw new RetryLater(0, 'this run is out of time')
 		call.count++
 		const headers: Record<string, string> = { Accept: 'application/json', 'User-Agent': 'misomoon-import/1 (+https://misomoon.com)', ...init.headers }
 		let body: string | undefined
@@ -157,9 +164,11 @@ export async function runJob(env: Env, id: string, deadline: number) {
 	}
 	// rows written behind a running shard move would be lost when its old copy is purged
 	if (await moving(env, site.id)) return release(env, id, Date.now() + 3_600_000, job.retries)
-	const call = caller(imp)
+	// a day that runs past the hold would be read by the next run at the same time
+	const call = caller(imp, undefined, now + LEASE_MS - LEASE_MARGIN_MS)
 	let next = job.next_day
 	let done = job.days_done
+	let saved = job.days_done
 	try {
 		const { state } = await imp.open(JSON.parse(job.input), call, site.timezone)
 		const taken = await takenDays(env, site.id, id)
@@ -188,6 +197,7 @@ export async function runJob(env: Env, id: string, deadline: number) {
 			])
 			// the import was deleted while this run read: the days it wrote since go too
 			if (!written.meta.changes) return dropRows(env, site.id, id)
+			saved = done
 			skipped = 0
 		}
 		if (next >= job.from_day) return release(env, id, 0, 0)
@@ -196,11 +206,14 @@ export async function runJob(env: Env, id: string, deadline: number) {
 			env.CONTROL.prepare('DELETE FROM import_jobs WHERE import_id = ?').bind(id),
 		])
 	} catch (e) {
-		// out of requests or time: carry on in the next run, from the last day written
-		if (e instanceof RetryLater && (e.ms === 0 || job.retries < MAX_RETRIES)) return release(env, id, Date.now() + e.ms, e.ms === 0 ? 0 : job.retries + 1)
+		// out of requests or time after writing a day: carry on in the next run, from the last day written
+		if (e instanceof RetryLater && e.ms === 0 && saved > job.days_done) return release(env, id, 0, 0)
+		// a run that wrote no day counts as a failed one, so a day that never fits a run ends the job
+		if (e instanceof RetryLater && job.retries < MAX_RETRIES) return release(env, id, Date.now() + e.ms, job.retries + 1)
 		await env.CONTROL.prepare('DELETE FROM import_jobs WHERE import_id = ?').bind(id).run()
 		await dropRows(env, site.id, id)
-		await fail(env, id, e instanceof ImportError || e instanceof RetryLater ? e.message : `The import stopped on an error: ${String((e as Error)?.message ?? e)}`)
+		const message = e instanceof RetryLater && e.ms === 0 ? `${imp.name} needs more time or requests for one day than a run has` : e instanceof ImportError || e instanceof RetryLater ? e.message : `The import stopped on an error: ${String((e as Error)?.message ?? e)}`
+		await fail(env, id, message)
 	}
 }
 

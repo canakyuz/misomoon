@@ -103,6 +103,10 @@ shows in your reports as soon as it's read.
 - When the tool doesn't answer, or answers with a server error, misomoon tries again five
   minutes later, up to six runs in a row. Then the import fails.
 - When the tool refuses the key part way, the import fails.
+- When one day takes more time or requests than a run has, as a day of many custom
+  events can at a tool's rate limit, misomoon reads it again in the next run, up to six
+  runs in a row without a finished day. Then the import fails with
+  `<tool> needs more time or requests for one day than a run has`.
 
 A failed import keeps none of its rows and shows **Failed:** with the tool's answer.
 misomoon keeps the API key or password while the import runs and deletes it when the

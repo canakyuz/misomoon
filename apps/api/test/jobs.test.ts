@@ -199,6 +199,36 @@ describe('API imports', () => {
 		expect([imports(env), jobs(env)]).toEqual([[], []])
 	})
 
+	it('stops a day that runs into the end of its hold on the job, so a later run never reads it at the same time', async () => {
+		const env = await site()
+		// 1 June takes six minutes, as a slow tool's day can: the run's hold lasts six
+		let slow = true
+		fakeTool((day) => {
+			if (slow && day === '2024-06-01') {
+				slow = false
+				vi.setSystemTime(Date.now() + 6 * 60_000)
+			}
+			return null
+		})
+		await start(env, { from: '2024-05-20' })
+		// 9 June back to 3 June were written; 2 June and 1 June wait for the next run
+		expect(Object.keys(totals(env)).sort()).toEqual(['2024-06-03', '2024-06-04', '2024-06-05', '2024-06-06', '2024-06-07', '2024-06-08', '2024-06-09'])
+		expect(jobs(env)).toEqual([{ next_day: '2024-06-02', days_done: 7, days_total: 21, retries: 0 }])
+		await cron(env)
+		expect(imports(env)[0]).toMatchObject({ status: 'done', from_day: '2024-05-20', to_day: '2024-06-09' })
+		expect(Object.values(totals(env))).toEqual(Array(21).fill(12))
+	})
+
+	it('fails after six runs in a row that each ran out of time before writing a day', async () => {
+		const env = await site()
+		// every first read of a day takes six minutes
+		fakeTool(() => (vi.setSystemTime(Date.now() + 6 * 60_000), null))
+		await start(env, { from: '2024-06-01' })
+		for (let i = 0; i < 6; i++) await cron(env)
+		expect(imports(env)[0]).toMatchObject({ status: 'failed', error: `${NAME} needs more time or requests for one day than a run has` })
+		expect([totals(env), jobs(env)]).toEqual([{}, []])
+	})
+
 	it('keeps none of the days a run reads after its import is deleted part way', async () => {
 		const env = await site()
 		const asked = fakeTool()
