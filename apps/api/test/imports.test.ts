@@ -110,3 +110,16 @@ describe('Google imports', () => {
 		expect(env.CONTROL.rows('SELECT id FROM google_auth')).toEqual([{ id: 'new' }])
 	})
 })
+
+describe('Search Console', () => {
+	it('revokes the token at Google in the request body when a site disconnects', async () => {
+		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		env.CONTROL.db.prepare("INSERT INTO search_console (site_id, property, access_token, refresh_token, expires_at, created_at) VALUES ('shop-com', 'sc-domain:shop.com', 'ya29', '1//refresh', 0, 0)").run()
+		const sent: { url: string; body: string; type: string | null }[] = []
+		vi.stubGlobal('fetch', async (url: string, init: RequestInit) => (sent.push({ url, body: String(init.body), type: new Headers(init.headers).get('content-type') }), new Response(null)))
+		expect((await call(env, 'DELETE', '/api/v1/sites/shop-com/search-console')).status).toBe(204)
+		expect(sent).toEqual([{ url: 'https://oauth2.googleapis.com/revoke', body: 'token=1%2F%2Frefresh', type: 'application/x-www-form-urlencoded' }])
+		expect(env.CONTROL.rows('SELECT 1 FROM search_console')).toEqual([])
+	})
+})

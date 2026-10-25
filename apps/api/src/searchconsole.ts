@@ -33,7 +33,13 @@ export async function connectSearch(env: Env, site: Site, userId: string | null,
 
 export async function disconnectSearch(env: Env, site: Site) {
 	const row = await env.CONTROL.prepare('SELECT refresh_token FROM search_console WHERE site_id = ?').bind(site.id).first<{ refresh_token: string }>()
-	if (row) await fetch(`https://oauth2.googleapis.com/revoke?token=${encodeURIComponent(row.refresh_token)}`, { method: 'POST' }).catch(() => {})
+	if (row) {
+		await fetch('https://oauth2.googleapis.com/revoke', {
+			method: 'POST',
+			headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+			body: new URLSearchParams({ token: row.refresh_token }).toString(),
+		}).catch(() => {})
+	}
 	await env.CONTROL.prepare('DELETE FROM search_console WHERE site_id = ?').bind(site.id).run()
 	invalidate(`gsc:${site.id}:`)
 }
