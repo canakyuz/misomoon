@@ -16,9 +16,19 @@ export function googleConfigured(env: Env) {
 
 const callbackUrl = (origin: string) => `${origin}/api/v1/google/callback`
 
+/**
+ * The OAuth state also goes in a cookie for the Google routes, so the callback finishes
+ * only in the browser that started the sign-in. It lasts as long as a grant may wait.
+ * wrangler dev serves http, where the cookie goes without Secure.
+ */
+const STATE_COOKIE = 'misomoon_google'
+const stateCookie = (url: URL, state: string, maxAge: number) =>
+	`${STATE_COOKIE}=${state}; Path=/api/v1/google; Max-Age=${maxAge}; HttpOnly${url.protocol === 'https:' ? '; Secure' : ''}; SameSite=Lax`
+
 /** Starts the OAuth consent; the grant id doubles as the OAuth state. */
-export async function googleConnect(env: Env, site: Site, origin: string, purpose: GooglePurpose): Promise<{ url: string }> {
+export async function googleConnect(env: Env, site: Site, req: Request, purpose: GooglePurpose): Promise<Response> {
 	googleConfigured(env)
+	const origin = new URL(req.url).origin
 	const id = crypto.randomUUID()
 	await env.CONTROL.prepare('INSERT INTO google_auth (id, site_id, purpose, created_at) VALUES (?, ?, ?, ?)').bind(id, site.id, purpose, Date.now()).run()
 	const q = new URLSearchParams({
@@ -30,7 +40,7 @@ export async function googleConnect(env: Env, site: Site, origin: string, purpos
 		prompt: 'consent',
 		state: id,
 	})
-	return { url: `https://accounts.google.com/o/oauth2/v2/auth?${q}` }
+	return Response.json({ url: `https://accounts.google.com/o/oauth2/v2/auth?${q}` }, { headers: { 'Set-Cookie': stateCookie(new URL(req.url), id, 3600) } })
 }
 
 async function tokenRequest(env: Env, body: Record<string, string>) {
@@ -44,12 +54,22 @@ async function tokenRequest(env: Env, body: Record<string, string>) {
 }
 
 /** Google redirects here. Stores the tokens against the grant and returns to Settings with `google=` or `search=`. */
-export async function googleCallback(env: Env, url: URL): Promise<Response> {
+export async function googleCallback(env: Env, req: Request): Promise<Response> {
 	googleConfigured(env)
+	const url = new URL(req.url)
 	const state = url.searchParams.get('state') ?? ''
+	const clear = { 'Set-Cookie': stateCookie(url, '', 0) }
+	const cookie = (req.headers.get('cookie') ?? '').match(new RegExp(`(?:^|;\\s*)${STATE_COOKIE}=([^;]*)`))?.[1]
+	// a callback link opened in another browser would connect someone else's Google account
+	if (!state || cookie !== state) {
+		return new Response(
+			'<!doctype html><meta charset="utf-8"><title>Google sign-in refused</title><p>This Google sign-in was started in another browser. Open misomoon in the browser you use it in, go to <b>Settings</b> &gt; <b>Integrations</b>, and click <b>Connect</b> again.</p><p><a href="/">Open misomoon</a></p>',
+			{ status: 403, headers: { 'Content-Type': 'text/html; charset=utf-8', ...clear } },
+		)
+	}
 	const grant = await env.CONTROL.prepare('SELECT site_id, purpose, created_at FROM google_auth WHERE id = ?').bind(state).first<{ site_id: string; purpose: GooglePurpose; created_at: number }>()
 	const param = grant?.purpose === 'search' ? 'search' : 'google'
-	const back = (q: string) => Response.redirect(`${url.origin}/?site=${encodeURIComponent(grant?.site_id ?? '')}&view=settings&${q}`, 302)
+	const back = (q: string) => new Response(null, { status: 302, headers: { Location: `${url.origin}/?site=${encodeURIComponent(grant?.site_id ?? '')}&view=settings&${q}`, ...clear } })
 	if (!grant || Date.now() - grant.created_at > 3_600_000) return back('google_error=expired')
 	const code = url.searchParams.get('code')
 	if (!code) return back(`google_error=${encodeURIComponent(url.searchParams.get('error') ?? 'denied')}`)

@@ -392,9 +392,9 @@ app.delete('/api/v1/sites/:id/imports/:import', async (c) => {
 	return c.body(null, 204)
 })
 app.post('/api/v1/sites/:id/imports/google/connect', async (c) => {
-	return c.json(await googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), new URL(c.req.url).origin, 'import'))
+	return googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.raw, 'import')
 })
-app.get('/api/v1/google/callback', (c) => googleCallback(c.env, new URL(c.req.url)))
+app.get('/api/v1/google/callback', (c) => googleCallback(c.env, c.req.raw))
 app.get('/api/v1/sites/:id/imports/google/properties', async (c) => {
 	return c.json(await googleProperties(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.query('grant') ?? ''))
 })
@@ -407,7 +407,7 @@ app.post('/api/v1/sites/:id/imports/google', async (c) => {
 
 app.get('/api/v1/sites/:id/search-console', async (c) => c.json(await searchStatus(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'))))
 app.post('/api/v1/sites/:id/search-console/connect', async (c) => {
-	return c.json(await googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), new URL(c.req.url).origin, 'search'))
+	return googleConnect(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.raw, 'search')
 })
 app.get('/api/v1/sites/:id/search-console/properties', async (c) => {
 	return c.json(await searchProperties(c.env, await authorize(c.env, c.get('who'), c.req.param('id'), 'edit'), c.req.query('grant') ?? ''))

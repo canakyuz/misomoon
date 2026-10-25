@@ -460,6 +460,13 @@ history moves between shards, it returns `409`, so try again a few hours later.
 
 Without Google configured, the Google routes return `501`.
 
+A `connect` route also sets the `misomoon_google` cookie (`HttpOnly`, `SameSite=Lax`,
+`Secure` over HTTPS, path `/api/v1/google`, one hour), which holds the OAuth state. Google
+sends the person to `GET /api/v1/google/callback`, which finishes the sign-in only when
+that cookie matches the state, and clears it. Without the cookie, or with another
+sign-in's, it answers `403` with a page saying the sign-in was started in another browser,
+and asks Google for nothing. Call `connect` from the browser that opens the consent page.
+
 ### Google Search Console
 
 The connected property feeds `property=search_term` in

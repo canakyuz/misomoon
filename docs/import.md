@@ -24,7 +24,9 @@ instance first needs [Google sign-in](#set-up-google-sign-in-on-your-instance).
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Connect Google**.
 3. Sign in with a Google account that can read the property, and allow access. Finish
-   within an hour of the click.
+   within an hour of the click, in the same browser. A sign-in that ends in another
+   browser stops at a page that says "This Google sign-in was started in another
+   browser." Click **Connect Google** again in the browser you use misomoon in.
 4. Back in **Settings**, pick the property in **Google property**. The list shows each
    property as `Account: Property`.
 5. In **To**, set the day before misomoon started collecting.
@@ -109,7 +111,9 @@ Without it, the **Google Search Console** card says **Not enabled on this server
 
 1. Open **Settings** > **Integrations**.
 2. In the **Google Search Console** card, click **Connect Search Console**.
-3. Sign in with a Google account that has the site in Search Console, and allow access.
+3. Sign in with a Google account that has the site in Search Console, and allow access,
+   in the same browser. A sign-in that ends in another browser stops at a page that says
+   "This Google sign-in was started in another browser."
 4. Back in **Settings**, pick the property in **Search Console property**. Properties
    for the site's domain come first and say **matches this site**.
 5. Click **Connect**.
@@ -154,6 +158,12 @@ instance already has `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`, you are done
    wrangler secret put GOOGLE_CLIENT_ID
    wrangler secret put GOOGLE_CLIENT_SECRET
    ```
+
+misomoon ties each sign-in to the browser that started it with a cookie, so a link to the
+callback that someone else opens connects nothing. In `wrangler dev` at
+`http://localhost:8787`, and through the dashboard's dev server, the cookie goes without
+`Secure` because the address is HTTP; add `http://localhost:8787/api/v1/google/callback`
+as a redirect URI to sign in there.
 
 On an instance deployed with the button, set the secrets under the Worker's
 **Settings** > **Variables and Secrets** in the Cloudflare dashboard. misomoon builds the

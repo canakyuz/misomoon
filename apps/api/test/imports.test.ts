@@ -111,6 +111,48 @@ describe('Google imports', () => {
 	})
 })
 
+describe('Google sign-in', () => {
+	const COOKIE = 'misomoon_google'
+	/** starts a Search Console sign-in and returns its state and the cookie the browser got */
+	async function start() {
+		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		const res = await call(env, 'POST', '/api/v1/sites/shop-com/search-console/connect')
+		const state = new URL((await res.json()).url).searchParams.get('state')!
+		const sent: string[] = []
+		vi.stubGlobal('fetch', async (url: string) => (sent.push(url), Response.json({ access_token: 'ya29', refresh_token: '1//r', expires_in: 3600 })))
+		return { env, state, cookie: res.headers.get('set-cookie'), sent }
+	}
+	const callback = (env: FakeEnv, state: string, cookie?: string) => call(env, 'GET', `/api/v1/google/callback?state=${state}&code=abc`, undefined, cookie ? { cookie } : {})
+	const tokens = (env: FakeEnv) => env.CONTROL.rows('SELECT access_token FROM google_auth')
+
+	it('ties the sign-in to the browser that started it with an HttpOnly cookie for the Google routes', async () => {
+		const { state, cookie } = await start()
+		expect(cookie).toBe(`${COOKIE}=${state}; Path=/api/v1/google; Max-Age=3600; HttpOnly; Secure; SameSite=Lax`)
+	})
+
+	it('finishes the sign-in when the cookie matches the state, and clears the cookie', async () => {
+		const { env, state, sent } = await start()
+		const res = await callback(env, state, `${COOKIE}=${state}`)
+		expect([res.status, res.headers.get('location'), res.headers.get('set-cookie')]).toEqual([
+			302,
+			`https://app.test/?site=shop-com&view=settings&search=${state}`,
+			`${COOKIE}=; Path=/api/v1/google; Max-Age=0; HttpOnly; Secure; SameSite=Lax`,
+		])
+		expect([sent, tokens(env)]).toEqual([['https://oauth2.googleapis.com/token'], [{ access_token: 'ya29' }]])
+	})
+
+	it('refuses a callback without the cookie or with another sign-in\'s, before asking Google for tokens', async () => {
+		const { env, state, sent } = await start()
+		for (const cookie of [undefined, `${COOKIE}=${crypto.randomUUID()}`]) {
+			const res = await callback(env, state, cookie)
+			expect([res.status, res.headers.get('content-type'), res.headers.get('set-cookie')]).toEqual([403, 'text/html; charset=utf-8', `${COOKIE}=; Path=/api/v1/google; Max-Age=0; HttpOnly; Secure; SameSite=Lax`])
+			expect(await res.text()).toContain('This Google sign-in was started in another browser.')
+		}
+		expect([sent, tokens(env)]).toEqual([[], [{ access_token: null }]])
+	})
+})
+
 describe('Search Console', () => {
 	it('revokes the token at Google in the request body when a site disconnects', async () => {
 		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
