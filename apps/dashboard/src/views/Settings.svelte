@@ -360,7 +360,9 @@
 		})
 	const moveSite = () => run('moveSite', async () => (await send('POST', `/api/v1/sites/${dash.site}/transfer`, { team: moveTo }), await dash.load()))
 	// ------------------------------------------------------------ imports
-	const imports = new Resource<ImportRow[]>(() => (dash.site && dash.canEdit ? `/api/v1/sites/${dash.site}/imports?_=${dash.tick}` : null))
+	// bumped by the poll below, so it reloads only this list
+	let importPoll = $state(0)
+	const imports = new Resource<ImportRow[]>(() => (dash.site && dash.canEdit ? `/api/v1/sites/${dash.site}/imports?_=${dash.tick}.${importPoll}` : null))
 	let uploading = $state(false)
 	let grant = $state<string | null>(new URLSearchParams(location.search).get('google'))
 	let properties = $state<{ id: string; name: string; account: string }[] | null>(null)
@@ -406,7 +408,7 @@
 	$effect(() => {
 		// poll while a Google import runs in the background
 		if (!imports.data?.some((i) => i.status === 'importing')) return
-		const t = setTimeout(() => dash.tick++, 4000)
+		const t = setTimeout(() => importPoll++, 4000)
 		return () => clearTimeout(t)
 	})
 
