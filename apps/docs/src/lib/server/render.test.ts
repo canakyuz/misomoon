@@ -128,6 +128,15 @@ misomoon('Signup')
 		expect(page.html).not.toContain('<h1')
 	})
 
+	it('keeps the description to whole sentences that fit a search result', () => {
+		const long = renderPage('a.md', `# A\n\n${'This sentence is about fifty characters long, ok. '.repeat(5)}\n`, docs, {}, raw)
+		expect(long.description).toBe('This sentence is about fifty characters long, ok. '.repeat(3).trim())
+		const dotted = renderPage('a.md', `# A\n\nOpen app.misomoon.com, then sign in. ${'Then wait for it to load. '.repeat(8)}\n`, docs, {}, raw)
+		expect(dotted.description).toBe(`Open app.misomoon.com, then sign in. ${'Then wait for it to load. '.repeat(4).trim()}`)
+		const one = renderPage('a.md', `# A\n\n${'word '.repeat(60)}end.\n`, docs, {}, raw)
+		expect(one.description).toBe(`${'word '.repeat(32).trim()}…`)
+	})
+
 	it('gives headings GitHub ids, numbering a repeated one, and lists h2 and h3 in the outline', () => {
 		expect(page.toc).toEqual([
 			{ depth: 2, id: 'add-the-script', text: 'Add the script' },

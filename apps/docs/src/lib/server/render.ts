@@ -182,8 +182,23 @@ export function renderPage(file: string, md: string, docs: Set<string>, images: 
 	const html = marked.parse(md, { async: false }) as string
 	// the first paragraph, for the page description
 	const first = new Marked().lexer(md).find((t) => t.type === 'paragraph') as Tokens.Paragraph | undefined
-	const description = first ? plain(new Marked().parseInline(first.text, { async: false }) as string) : ''
+	const description = first ? fit(plain(new Marked().parseInline(first.text, { async: false }) as string)) : ''
 	return { title: title || file, description, html, toc, sections: splitSections(html, title), links }
+}
+
+/** The whole sentences of `text` that fit in `max` characters, which is about what a search result shows; else its words up to there, with an ellipsis. */
+export function fit(text: string, max = 160): string {
+	if (text.length <= max) return text
+	let out = ''
+	// a sentence ends at a stop followed by a space, so app.misomoon.com stays whole
+	for (const s of text.split(/(?<=[.!?])\s+/)) {
+		const next = out ? `${out} ${s}` : s
+		if (next.length > max) break
+		out = next
+	}
+	if (out) return out
+	const cut = text.slice(0, max)
+	return `${cut.slice(0, cut.lastIndexOf(' ')).trimEnd()}…`
 }
 
 // marked's own table markup: the renderer above only wraps it
