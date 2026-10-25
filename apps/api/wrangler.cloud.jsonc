@@ -21,10 +21,10 @@
 		"run_worker_first": true
 	},
 	"d1_databases": [
-		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "00000000-0000-0000-0000-000000000001", "migrations_dir": "migrations/control" },
+		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "b115d9d2-e677-4fce-aaf6-6137f3f92feb", "migrations_dir": "migrations/control" },
 		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy:cloud` (scripts/deploy.ts).
-		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "00000000-0000-0000-0000-000000000002", "migrations_dir": "migrations/shard" },
-		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "00000000-0000-0000-0000-000000000003", "migrations_dir": "migrations/shard" }
+		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "73fef96c-ec3b-4309-aa6c-69054f8f5292", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "7e98e8e2-fcb8-4267-9c7a-4216980b43b2", "migrations_dir": "migrations/shard" }
 	],
 	"queues": {
 		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
