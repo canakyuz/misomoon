@@ -85,7 +85,7 @@ The [command-line steps](docs/self-hosting.md#deploy-from-the-command-line) show
   control. Nobody else can read them, including the misomoon project.
 - **No cookies.** The tracker stores nothing on the device and never stores IP
   addresses. Visitor ids come from a salt that changes every day, so nobody can follow a
-  visitor from one day to the next.
+  visitor from one day to the next, beyond a visit still open at midnight UTC.
 - **One page answers most questions.** The overview shows sources, pages, countries,
   devices, goals, and Core Web Vitals together. Click any row to filter the whole page
   by it.

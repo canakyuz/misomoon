@@ -11,7 +11,8 @@ sends. It doesn't store the IP address.
 To count unique visitors, the Worker makes an id from a hash of a daily random salt,
 the site, the IP address, and the user agent. It keeps 16 characters of that hash. The
 salt changes every day at 00:00 UTC and is deleted after two days. After that, nobody
-can link a visitor's id from one day to the next, or work back to the IP address.
+can work back to the IP address or link a visitor's id from one day to the next. The one
+exception is a visit still open at 00:00 UTC, which stays one visit and keeps both ids.
 
 ### Does the tracker use cookies or local storage?
 

@@ -12,8 +12,9 @@ the features you turn on. Ask someone who knows the law where you operate.
 misomoon sets no cookies, stores nothing on the visitor's device, and never stores IP
 addresses. To count unique visitors, it hashes a random salt that changes every day, the
 site, the IP address, and the user agent, and keeps 16 characters of the hash. The salt is
-deleted after two days, so nobody can link a visitor from one day to the next or work back
-to the address ([Architecture](ARCHITECTURE.md#ingest)).
+deleted after two days, so nobody can work back to the address or link a visitor from one
+day to the next. The one link is a visit still open at 00:00 UTC: it stays one visit, and
+its record keeps both days' ids ([Architecture](ARCHITECTURE.md#ingest)).
 
 Every pageview carries the page path, the referrer without its query, campaign tags, the
 country, region and city, the network operator, the browser, operating system, device

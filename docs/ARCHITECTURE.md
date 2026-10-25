@@ -133,7 +133,7 @@ events past the retention window.
    organisation), parses the UA, classifies the channel, and computes
    `visitor_id = sha256(daily_salt ‖ site ‖ ip ‖ ua)[0..16]`. The IP is never stored.
    Salts are random per UTC day and deleted after two days, so ids cannot be linked
-   across days. The salt rotates at 00:00 UTC, not at the site's local midnight, so a
+   across days, except through a visit that was open at 00:00 UTC (step 4). The salt rotates at 00:00 UTC, not at the site's local midnight, so a
    unique count over a local day that spans 00:00 UTC can count one person twice.
    Behind a first-party proxy the connection belongs to the proxy, so the IP and geo
    come from forwarded headers instead (`edgeFromRequest` in `core/src/proxy.ts`,
