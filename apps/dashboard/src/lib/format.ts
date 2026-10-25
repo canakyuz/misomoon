@@ -31,9 +31,11 @@ export function money(n: number | null | undefined, currency = 'USD'): string {
 	return new Intl.NumberFormat('en', { style: 'currency', currency, maximumFractionDigits: n >= 1000 ? 0 : 2 }).format(n)
 }
 
-/** A short amount for tight rows: $167, $1.2K */
+/** A short amount for tight rows: $0.40, $167, $1.2K */
 export function moneyShort(n: number, currency = 'USD'): string {
-	return new Intl.NumberFormat('en', { style: 'currency', currency, notation: 'compact', minimumFractionDigits: 0, maximumFractionDigits: Math.abs(n) >= 1000 ? 1 : 0 }).format(n)
+	const a = Math.abs(n)
+	const digits = a < 10 ? 2 : a >= 1000 ? 1 : 0
+	return new Intl.NumberFormat('en', { style: 'currency', currency, notation: 'compact', minimumFractionDigits: a < 10 ? 2 : 0, maximumFractionDigits: digits }).format(n)
 }
 
 export interface Metric {
