@@ -251,6 +251,18 @@
 		color: var(--on-vermilion);
 		box-shadow: var(--shadow-sm);
 	}
+	/* the strip scrolls, which clips an outside ring, so focus is drawn inside the tab */
+	.tabs button:focus-visible {
+		box-shadow:
+			inset 0 0 0 2px var(--cobalt),
+			inset 0 0 0 3.5px var(--surface);
+	}
+	.tabs button.on:focus-visible {
+		box-shadow:
+			var(--shadow-sm),
+			inset 0 0 0 2px var(--cobalt),
+			inset 0 0 0 3.5px var(--surface);
+	}
 
 	.live {
 		display: flex;

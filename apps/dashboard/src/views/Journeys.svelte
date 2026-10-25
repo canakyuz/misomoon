@@ -253,6 +253,12 @@
 		outline: 2px solid var(--edge);
 		box-shadow: 3px 3px 0 var(--edge);
 	}
+	/* the selected style sets its own shadow, so the focus ring is added back on top of it */
+	.row.on:focus-visible {
+		box-shadow:
+			3px 3px 0 var(--edge),
+			var(--focus);
+	}
 	.row.on .bar {
 		background: var(--miso-line);
 	}
