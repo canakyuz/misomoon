@@ -294,7 +294,6 @@ export const GOOGLE_PULLS: GooglePull[] = [
 			return unset(d.operatingSystemVersion) ? [['os', os, visit(m)], ['os_version', `${os} ${d.operatingSystemVersion}`, visit(m)]] : [['os', os, visit(m)]]
 		},
 	},
-	{ name: 'language', dims: ['language'], metrics: VISIT_METRICS, rows: (d, m) => (unset(d.language) ? [['language', d.language, visit(m)]] : []) },
 ]
 
 /** Google's automatic events, which misomoon measures itself (pageviews, visits, scroll). */

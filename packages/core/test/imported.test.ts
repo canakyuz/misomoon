@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vite-plus/test'
-import { addGoogleRows, addCsvExport, GOOGLE_PULLS, aggregate, breakdown, channelForSource, importedInsertStmts, ImportedSet, timeseries, unzipTexts, zipFiles, type Scope } from '../src'
+import { addGoogleRows, addCsvExport, GOOGLE_PULLS, IMPORTED_DIMS, aggregate, breakdown, channelForSource, importedInsertStmts, ImportedSet, timeseries, unzipTexts, zipFiles, type Scope } from '../src'
 import { runner, shardDb } from './helpers'
 
 const scope: Scope = { siteId: 'demo', filters: [], tz: 0, imported: true }
@@ -27,6 +27,16 @@ async function load() {
 const pull = (name: string) => GOOGLE_PULLS.find((p) => p.name === name)!
 
 describe('imported history', () => {
+	it('pulls from Google only what the reports read', () => {
+		const stored = new Set<string>()
+		for (const p of GOOGLE_PULLS) {
+			const set = new ImportedSet()
+			addGoogleRows(set, p, [{ dimensionValues: [{ value: '20240101' }, ...p.dims.map(() => ({ value: 'x' }))], metricValues: p.metrics.map(() => ({ value: '1' })) }])
+			for (const r of set.list()) stored.add(r.dim)
+		}
+		expect([...stored].filter((d) => d && !(IMPORTED_DIMS as readonly string[]).includes(d))).toEqual([])
+	})
+
 	it('reads a CSV export into the totals', async () => {
 		const t = await load()
 		const agg = await aggregate(t, scope)
