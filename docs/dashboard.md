@@ -376,8 +376,10 @@ lists only the sites where you have a role. [Share a dashboard](sharing.md) cove
 `/demo` on your misomoon host opens the dashboard on Acme, a made-up outdoor store with
 purchases, goals, two funnels, and data for every **Behavior** report. The landing page
 embeds it at `misomoon.com/demo`. It is the real dashboard on the real API, always signed
-out, with **Settings** hidden. The Worker writes Acme's traffic every five minutes, so
-**Live** has people on it. To turn the demo on, set
+out, with **Settings** hidden. The Worker writes Acme's traffic every five minutes, and
+**Live** writes the minutes since whenever someone watches it. Quiet hours get a few
+visitors who browse for a while, so **Live** always shows at least three people online.
+To turn the demo on, set
 [`SAMPLE_SITE`](configuration.md#variables). When it isn't set, `/demo` says the server
 has no sample site.
 

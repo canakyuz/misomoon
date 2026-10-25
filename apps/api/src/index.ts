@@ -7,7 +7,7 @@ import { authenticate, authorize, getSharedLink, hashPassword, requireUser, site
 import { moveTargets, retireShards } from './moves'
 import { checkCurrency, checkTimezone, conflict, createSite, getRanges, getShards, getSite, HttpError, invalidate, listSites, purge, shardDb, shardLimit, SITE_ID } from './control'
 import { acceptBeacon, writeEvents } from './ingest'
-import { fillSample } from './sample'
+import { fillSample, topUpSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
 import { loginProviders } from './social'
@@ -615,7 +615,10 @@ app.post('/api/v1/sites/:id/demo', async (c) => {
 app.get('/api/v1/stats/aggregate', async (c) => c.json(await aggregateStats(c.env, c.get('who'), q(c))))
 app.get('/api/v1/stats/timeseries', async (c) => c.json(await timeseriesStats(c.env, c.get('who'), q(c))))
 app.get('/api/v1/stats/breakdown', async (c) => c.json(await breakdownStats(c.env, c.get('who'), q(c))))
-app.get('/api/v1/stats/realtime', async (c) => c.json(await realtimeStats(c.env, c.get('who'), q(c))))
+app.get('/api/v1/stats/realtime', async (c) => {
+	c.executionCtx.waitUntil(topUpSample(c.env, c.req.query('site')).catch((e) => console.error(JSON.stringify({ msg: 'sample top-up failed', error: String(e) }))))
+	return c.json(await realtimeStats(c.env, c.get('who'), q(c)))
+})
 app.get('/api/v1/stats/vitals', async (c) => c.json(await vitalsStats(c.env, c.get('who'), q(c))))
 app.post('/api/v1/stats/funnel', async (c) => c.json(await funnelStats(c.env, c.get('who'), await c.req.json())))
 app.get('/api/v1/stats/journeys', async (c) => c.json(await journeyStats(c.env, c.get('who'), q(c))))

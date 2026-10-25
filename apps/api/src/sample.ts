@@ -1,4 +1,4 @@
-import { buildEvent, DAY, SAMPLE, sampleTraffic, visitorId, type EventRow } from '@misomoon/core'
+import { buildEvent, DAY, MINUTE, SAMPLE, sampleTraffic, visitorId, type EventRow } from '@misomoon/core'
 import { createSite, getRanges, getSite, invalidate, shardDb, type Site } from './control'
 import { writeEvents } from './ingest'
 
@@ -35,6 +35,24 @@ export async function fillSample(env: Env, now = Date.now(), opts: { perDay?: nu
 	}
 	// each hit keeps its event id, so the hits at `from` that are stored already insert nothing
 	return writeEvents(env, rows)
+}
+
+/** When this isolate last topped the sample site up for Live, which polls every few seconds. */
+let toppedUp = 0
+const TOP_UP_EVERY = 20_000
+
+/**
+ * The cron writes the sample's traffic every five minutes, so Live, which counts the last
+ * five, would show almost nobody just before a run. A Live read of the sample site writes
+ * the minutes since, at most every 20 seconds per isolate. A site still filling its history
+ * leaves that to the cron. A hit written twice is stored once.
+ */
+export async function topUpSample(env: Env, siteId: string | undefined, now = Date.now()): Promise<void> {
+	if (!siteId || siteId !== env.SAMPLE_SITE || now - toppedUp < TOP_UP_EVERY) return
+	toppedUp = now
+	const last = await lastEvent(env, siteId)
+	if (last == null || now - last > 15 * MINUTE) return
+	await fillSample(env, now)
 }
 
 /** The newest stored event of the site, or null when it has none. */

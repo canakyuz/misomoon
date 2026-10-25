@@ -32,6 +32,31 @@ describe('the sample site', () => {
 		expect([...sampleTraffic('acme', SAMPLE.domain, from, mid), ...sampleTraffic('acme', SAMPLE.domain, mid, to)]).toEqual(hits)
 	})
 
+	it('always has people online: every minute, at least SAMPLE.online visitors were active in the last five', () => {
+		expect(SAMPLE.online).toBe(3)
+		for (const day of [TODAY - 30, TODAY - 7, TODAY - 1, TODAY, TODAY + 1]) {
+			const hits = sampleTraffic('acme', SAMPLE.domain, day * DAY - HOUR, (day + 1) * DAY)
+			for (let t = day * DAY; t < (day + 1) * DAY; t += 60_000) {
+				const online = new Set(hits.filter((h) => h.ts > t - 5 * 60_000 && h.ts <= t).map((h) => h.edge.ip + h.edge.ua))
+				if (online.size < SAMPLE.online) throw new Error(`${online.size} online at ${new Date(t).toISOString()}`)
+			}
+		}
+	})
+
+	it('keeps the hits and ids a day had before the visitors who keep it alive were added', () => {
+		const hits = sampleDay('acme', SAMPLE.domain, 20750)
+		const known: [number, string][] = [
+			[1792800022151, 'aa338975-1cb4-451d-a0ee-4a8863fb65cd'],
+			[1792800051626, '9609ea71-9639-41ba-a94c-11024abde292'],
+			[1792854501217, '21749500-785e-453d-bedc-ef69431376a3'],
+			[1792886389475, '6f4d1929-128a-4e05-9f73-352cd9d1a6f0'],
+			[1792886421563, 'bc0a291c-95c0-4b91-9dd0-7d7b02d9877a'],
+		]
+		for (const [ts, id] of known) expect(hits.find((h) => h.payload.id === id)?.ts).toBe(ts)
+		expect(hits.every((h, i) => i === 0 || h.ts >= hits[i - 1].ts)).toBe(true)
+		expect(new Set(hits.map((h) => h.payload.id)).size).toBe(hits.length)
+	})
+
 	describe('as stored', () => {
 		const db = shardDb()
 		const scope: Scope = { siteId: 'acme', filters: [], tz: 0 }

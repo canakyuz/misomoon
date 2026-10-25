@@ -83,6 +83,33 @@ describe('the sample site', () => {
 		expect(me.body.sites.map((s: { id: string }) => s.id)).toContain('acme')
 	}, 60_000)
 
+	it('writes the minutes since the last run when someone watches Live, once its history is in', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(NOW)
+		try {
+			const env = fakeEnv({ SAMPLE_SITE: 'acme' })
+			const live = async () => {
+				const ctx = fakeCtx()
+				const res = await worker.fetch(new Request('https://app.test/api/v1/stats/realtime?site=acme'), env as unknown as Env, ctx as unknown as ExecutionContext)
+				await ctx.settle()
+				return res.json<{ visitors: number }>()
+			}
+			// still filling its history: Live leaves that to the cron
+			await fill(env, NOW, 40)
+			const filling = events(env)
+			await live()
+			expect(events(env)).toBe(filling)
+			// caught up to five minutes ago, as just before the next run
+			for (const db of [env.SHARD_0, env.SHARD_1]) db.db.exec(`UPDATE events SET ts = ${NOW - 5 * MINUTE} WHERE rowid = (SELECT MAX(rowid) FROM events WHERE site_id = 'acme')`)
+			vi.setSystemTime(NOW + 30_000)
+			await live()
+			expect(events(env)).toBeGreaterThan(filling)
+			expect((await live()).visitors).toBeGreaterThanOrEqual(SAMPLE.online)
+		} finally {
+			vi.useRealTimers()
+		}
+	})
+
 	it('never writes to a site with the same id that another team owns', async () => {
 		const env = fakeEnv({ SAMPLE_SITE: 'acme' })
 		await worker.fetch(

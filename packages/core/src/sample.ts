@@ -1,6 +1,6 @@
 import { AGENTS, GEO, LANGS, pickW, rng, type DemoHit, type Weighted } from './demo'
 import type { EdgeContext } from './ingest'
-import { DAY, HOUR } from './time'
+import { DAY, HOUR, MINUTE } from './time'
 import type { TrackerPayload } from './types'
 
 /**
@@ -19,6 +19,8 @@ export const SAMPLE = {
 	/** days the site keeps; older ones are deleted by its retention */
 	retention: 90,
 	perDay: 600,
+	/** people Live shows online at the least: quiet hours get visitors who browse a while */
+	online: 3,
 	seed: 11,
 	goals: [
 		['Purchase', 'event', 'Purchase'],
@@ -230,7 +232,76 @@ export function sampleDay(site: string, host: string, day: number, opts: { seed?
 	for (const h of hits) h.payload.id = uuid(ids)
 	// like m.js, a page view and its engagement beacons carry one view key
 	for (const [ping, view] of views) ping.payload.y = view.payload.y = viewKey(view.payload.id!)
-	return hits
+	return [...hits, ...keepAlive(site, host, day, hits, seed)].sort((a, b) => a.ts - b.ts)
+}
+
+/** Where a visitor who only browses goes next: never into the cart, so no funnel step goes without its event. */
+const BROWSE = new Set(['/cart', '/checkout', '/checkout/thanks'])
+
+/**
+ * Visitors who browse for a while in the quiet hours, so every minute of the day has at
+ * least SAMPLE.online people active in the four before it, which Live counts as online.
+ * They draw from streams of their own after the day's ids, so the day's other hits keep
+ * theirs. Each page holds them 50 to 170 seconds, so they stay online while they browse.
+ */
+function keepAlive(site: string, host: string, day: number, hits: DemoHit[], seed: number): DemoHit[] {
+	const r = rng(seed * 7919 + day + 0x0a11)
+	const ids = rng(seed * 7919 + day + 0x5a1e)
+	const dayStart = day * DAY
+	// who was active in each minute, from the four before midnight, which the first minutes count
+	const active: Set<string>[] = Array.from({ length: DAY / MINUTE + 4 }, () => new Set())
+	const mark = (h: DemoHit) => {
+		const m = Math.floor((h.ts - dayStart) / MINUTE) + 4
+		if (m >= 0 && m < active.length) active[m].add(h.edge.ip + h.edge.ua)
+	}
+	for (const h of hits) mark(h)
+	// online at the start of minute m: active in minutes m-4 to m-1
+	const online = (m: number) => {
+		const people = new Set<string>()
+		for (let k = m; k < m + 4; k++) for (const p of active[k]) people.add(p)
+		return people.size
+	}
+	const out: DemoHit[] = []
+	for (let m = 0; m < DAY / MINUTE; m++) {
+		while (online(m) < SAMPLE.online) {
+			const agent = pickW(r, AGENTS)
+			const edge: EdgeContext = { ua: agent.ua, ip: `10.${Math.floor(r() * 255)}.${Math.floor(r() * 255)}.${Math.floor(r() * 255)}`, ...pickW(r, GEO) }
+			const lang = pickW(r, LANGS)
+			const ref = pickW(r, REFERRERS.filter(([x]) => !x.q?.includes('trail-sale')))
+			// a third read one journal post and leave, the rest look around the shop
+			const reader = r() < 0.35
+			let path = reader ? pickW(r, LANDINGS.filter(([p]) => p.startsWith('/journal/'))) : pickW(r, LANDINGS)
+			let t = dayStart + (m - 1) * MINUTE + Math.floor(r() * 30_000)
+			const visit: DemoHit[] = []
+			for (let i = 0, pages = reader ? 1 : 4 + Math.floor(r() * 6); i < pages; i++) {
+				const base = { s: site, u: `https://${host}${path}${i === 0 && ref.q ? `?${ref.q}` : ''}`, t: TITLES[path] ?? path, w: agent.w, h: agent.h, vw: agent.vw, l: lang }
+				const engaged = 50_000 + Math.floor(r() * 120_000)
+				const slow = agent.w < 800 ? 1.7 : 1
+				const view: DemoHit = { ts: t, edge, payload: { ...base, ts: t, n: 'pageview', r: i === 0 ? ref.r : `https://${host}/` } }
+				const v = {
+					lcp: Math.round((1100 + r() * 1900) * slow),
+					inp: Math.round((50 + r() * 170) * slow),
+					cls: Math.round(r() * 0.07 * 1000) / 1000,
+					fcp: Math.round((600 + r() * 1200) * slow),
+					ttfb: Math.round((70 + r() * 320) * slow),
+				}
+				const d = Math.min(100, Math.round((path.startsWith('/journal/') ? 40 : 18) + r() * 80))
+				const ping: DemoHit = { ts: t + engaged, edge, payload: { ...base, ts: t + engaged, n: 'engagement', e: engaged, d, v } }
+				visit.push(view, ping)
+				t += engaged + 1000 + Math.floor(r() * 3000)
+				const next = FLOWS[path] ? pickW(r, FLOWS[path]) : PRODUCTS[path] ? pickW(r, PRODUCT_FLOW) : '/shop'
+				path = BROWSE.has(next) ? '/shop' : next
+			}
+			for (let i = 0; i < visit.length; i += 2) {
+				visit[i].payload.id = uuid(ids)
+				visit[i + 1].payload.id = uuid(ids)
+				visit[i].payload.y = visit[i + 1].payload.y = viewKey(visit[i].payload.id!)
+			}
+			for (const h of visit) mark(h)
+			out.push(...visit)
+		}
+	}
+	return out
 }
 
 /** The sample site's hits with `from <= ts < to`, oldest first. */
