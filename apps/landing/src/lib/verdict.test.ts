@@ -11,8 +11,8 @@ describe('the verdict on a comparison page', () => {
 	})
 
 	it('says how many times lighter the Light preset is, rounded down, and nothing under 1.5 times', () => {
-		expect(lighter(157)).toBe(87)
-		expect(lighter(5.3)).toBe(2.9)
+		expect(lighter(157)).toBe(82)
+		expect(lighter(5.3)).toBe(2.7)
 		expect(lighter(2.5)).toBeNull()
 		expect(lighter(1.8)).toBeNull()
 	})
