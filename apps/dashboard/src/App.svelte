@@ -162,7 +162,8 @@
 				{:else if dash.view === 'realtime'}
 					<Realtime />
 				{:else if dash.view === 'funnels'}
-					<Funnels />
+					<!-- an open funnel belongs to its site -->
+					{#key dash.site}<Funnels />{/key}
 				{:else if dash.view === 'journeys'}
 					<Journeys />
 				{:else if dash.view === 'behavior'}
