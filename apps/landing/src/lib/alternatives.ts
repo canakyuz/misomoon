@@ -348,7 +348,7 @@ const fathom: Alternative = {
 	faq: [
 		[
 			'Is misomoon cheaper than Fathom?',
-			`Yes, at the entry price. misomoon ${START.name} is $${START.price} a month for ${pv(START.events)} events on ${sites(START.sites)}, and Fathom starts at $15 for 100k pageviews. misomoon’s events count custom events as well as pageviews, so a site whose pageviews and custom events pass ${pv(START.events)} a month, or a second site, needs ${GROWTH.name}: $${GROWTH.price} for ${words(GROWTH.events)} events on ${sites(GROWTH.sites)}. Self-hosted misomoon costs what Cloudflare charges for the Workers, D1 and Queues it uses, from $5 a month for the whole account on Workers Paid.`,
+			`Yes, at the entry price. misomoon ${START.name} is $${START.price} a month for ${pv(START.events)} events on ${sites(START.sites)}, and Fathom starts at $15 for 100k pageviews. misomoon’s events count custom events as well as pageviews, so a site whose pageviews and custom events pass ${pv(START.events)} a month, or a second site, needs ${GROWTH.name}: $${GROWTH.price} for ${words(GROWTH.events)} events on ${sites(GROWTH.sites)}. Self-hosted misomoon costs what Cloudflare charges for the Workers, D1 and Queues it uses: nothing on the Workers Free plan, which handles about 3,000 events a day, and from $5 a month for the whole account on Workers Paid.`,
 		],
 		['Is my data in the EU?', 'On misomoon Cloud you pick the EU, the US or Asia-Pacific for each site. Self-hosted, the data stays in D1 databases in your Cloudflare account.'],
 		['Does misomoon set cookies?', 'No. It sets no cookies and stores nothing on the visitor’s device.'],
