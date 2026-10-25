@@ -95,6 +95,14 @@ describe('addRawHits', () => {
 		expect(row(list, '')).toMatchObject({ visitors: 1, visits: 1, pageviews: 2 })
 		expect(row(list, 'event', 'Ping')).toMatchObject({ visitors: 1, events: 1 })
 	})
+
+	it('counts a visit once when only events come more than 30 minutes after its last page view', () => {
+		const { list } = count([hit(0), hit(31, { event: 'Signup' }), hit(40, { event: 'Signup' })])
+		expect(row(list, '')).toMatchObject({ visitors: 1, visits: 1, pageviews: 1, bounces: 1 })
+		expect(row(list, 'event', 'Signup')).toMatchObject({ visitors: 1, events: 2 })
+		// a page view after them starts the next visit
+		expect(row(count([hit(0), hit(31, { event: 'Signup' }), hit(35, { path: '/b' })]).list, '')).toMatchObject({ visits: 2, pageviews: 2 })
+	})
 })
 
 describe('version keys', () => {

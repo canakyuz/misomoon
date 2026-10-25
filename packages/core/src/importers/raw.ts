@@ -178,6 +178,7 @@ export function addRawHits(set: ImportedSet, hits: RawHit[], zone: Zone): number
 		let v = open.get(key)
 		if (v && !h.visit && h.t - v.last > VISIT_GAP_MS) {
 			close(v)
+			open.delete(key)
 			v = undefined
 		}
 		if (h.event) {
