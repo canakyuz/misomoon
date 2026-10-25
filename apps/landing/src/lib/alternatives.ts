@@ -472,6 +472,7 @@ const datafast: Alternative = {
 	],
 	switching: [
 		'Start a misomoon trial and add its script next to DataFast’s. Running both keeps your numbers unbroken.',
+		'Import your DataFast history under Settings > Integrations, with the site’s API key.',
 		'Connect Stripe, Polar, Lemon Squeezy or Dodo Payments under Settings > Revenue, so each new sale is credited to the visit that brought it.',
 		'Recreate your goals, then remove the DataFast script once the numbers line up.',
 	],
@@ -481,7 +482,7 @@ const datafast: Alternative = {
 			'Which costs less?',
 			`misomoon, at the entry price. DataFast Starter is $9 a month for 10k events on 1 site with 1 team member. misomoon ${START.name} is $${START.price} for ${pv(START.events)} events on ${sites(START.sites)}, with teams. For more sites, misomoon ${GROWTH.name} is $${GROWTH.price} for ${pv(GROWTH.events)} events on ${sites(GROWTH.sites)}. Self-hosted misomoon costs what Cloudflare charges.`,
 		],
-		['Can I keep my history?', 'misomoon imports a Google Analytics property, or CSV files in the format on the import page. Keep DataFast until the new numbers cover the period you need.'],
+		['Can I keep my history?', 'Yes, most of it. misomoon reads your DataFast history from its API with the site’s API key: daily visitors, visits and bounces, and visitors by page, source, campaign, place, device, browser and goal. Revenue history stays in DataFast.'],
 	],
 }
 

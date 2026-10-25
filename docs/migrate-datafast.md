@@ -2,9 +2,10 @@
 
 DataFast's goal calls keep their shape: `window.datafast('signup')` becomes
 `misomoon('signup')`. Revenue attribution moves to misomoon's payment webhooks, and a
-checkout finds its visit through a ref instead of DataFast's visitor cookie. DataFast has
-no export file, so history comes from its API, as daily totals with visitors per page,
-source, country, and device. Revenue history, funnels, and visitor profiles stay behind.
+checkout finds its visit through a ref instead of DataFast's visitor cookie. misomoon
+imports your DataFast history from DataFast's API with the site's API key: daily totals,
+and visitors per page, source, campaign, place, device, browser, and goal. Revenue
+history, funnels, and visitor profiles stay behind.
 
 ## Add misomoon next to DataFast
 
@@ -79,42 +80,55 @@ subscription toward that visit for 400 days.
 
 ## Bring your history
 
-DataFast's docs describe no export file, so the history comes from its API. The overview
-and the breakdown routes return totals for the whole period you ask for, so call each one
-once per day, with the start and the end on the same day. That is about ten calls for
-each day of history. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)). Ask for days up to
-today, or stop the day before you added misomoon to make fewer calls. If DataFast answers `429`, wait as its
-`X-RateLimit-*` headers say and call again.
+DataFast has no export file, so misomoon reads your history from DataFast's API, a day at
+a time.
 
-1. Create an API key for the site in DataFast.
-2. Call the routes in the table below for each day you want.
-3. Write the rows into the files that the table names, with a header line of column
-   names. Then zip the files.
-4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
-   the ZIP file.
+1. In DataFast, create an API key for the site under **Website settings** > **API**. It
+   starts with `df_` and reads that one website. An account token, which starts with
+   `dft_`, is refused.
+2. In misomoon, open **Settings** > **Integrations**.
+3. In the **Import history** card, pick **DataFast** in **Import from another tool**, and
+   paste the key into **API key**.
+4. Leave **From** and **To** empty to import every day from the first month DataFast
+   counted visitors in to the day before misomoon started counting. Set them to import
+   less.
+5. Click **Import**.
 
-| DataFast route and field | misomoon file and column |
+misomoon reads the site's domain and finds its first month while you wait. A wrong key
+stops the import there, with DataFast's answer, such as
+`DataFast answered 401: check the key or the sign-in, and that it can read this site`, and
+a site with no visitors stops it with `DataFast has counted no visitors for this site`.
+Then the import runs on the server, from the newest day back, so you can close the page.
+Its row shows **Importing…** and the days read so far.
+
+DataFast's docs give a limit of 60 requests without saying per how long, so misomoon makes
+at most 60 a minute. A day with visits takes 11 requests, and one more reads which of the
+next 90 days have visits, so empty days cost nothing. A year of daily traffic takes about
+an hour and a half. When DataFast answers `429` or doesn't answer, the import waits and
+tries again. After six failed tries in a row, it fails and keeps none of its rows.
+misomoon deletes the key when the import ends
+([Import from another tool](import.md#import-from-another-tool)).
+
+misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+Each request asks for one day, with `startAt` and `endAt` on that day and `timezone` set to
+the misomoon site's **Timezone** ([Sites](settings.md#sites)). For each day, it reads:
+
+| DataFast route | Goes into |
 | --- | --- |
-| `/analytics/timeseries?interval=day`: `visitors`, `pageviews`, `sessions` | `visitors`, `pageviews`, and `visits` in `imported_visitors.csv`. One call covers up to 1,000 days. |
-| `/analytics/overview` for one day: `bounce_rate`, `avg_session_duration`, `sessions` | `bounces` is `sessions` times `bounce_rate` divided by 100. `visit_duration` is `sessions` times `avg_session_duration`. Both go in `imported_visitors.csv`. |
-| `/analytics/pages`: `path`, `visitors` | `page` and `visitors` in `imported_pages.csv` |
-| `/analytics/referrers`: `referrer`, `visitors` | `source` and `visitors` in `imported_sources.csv`. Write `Direct / None` as an empty `source`, which counts as Direct. For a domain, also put it in `referrer`, and write the name misomoon gives a known host in `source` ([Sources and referrers](metrics.md#sources-and-referrers)). |
-| `/analytics/countries`: `country`, `visitors` | `country` and `visitors` in `imported_locations.csv`. DataFast returns the country name. Write the two-letter code instead, such as `US` for United States. |
-| `/analytics/devices` | `device` in `imported_devices.csv`. DataFast writes `desktop`, `mobile`, and `tablet`. Write `Desktop`, `Mobile`, and `Tablet`. |
-| `/analytics/browsers`, `/analytics/operating-systems` | `browser` in `imported_browsers.csv`, and `operating_system` in `imported_operating_systems.csv`. Use the names misomoon uses, such as `Chrome` and `macOS` ([Dimensions](metrics.md#dimensions)). |
-| `/analytics/goals`: `goal`, `completions`, `visitors` | `name`, `events`, and `visitors` in `imported_custom_events.csv`. Leave out the goals DataFast records for payments, because misomoon imports no revenue. |
+| `/analytics/timeseries?interval=day` | Which days have visitors, 90 days in one request |
+| `/analytics/overview` | Visitors, visits, page views, bounces, and visit duration for the day. Bounces are `sessions` times `bounce_rate` divided by 100, and visit duration is `sessions` times `avg_session_duration`, read as seconds. |
+| `/analytics/pages` | Visitors per page, without a trailing slash or query, as misomoon stores paths. Pages on other hostnames of the site count under the same path. |
+| `/analytics/referrers` | Visitors per source and channel. A domain also fills referrers and gets misomoon's name for a known site, such as `Google` for `google.com`. `Direct / None` counts as `Direct`, and a name DataFast gives, such as `Google`, is the source. |
+| `/analytics/campaigns` | Visitors per UTM tag, each tag on its own. A campaign row holds all five tags, so a tag's visitors are the sum of its rows. `ref`, `source`, and `via` stay behind. |
+| `/analytics/countries`, `regions`, `cities` | Visitors per country, region, and city. A country's code comes from the flag DataFast sends, or else from its English name. A name misomoon doesn't know is left out of countries. |
+| `/analytics/devices`, `browsers`, `operating-systems` | Visitors per device, browser, and operating system, with misomoon's names: `desktop` becomes `Desktop`, `Mobile Safari` becomes `Safari`, and `Mac OS` becomes `macOS` |
+| `/analytics/goals` | Custom events: completions and the visitors who completed each goal |
 
-Leave out `/analytics/campaigns`. Every row of `imported_sources.csv` also counts toward
-`source` and `channel`, with an empty source as Direct, so campaign rows next to the
-referrer rows would count those visitors twice.
-
-The breakdowns return visitors only. `visits`, `pageviews`, `bounces`, and
-`visit_duration` stay empty in every file except `imported_visitors.csv`, and so do
-`total_time_on_page`, the versions, and `region`. Imported days appear only in reports
-without filters ([What imported data fills](import.md#what-imported-data-fills)).
-
-If you uploaded the wrong file, [delete the import](import.md#delete-an-import) and upload
-again.
+The breakdowns return visitors only, so imported days add visitors to pages, sources, and
+the other breakdowns, without visits, page views, bounces, or time. Imported days appear
+only in reports without filters
+([What imported data fills](import.md#what-imported-data-fills)). To start again,
+[delete the import](import.md#delete-an-import).
 
 ## Remove DataFast
 
@@ -127,18 +141,24 @@ Once misomoon's revenue matches DataFast's for a billing cycle:
 
 ## What stays behind
 
-- Revenue history. misomoon imports no revenue, so past payments stay in DataFast.
+- Revenue history. misomoon imports no revenue, so past payments stay in DataFast. Goals
+  that DataFast records for payments come through as custom events.
 - Funnels, journeys, and visitor profiles.
-- Entry and exit pages, time on page, and regions.
-- Visits, page views, and bounces per page, source, country, and device. DataFast's
+- Entry and exit pages, time on page, and browser and system versions. DataFast's API has
+  none of them.
+- Visits, page views, and bounces per page, source, place, device, and goal. DataFast's
   breakdowns report visitors only.
-- UTM history, for the reason in [Bring your history](#bring-your-history).
+- UTM tags by source, and the `ref`, `source`, and `via` parameters.
 - New and returning visitors. misomoon's visitor id lasts
   [one UTC day](metrics.md#a-visitor-id-lasts-one-utc-day).
 
 ## Sources
 
-Checked on 2026-10-25.
+Checked on 2026-10-26.
+
+The import was built from DataFast's API reference and tested on the example answers in
+it. It has not yet been run on a real DataFast site, because DataFast's API needs a key
+and has no public demo.
 
 - DataFast: [docs index](https://datafa.st/llms.txt),
   [custom goals](https://datafa.st/docs/custom-goals.md),
@@ -161,4 +181,9 @@ Checked on 2026-10-25.
   [campaigns](https://datafa.st/docs/api/website/breakdowns/campaigns.md),
   [countries](https://datafa.st/docs/api/website/breakdowns/countries.md),
   [devices](https://datafa.st/docs/api/website/breakdowns/devices.md),
+  [browsers](https://datafa.st/docs/api/website/breakdowns/browsers.md),
+  [operating systems](https://datafa.st/docs/api/website/breakdowns/operating-systems.md),
+  [regions](https://datafa.st/docs/api/website/breakdowns/regions.md),
+  [cities](https://datafa.st/docs/api/website/breakdowns/cities.md),
+  [metadata](https://datafa.st/docs/api/website/analytics/metadata.md),
   [goals breakdown](https://datafa.st/docs/api/website/goals/analyze.md)

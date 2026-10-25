@@ -61,6 +61,12 @@ export const IMPORTER_INFO: ImporterInfo[] = [
 			{ name: 'domain', label: 'Domain', kind: 'text', optional: true, placeholder: 'example.com', help: 'Only for a client that reads more than one dashboard.' },
 		],
 	},
+	{
+		id: 'datafast',
+		name: 'DataFast',
+		guide: 'migrate-datafast',
+		fields: [{ name: 'key', label: 'API key', kind: 'secret', placeholder: 'df_…', help: 'In DataFast, under Website settings > API. It reads this one website.' }],
+	},
 ]
 
 export const importerInfo = (id: string) => IMPORTER_INFO.find((i) => i.id === id)

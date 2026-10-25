@@ -1,0 +1,299 @@
+{
+	"note": "The example answers in DataFast API reference, one per route, copied from the Markdown pages on 2026-10-26.",
+	"routes": {
+		"metadata": {
+			"source": "https://datafa.st/docs/api/website/analytics/metadata",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"domain": "example.com",
+						"timezone": "America/New_York",
+						"name": "Example",
+						"logo": null,
+						"kpiColorScheme": "orange",
+						"kpi": "signup",
+						"currency": "USD"
+					}
+				]
+			}
+		},
+		"overview": {
+			"source": "https://datafa.st/docs/api/website/analytics/overview",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"visitors": 12450,
+						"new_visitors": 3840,
+						"returning_visitors": 8610,
+						"visitorBreakdown": {
+							"new": 3840,
+							"returning": 8610,
+							"newPercentage": 30.84,
+							"returningPercentage": 69.16
+						},
+						"pageviews": 16890,
+						"sessions": 16890,
+						"bounce_rate": 42.1,
+						"avg_session_duration": 68,
+						"currency": "USD",
+						"revenue": 28450,
+						"payments": 328,
+						"revenue_per_visitor": 2.29,
+						"conversion_rate": 2.63
+					}
+				]
+			}
+		},
+		"timeseries": {
+			"source": "https://datafa.st/docs/api/website/analytics/timeseries",
+			"answer": {
+				"status": "success",
+				"fields": [
+					"visitors",
+					"pageviews",
+					"new_visitors",
+					"returning_visitors",
+					"sessions"
+				],
+				"interval": "day",
+				"timezone": "America/New_York",
+				"totals": {
+					"visitors": 14213,
+					"visitorBreakdown": {
+						"new": 4210,
+						"returning": 10003,
+						"newPercentage": 29.62,
+						"returningPercentage": 70.38
+					},
+					"new_visitors": 4210,
+					"returning_visitors": 10003,
+					"pageviews": 20181,
+					"sessions": 20181
+				},
+				"data": [
+					{
+						"timestamp": "2026-05-01T00:00:00Z",
+						"visitors": 528,
+						"visitorBreakdown": {
+							"new": 142,
+							"returning": 386,
+							"newPercentage": 26.89,
+							"returningPercentage": 73.11
+						},
+						"new_visitors": 142,
+						"returning_visitors": 386,
+						"pageviews": 604,
+						"sessions": 604
+					}
+				],
+				"pagination": {
+					"limit": 100,
+					"offset": 0,
+					"total": 19
+				}
+			}
+		},
+		"pages": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/pages",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"hostname": "example.com",
+						"path": "/pricing",
+						"visitors": 2150,
+						"revenue": 8934,
+						"payments": 96
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"referrers": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/referrers",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"referrer": "Google",
+						"visitors": 1840,
+						"revenue": 2890,
+						"payments": 33
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"campaigns": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/campaigns",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"campaign": {
+							"utm_source": "google",
+							"utm_medium": "cpc",
+							"utm_campaign": "launch",
+							"utm_term": "",
+							"utm_content": "",
+							"ref": "",
+							"source": "",
+							"via": ""
+						},
+						"visitors": 430,
+						"revenue": 1700,
+						"payments": 21
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"countries": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/countries",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"country": "United States",
+						"image": "🇺🇸",
+						"visitors": 1240,
+						"revenue": 4890,
+						"payments": 52
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"regions": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/regions",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"region": "California",
+						"visitors": 540,
+						"revenue": 2100,
+						"payments": 24
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"cities": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/cities",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"city": "San Francisco",
+						"visitors": 320,
+						"revenue": 980,
+						"payments": 12
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"devices": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/devices",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"device": "desktop",
+						"visitors": 980,
+						"revenue": 3200,
+						"payments": 41
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"browsers": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/browsers",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"browser": "Chrome",
+						"visitors": 760,
+						"revenue": 1840,
+						"payments": 19
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"operating-systems": {
+			"source": "https://datafa.st/docs/api/website/breakdowns/operating-systems",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"operating_system": "Mac OS",
+						"visitors": 640,
+						"revenue": 2200,
+						"payments": 27
+					}
+				],
+				"pagination": {
+					"limit": 20,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		},
+		"goals": {
+			"source": "https://datafa.st/docs/api/website/goals/analyze",
+			"answer": {
+				"status": "success",
+				"data": [
+					{
+						"goal": "signup",
+						"completions": 482,
+						"visitors": 391
+					}
+				],
+				"pagination": {
+					"limit": 100,
+					"offset": 0,
+					"total": 1
+				}
+			}
+		}
+	}
+}

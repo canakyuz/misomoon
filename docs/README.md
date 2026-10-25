@@ -57,7 +57,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Fathom Analytics](migrate-fathom.md): rename the columns of Fathom's daily exports, and move event values to revenue.
 - [Simple Analytics](migrate-simple-analytics.md): count the raw export or the Stats API into history files, and keep your event names.
 - [Cloudflare Web Analytics](migrate-cloudflare-web-analytics.md): swap the beacon, and bring six months of history from the GraphQL API.
-- [DataFast](migrate-datafast.md): move goals and revenue attribution, and bring daily totals from DataFast's API.
+- [DataFast](migrate-datafast.md): move goals and revenue attribution, and import your history from DataFast's API.
 - [Pirsch](migrate-pirsch.md): bring daily totals and breakdowns from Pirsch's API, and keep your event calls.
 - [GoatCounter](migrate-goatcounter.md): write history files from the CSV or JSON export, and swap click attributes.
 - [Swetrix](migrate-swetrix.md): bring history from the Statistics API, and keep your event calls.

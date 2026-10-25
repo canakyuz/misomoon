@@ -4,7 +4,7 @@ import { BUILTIN_EVENTS } from '../ingest'
 import { localDay, type Zone } from '../time'
 import { importerInfo } from './info'
 import { ImportError, type ApiCall, type Importer } from './types'
-import { count, prevDay, required } from './util'
+import { count, prevDay, required, tz } from './util'
 
 /**
  * Pirsch's statistics API (v1), a day at a time in the site's time zone (`tz`), one
@@ -37,12 +37,6 @@ const os = (name: string) => OS[name] ?? name
 const SPAN = 90
 /** rows a request returns, as the API documents */
 const PAGE = 100
-
-/** The site's zone as Pirsch's `tz` takes it: an IANA name. Etc/GMT's sign is reversed. */
-export function tz(zone: Zone): string {
-	if (typeof zone === 'string') return zone
-	return zone && zone % 60 === 0 && Math.abs(zone) <= 14 * 60 ? `Etc/GMT${zone > 0 ? '-' : '+'}${Math.abs(zone / 60)}` : 'UTC'
-}
 
 const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
 

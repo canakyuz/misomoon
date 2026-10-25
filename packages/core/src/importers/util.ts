@@ -47,3 +47,9 @@ export function count(v: unknown): number {
 	const x = Number(v && typeof v === 'object' && 'value' in v ? (v as { value: unknown }).value : v)
 	return Number.isFinite(x) && x > 0 ? x : 0
 }
+
+/** The site's zone as an IANA name, for APIs that take one. A whole-hour offset is an Etc/GMT zone, whose sign is reversed. */
+export function tz(zone: Zone): string {
+	if (typeof zone === 'string') return zone
+	return zone && zone % 60 === 0 && Math.abs(zone) <= 14 * 60 ? `Etc/GMT${zone > 0 ? '-' : '+'}${Math.abs(zone / 60)}` : 'UTC'
+}

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vite-plus/test'
 import { ImportedSet, type ImportedRow } from '../../src/imported'
-import { pirsch, tz } from '../../src/importers/pirsch'
+import { pirsch } from '../../src/importers/pirsch'
+import { tz } from '../../src/importers/util'
 import { ImportError, type CallInit } from '../../src/importers/types'
 import real from './fixtures/pirsch-day.json'
 
