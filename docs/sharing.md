@@ -252,4 +252,6 @@ link with a password asks for it again.
 - The per-page reports in **Behavior**, such as the click and scroll reports for one page,
   replace every page filter with the page you pick, the saved filter's page filter too. If
   a saved filter filters by page, a viewer can open those reports for other pages.
-- misomoon has no embed code or embed widget.
+- misomoon has no embed code or embed widget. Another site can show a shared link in an
+  iframe. The rest of the dashboard, a public site included, refuses to load in a frame on
+  another site.

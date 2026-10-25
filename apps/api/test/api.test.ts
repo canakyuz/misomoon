@@ -582,6 +582,22 @@ describe('shards', () => {
 	})
 })
 
+describe('dashboard pages', () => {
+	it('refuse to load in a frame on another site, except the demo and shared links', async () => {
+		const env = fakeEnv()
+		const head = async (path: string) => {
+			const { res } = await call(env, 'GET', path)
+			return [path, res.headers.get('content-security-policy'), res.headers.get('x-frame-options'), res.headers.get('x-content-type-options'), res.headers.get('referrer-policy')]
+		}
+		expect(await Promise.all(['/', '/shop-com/settings', '/demo', '/share/abc'].map(head))).toEqual([
+			['/', "frame-ancestors 'self'", 'SAMEORIGIN', 'nosniff', 'strict-origin-when-cross-origin'],
+			['/shop-com/settings', "frame-ancestors 'self'", 'SAMEORIGIN', 'nosniff', 'strict-origin-when-cross-origin'],
+			['/demo', null, null, 'nosniff', 'strict-origin-when-cross-origin'],
+			['/share/abc', null, null, 'nosniff', 'strict-origin-when-cross-origin'],
+		])
+	})
+})
+
 describe('proxy hostnames (F9)', () => {
 	const proxied = () => {
 		const env = fakeEnv({ PROXY_CNAME_TARGET: 'proxy.misomoon.test' })

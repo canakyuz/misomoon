@@ -619,7 +619,18 @@ app.all('/mcp', async (c) => {
 
 // Everything else is the dashboard (a single-page app in ASSETS).
 app.all('/api/*', (c) => c.json({ error: 'not found' }, 404))
-app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw))
+app.all('*', async (c) => {
+	const asset = await c.env.ASSETS.fetch(c.req.raw)
+	const res = new Response(asset.body, asset)
+	res.headers.set('X-Content-Type-Options', 'nosniff')
+	res.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin')
+	// the landing frames the demo, and a shared link may sit in a page; nothing signed in is framed
+	if (!/^\/(demo|share)(\/|$)/.test(c.req.path)) {
+		res.headers.set('Content-Security-Policy', "frame-ancestors 'self'")
+		res.headers.set('X-Frame-Options', 'SAMEORIGIN')
+	}
+	return res
+})
 
 app.onError((err, c) => {
 	if (err instanceof HttpError) return c.json(err.code ? { error: err.message, code: err.code } : { error: err.message }, err.status as 400)
