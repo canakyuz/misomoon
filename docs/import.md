@@ -37,7 +37,12 @@ Google serves. An empty **To** ends yesterday.
 The import runs on the server, so you can close the page. Its row says **Importing…**
 until it shows the first and last day and the number of rows stored. If it shows
 **Failed:** and an error, delete it and start again at **Connect Google**. A failed import
-keeps none of its rows, so starting again counts no day twice.
+keeps none of its rows, so starting again counts no day twice. An import still
+**Importing…** after an hour was stopped part way: within the next hour misomoon marks it
+**Failed**, with "The import stopped before it finished", and deletes its rows.
+
+misomoon deletes the Google sign-in it got for the import when the import ends, and within
+a day if you never start one.
 
 ## Upload CSV files
 

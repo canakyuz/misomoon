@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { invalidate } from '../src/control'
 import { fakeCtx, fakeEnv, OWNER, type FakeEnv } from './fake'
 
@@ -19,6 +19,7 @@ function visitorsCsv(days: number) {
 }
 
 beforeEach(() => invalidate(''))
+afterEach(() => vi.unstubAllGlobals())
 
 describe('CSV imports', () => {
 	it('leaves no rows behind when an import fails part way, so a retry does not count days twice', async () => {
@@ -36,5 +37,46 @@ describe('CSV imports', () => {
 		expect(batches).toBe(2)
 		expect(env.CONTROL.rows("SELECT status FROM imports")).toEqual([{ status: 'failed' }])
 		expect([...env.SHARD_0.rows('SELECT 1 FROM imported'), ...env.SHARD_1.rows('SELECT 1 FROM imported')]).toEqual([])
+	})
+})
+
+const HOUR = 3_600_000
+const grant = (env: FakeEnv, id: string, createdAt: number) =>
+	env.CONTROL.db.prepare("INSERT INTO google_auth (id, site_id, purpose, access_token, refresh_token, expires_at, created_at) VALUES (?, 'shop-com', 'import', 'ya29.token', '1//refresh', ?, ?)").run(id, Date.now() + HOUR, createdAt)
+
+describe('Google imports', () => {
+	it('drops the Google grant when the import fails', async () => {
+		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		grant(env, 'g1', Date.now())
+		vi.stubGlobal('fetch', async () => Response.json({ error: { message: 'Quota exceeded' } }, { status: 429 }))
+		const res = await call(env, 'POST', '/api/v1/sites/shop-com/imports/google', JSON.stringify({ grant: 'g1', property: 'properties/123' }), { 'content-type': 'application/json' })
+		expect(res.status).toBe(202)
+		expect(env.CONTROL.rows('SELECT status, error FROM imports')).toEqual([{ status: 'failed', error: 'Google: Quota exceeded' }])
+		expect(env.CONTROL.rows('SELECT id FROM google_auth')).toEqual([])
+	})
+
+	it('fails an import cut off for an hour, with none of its rows, and forgets grants a day old', async () => {
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		const form = new FormData()
+		form.append('file', visitorsCsv(30))
+		await call(env, 'POST', '/api/v1/sites/shop-com/imports', form)
+		const imported = () => [...env.SHARD_0.rows('SELECT 1 FROM imported'), ...env.SHARD_1.rows('SELECT 1 FROM imported')].length
+		expect(imported()).toBeGreaterThan(0)
+		// as a background import the Worker stopped part way leaves it
+		env.CONTROL.db.prepare("UPDATE imports SET status = 'importing', created_at = ?").run(Date.now() - 2 * HOUR)
+		env.CONTROL.db.prepare("INSERT INTO imports (id, site_id, source, label, status, created_at) VALUES ('running', 'shop-com', 'google', 'Google', 'importing', ?)").run(Date.now() - 10 * 60_000)
+		grant(env, 'old', Date.now() - 25 * HOUR)
+		grant(env, 'new', Date.now() - HOUR)
+		const ctx = fakeCtx()
+		await worker.scheduled({} as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+		expect(env.CONTROL.rows('SELECT id, status, error FROM imports ORDER BY created_at')).toEqual([
+			{ id: expect.any(String), status: 'failed', error: 'The import stopped before it finished. Delete it and start again.' },
+			{ id: 'running', status: 'importing', error: null },
+		])
+		expect(imported()).toBe(0)
+		expect(env.CONTROL.rows('SELECT id FROM google_auth')).toEqual([{ id: 'new' }])
 	})
 })

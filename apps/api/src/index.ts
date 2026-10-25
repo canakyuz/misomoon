@@ -10,7 +10,7 @@ import { acceptBeacon, writeEvents } from './ingest'
 import { fillSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
-import { deleteImport, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
+import { deleteImport, expireImports, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
 import { expireAttribution, handleWebhook, listSources, removeSource, saveSource } from './revenue'
 import { checkout, polarWebhook, portal, teamBilling, withBilling } from './billing'
@@ -639,7 +639,7 @@ const USAGE_DAYS = 400
 const CLEANUP_HOUR = 3
 
 /**
- * Hourly: expires old salts, sign-ins and reset links, records each shard's size (placement weighs by free space)
+ * Hourly: expires old salts, sign-ins, reset links and stopped imports, records each shard's size (placement weighs by free space)
  * and drains shards past their soft limit. With `cleanup`, once a day, it first deletes
  * what retention no longer keeps. Retention counts in days, so a daily run is enough.
  */
@@ -652,6 +652,7 @@ async function maintenance(env: Env, cleanup: boolean) {
 		env.CONTROL.prepare('DELETE FROM password_resets WHERE expires_at < ?').bind(Date.now()),
 	])
 	await expireAttribution(env)
+	await expireImports(env)
 	// with plans on, the monthly event emails of the last 3 months are kept (plan_notices)
 	if (cleanup && plansEnforced(env)) await env.CONTROL.prepare('DELETE FROM plan_notices WHERE month < ?').bind(utcMonth(Date.now()) - 2).run()
 	const limit = shardLimit(env)

@@ -20,7 +20,6 @@ const callbackUrl = (origin: string) => `${origin}/api/v1/google/callback`
 export async function googleConnect(env: Env, site: Site, origin: string, purpose: GooglePurpose): Promise<{ url: string }> {
 	googleConfigured(env)
 	const id = crypto.randomUUID()
-	await env.CONTROL.prepare('DELETE FROM google_auth WHERE created_at < ?').bind(Date.now() - 86_400_000).run()
 	await env.CONTROL.prepare('INSERT INTO google_auth (id, site_id, purpose, created_at) VALUES (?, ?, ?, ?)').bind(id, site.id, purpose, Date.now()).run()
 	const q = new URLSearchParams({
 		client_id: env.GOOGLE_CLIENT_ID!,

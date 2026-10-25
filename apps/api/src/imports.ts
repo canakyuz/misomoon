@@ -92,12 +92,31 @@ export async function importCsv(env: Env, site: Site, files: File[]): Promise<Im
 	return (await env.CONTROL.prepare('SELECT * FROM imports WHERE id = ?').bind(id).first<ImportRow>())!
 }
 
-export async function deleteImport(env: Env, site: Site, id: string) {
-	const shards = new Set([...(await getRanges(env, site.id)).map((r) => r.shard), ...(await moveTargets(env, site.id))])
+/** Deletes an import's rows from every shard that may hold them. */
+async function dropRows(env: Env, siteId: string, id: string) {
+	const shards = new Set([...(await getRanges(env, siteId)).map((r) => r.shard), ...(await moveTargets(env, siteId))])
 	for (const shard of shards) {
-		await (await shardDb(env, shard)).prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(site.id, id).run()
+		await (await shardDb(env, shard)).prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(siteId, id).run()
 	}
+}
+
+export async function deleteImport(env: Env, site: Site, id: string) {
+	await dropRows(env, site.id, id)
 	await env.CONTROL.prepare('DELETE FROM imports WHERE id = ? AND site_id = ?').bind(id, site.id).run()
+}
+
+/**
+ * Hourly: a Google import runs as background work, which the Worker can stop part way, so
+ * one still importing after an hour failed. It keeps none of its rows. Google grants
+ * nobody used within a day go too.
+ */
+export async function expireImports(env: Env, now = Date.now()) {
+	const { results } = await env.CONTROL.prepare("SELECT id, site_id FROM imports WHERE status = 'importing' AND created_at < ?").bind(now - 3_600_000).all<{ id: string; site_id: string }>()
+	for (const r of results) {
+		await dropRows(env, r.site_id, r.id)
+		await fail(env, r.id, 'The import stopped before it finished. Delete it and start again.')
+	}
+	await env.CONTROL.prepare('DELETE FROM google_auth WHERE created_at < ?').bind(now - 86_400_000).run()
 }
 
 // ---------------------------------------------------------------- Google
@@ -146,9 +165,11 @@ export async function googleImport(env: Env, site: Site, grantId: string, proper
 			}
 		}
 		await persist(env, site, id, set)
-		await env.CONTROL.prepare('DELETE FROM google_auth WHERE id = ?').bind(grantId).run()
 	} catch (e) {
 		await fail(env, id, e)
+	} finally {
+		// starting again goes through Connect Google, which makes a new grant
+		await env.CONTROL.prepare('DELETE FROM google_auth WHERE id = ?').bind(grantId).run()
 	}
 }
 
