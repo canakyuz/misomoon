@@ -8,7 +8,7 @@ vi.hoisted(() => {
 const { sameSite } = await import('../src/lib/overlay')
 
 describe('overlay origin check', () => {
-	it("answers only the site's own domain and its subdomains", () => {
+	it("treats only the site's own domain and its subdomains as the site", () => {
 		expect(sameSite('https://shop.com', 'shop.com')).toBe(true)
 		expect(sameSite('https://www.shop.com', 'shop.com')).toBe(true)
 		expect(sameSite('https://shop.com', 'www.shop.com')).toBe(true)

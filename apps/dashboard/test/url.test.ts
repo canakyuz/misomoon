@@ -39,9 +39,11 @@ describe('checking a filter before adding it (F30)', () => {
 		expect(filterProblem(eight, f('a', 'y'))).toBeNull()
 	})
 
-	it('refuses more than 6 values in one filter and 16 in total', () => {
+	it('allows 6 values in one filter and 16 in total, and no more', () => {
+		expect(filterProblem([], f('country', '1', '2', '3', '4', '5', '6'))).toBeNull()
 		expect(filterProblem([], f('country', '1', '2', '3', '4', '5', '6', '7'))).toBe('at most 6 values in one filter')
 		const many = [f('a', '1', '2', '3', '4', '5', '6'), f('b', '1', '2', '3', '4', '5', '6')]
+		expect(filterProblem(many, f('c', '1', '2', '3', '4'))).toBeNull()
 		expect(filterProblem(many, f('c', '1', '2', '3', '4', '5'))).toBe('at most 16 filter values in total')
 	})
 
@@ -60,12 +62,13 @@ describe('reading the URL (F30)', () => {
 		expect(readUrlState('?metric=events').metric).toBe('visitors')
 	})
 
-	it('keeps a valid custom range', () => {
+	it('keeps a valid custom range, up to 400 days', () => {
 		expect(readUrlState('?period=custom&from=2026-01-01&to=2026-01-31')).toMatchObject({ period: 'custom', from: '2026-01-01', to: '2026-01-31' })
+		expect(readUrlState('?period=custom&from=2025-01-01&to=2026-02-04')).toMatchObject({ period: 'custom', from: '2025-01-01', to: '2026-02-04' })
 	})
 
 	it.each([
-		['over 400 days', '?period=custom&from=2025-01-01&to=2026-06-01'],
+		['over 400 days', '?period=custom&from=2025-01-01&to=2026-02-05'],
 		['backwards', '?period=custom&from=2026-02-01&to=2026-01-01'],
 		['not a date', '?period=custom&from=yesterday&to=2026-01-01'],
 		['missing to', '?period=custom&from=2026-01-01'],
