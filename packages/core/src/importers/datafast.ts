@@ -8,8 +8,8 @@ import { count, prevDay, required, tz } from './util'
 /**
  * DataFast's Website API (v1) with a `df_` website key, a day at a time in the site's time
  * zone: the overview and each breakdown return totals for the range asked, so each asks
- * for one day. Built from DataFast's API reference and its example answers, not yet run
- * against a real site. https://datafa.st/docs/api
+ * for one day. Built from DataFast's API reference and its example answers, and checked
+ * against the values of a real public dashboard. https://datafa.st/docs/api
  */
 
 const BASE = 'https://datafa.st/api/v1'
@@ -29,8 +29,9 @@ const PAGE = 1000
 /** a time series of months from here finds the first one with visitors */
 const SINCE = '2020-01-01'
 
-const BROWSERS: Record<string, string> = { 'Mobile Safari': 'Safari', 'Mobile Chrome': 'Chrome', 'Chrome WebView': 'Chrome', 'Mobile Firefox': 'Firefox', 'Samsung Browser': 'Samsung Internet', 'Opera Mobi': 'Opera', 'Opera Mini': 'Opera' }
-const OS: Record<string, string> = { 'Mac OS': 'macOS', 'Chrome OS': 'ChromeOS', Chromium_OS: 'ChromeOS' }
+// WebKit is an app's web view on iOS, which misomoon's tracker counts as Safari
+const BROWSERS: Record<string, string> = { 'Mobile Safari': 'Safari', WebKit: 'Safari', 'Mobile Chrome': 'Chrome', 'Chrome WebView': 'Chrome', 'Mobile Firefox': 'Firefox', 'Samsung Browser': 'Samsung Internet', 'Opera Mobi': 'Opera', 'Opera Mini': 'Opera', unknown: 'Unknown' }
+const OS: Record<string, string> = { 'Mac OS': 'macOS', 'Chrome OS': 'ChromeOS', 'Chromium OS': 'ChromeOS', Ubuntu: 'Linux', unknown: 'Unknown' }
 const DEVICES: Record<string, string> = { desktop: 'Desktop', mobile: 'Mobile', tablet: 'Tablet' }
 
 const text = (v: unknown) => (typeof v === 'string' ? v.trim() : '')
@@ -46,10 +47,17 @@ const fold = (s: string) =>
 	s.normalize('NFD').replace(/\p{M}/gu, '').toLowerCase().replace(/&/g, ' and ').replace(/\bst\.?\s/g, 'saint ').replace(/[^a-z0-9]+/g, ' ').trim()
 
 let countries: Map<string, string> | undefined
-/** A country's two-letter code from the flag DataFast sends, or from its English name. */
-export function countryCode(name: string, image?: unknown): string | undefined {
-	const flag = [...text(image)].map((c) => (c.codePointAt(0) ?? 0) - 0x1f1a5)
-	if (flag.length === 2 && flag.every((c) => c >= 65 && c <= 90)) return String.fromCharCode(...flag)
+/**
+ * A country's two-letter code from the flag DataFast sends, as an emoji or as the URL of its
+ * picture (`.../3x2/GB.svg`), or else from its English name.
+ */
+export function countryCode(name: string, ...flags: unknown[]): string | undefined {
+	for (const f of flags) {
+		const emoji = [...text(f)].map((c) => (c.codePointAt(0) ?? 0) - 0x1f1a5)
+		if (emoji.length === 2 && emoji.every((c) => c >= 65 && c <= 90)) return String.fromCharCode(...emoji)
+		const picture = text(f).match(/\/([A-Z]{2})\.svg$/)
+		if (picture) return picture[1]
+	}
 	if (/^[A-Z]{2}$/.test(name)) return name
 	if (!countries) {
 		countries = new Map(Object.entries(COUNTRY_ALIASES))
@@ -76,14 +84,32 @@ export function countryCode(name: string, image?: unknown): string | undefined {
 }
 
 /**
- * A time bucket's day. DataFast writes buckets as `2026-05-01T00:00:00Z` for the time zone
- * asked; a bucket that starts at another hour is an instant, read in the zone.
+ * A time bucket's day. DataFast writes buckets as the start of the day in the time zone
+ * asked, `2026-05-01T00:00:00Z` in its reference and `2026-09-28T00:00:00+02:00` on a real
+ * dashboard; a bucket that starts at another hour is an instant, read in the zone.
  */
 function bucketDay(ts: string, zone: Zone): string {
-	if (/^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?Z?)?$/.test(ts)) return ts.slice(0, 10)
+	if (/^\d{4}-\d{2}-\d{2}(T00:00:00(\.0+)?(Z|[+-]\d{2}:?\d{2})?)?$/.test(ts)) return ts.slice(0, 10)
 	const t = Date.parse(ts)
 	return Number.isFinite(t) ? localDay(t, zone) : ''
 }
+
+/** DataFast's names for known sites where misomoon's differ */
+const NAMES: Record<string, string> = { Brave: 'Brave Search' }
+
+/** A referrer as DataFast names it: a domain, a known site's name such as Google, or Direct/None. */
+export function referrerSource(name: string): { source: string; channel: string; host: string } {
+	const host = /^[^\s/]+\.[a-z]{2,}$/i.test(name) ? name.toLowerCase().replace(/^www\./, '') : ''
+	const source = !name || /^direct\b/i.test(name) ? 'Direct' : host ? sourceName(host) : (NAMES[name] ?? name)
+	return { source, channel: channelForSource(source, null, null), host }
+}
+
+/**
+ * A visit's average time in seconds. DataFast doesn't say the unit; its reference's example
+ * reads as seconds, and its dashboard's own routes give milliseconds. No day of real visits
+ * averages an hour, so a larger number is milliseconds.
+ */
+const seconds = (v: unknown) => (count(v) > 3600 ? count(v) / 1000 : count(v))
 
 async function get(s: State, call: ApiCall, route: string, query: string): Promise<{ data: Row[]; total?: number }> {
 	const got = (await call(`${BASE}/analytics/${route}?${query}`, { headers: s.headers })) as { status?: string; data?: unknown; error?: { message?: string }; pagination?: { total?: unknown } }
@@ -137,18 +163,15 @@ export const datafast: Importer<State> = {
 		const [total] = (await get(s, call, 'overview', `fields=visitors,pageviews,sessions,bounce_rate,avg_session_duration&startAt=${day}&endAt=${day}&timezone=${encodeURIComponent(tz(zone))}`)).data
 		const visits = count(total?.sessions)
 		// the bounce rate is a percent of the day's visits, the duration their average in seconds
-		set.add(day, '', '', { visitors: count(total?.visitors), visits, pageviews: count(total?.pageviews), bounces: Math.round((visits * count(total?.bounce_rate)) / 100), duration: Math.round(visits * count(total?.avg_session_duration)) })
+		set.add(day, '', '', { visitors: count(total?.visitors), visits, pageviews: count(total?.pageviews), bounces: Math.round((visits * count(total?.bounce_rate)) / 100), duration: Math.round(visits * seconds(total?.avg_session_duration)) })
 
 		for (const r of await read('pages', 'path,visitors')) set.add(day, 'page', normalizeImportedPath(text(r.path)), { visitors: count(r.visitors) })
 
 		for (const r of await read('referrers', 'referrer,visitors')) {
-			const name = text(r.referrer)
+			const { source, channel, host } = referrerSource(text(r.referrer))
 			const m = { visitors: count(r.visitors) }
-			// a domain, a name DataFast gives a known site, such as Google, or Direct / None
-			const host = /^[^\s/]+\.[a-z]{2,}$/i.test(name) ? name.toLowerCase().replace(/^www\./, '') : ''
-			const source = !name || /^direct\b/i.test(name) ? 'Direct' : host ? sourceName(host) : name
 			set.add(day, 'source', source, m)
-			set.add(day, 'channel', channelForSource(source, null, null), m)
+			set.add(day, 'channel', channel, m)
 			if (host) set.add(day, 'referrer', host, m)
 		}
 		// each tag on its own, as a campaign row holds all five
@@ -161,7 +184,7 @@ export const datafast: Importer<State> = {
 		}
 
 		for (const r of await read('countries', 'country,image,visitors')) {
-			const code = countryCode(text(r.country), r.image)
+			const code = countryCode(text(r.country), r.flag, r.image)
 			if (code) set.add(day, 'country', code, { visitors: count(r.visitors) })
 		}
 		for (const r of await read('regions', 'region,visitors')) if (text(r.region)) set.add(day, 'region', text(r.region), { visitors: count(r.visitors) })

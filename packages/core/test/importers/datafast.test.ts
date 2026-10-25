@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vite-plus/test'
 import { ImportedSet, type ImportedRow } from '../../src/imported'
-import { countryCode, datafast } from '../../src/importers/datafast'
+import { countryCode, datafast, referrerSource } from '../../src/importers/datafast'
 import { ImportError, type CallInit } from '../../src/importers/types'
+import real from './fixtures/datafast-dashboard.json'
 import docs from './fixtures/datafast-docs.json'
 
 /** the day of the time series' example row */
@@ -156,5 +157,97 @@ describe('countryCode', () => {
 		expect([countryCode('Czech Republic'), countryCode('Czechia'), countryCode("Côte d'Ivoire"), countryCode('Ivory Coast')]).toEqual(['CZ', 'CZ', 'CI', 'CI'])
 		expect([countryCode('Hong Kong'), countryCode('South Korea'), countryCode('Bosnia and Herzegovina'), countryCode('Saint Lucia')]).toEqual(['HK', 'KR', 'BA', 'LC'])
 		expect([countryCode('FR'), countryCode('Atlantis'), countryCode('')]).toEqual(['FR', undefined, undefined])
+	})
+})
+
+/**
+ * CodeFast's public DataFast dashboard. Its share page reads the same data as the API
+ * under other names; the API's answers here are its rows under the API's v1 names, and its
+ * 30 days' breakdowns stand for one day's. A visit's average time is in seconds, as the API
+ * reference's example gives it; the dashboard's own routes give milliseconds.
+ */
+describe("the DataFast importer, on a real public DataFast dashboard", () => {
+	const REAL_DAY = '2026-09-28'
+	const PARIS = 'Europe/Paris'
+	const day = real.days.find((d) => d.timestamp.startsWith(REAL_DAY))!
+	const referrers = real.channels.flatMap((c) => c.referrers.map((r) => ({ ...r, channel: c.name })))
+	const ok = (data: unknown[]) => ({ status: 'success', data, pagination: { limit: 1000, offset: 0, total: data.length } })
+	const rows = (list: { name: string; uv: number }[], field: string, extra: (r: never) => Record<string, unknown> = () => ({})) => ok(list.map((r) => ({ [field]: r.name, visitors: r.uv, ...extra(r as never) })))
+	const answers: Record<string, unknown> = {
+		metadata: ok([{ domain: real.domain, name: 'CodeFast', timezone: real.timezone }]),
+		overview: ok([{ visitors: day.visitors, pageviews: day.pageviews, sessions: day.sessions, bounce_rate: (100 * day.bounces) / day.sessions, avg_session_duration: day.duration / day.sessions / 1000 }]),
+		pages: rows(real.pages, 'path'),
+		referrers: rows(referrers, 'referrer'),
+		campaigns: ok([]),
+		countries: rows(real.countries, 'country', (r: { flag: string }) => ({ image: r.flag })),
+		regions: rows(real.regions, 'region'),
+		cities: rows(real.cities, 'city'),
+		devices: rows(real.devices, 'device'),
+		browsers: rows(real.browsers, 'browser'),
+		'operating-systems': rows(real.operating_systems, 'operating_system'),
+		goals: ok([]),
+	}
+	const api = (days = real.days) => async (url: string) => {
+		const u = new URL(url)
+		const route = u.pathname.slice('/api/v1/analytics/'.length)
+		if (route === 'timeseries') return ok(u.searchParams.get('interval') === 'month' ? [{ timestamp: '2026-09-01T00:00:00+02:00', visitors: 1 }] : days.map((d) => ({ timestamp: d.timestamp, visitors: d.visitors })))
+		if (route in answers) return structuredClone(answers[route])
+		throw new Error(`no answer for ${url}`)
+	}
+	async function readReal(zone = PARIS, call = api()) {
+		const { state, first } = await datafast.open(INPUT, call, zone)
+		const set = new ImportedSet()
+		await datafast.day(state, REAL_DAY, zone, call, set)
+		return { list: set.list(), first }
+	}
+	const sum = (list: ImportedRow[], d: string) => list.filter((r) => r.dim === d).reduce((n, r) => n + r.visitors, 0)
+	const uv = (list: { uv: number }[]) => list.reduce((n, r) => n + r.uv, 0)
+
+	it("reads a day's bucket by its date, written with the zone's offset", async () => {
+		const { list, first } = await readReal()
+		expect(first).toBe('2026-09-01')
+		expect(dim(list, '')['']).toMatchObject({ visitors: 331, visits: 348, pageviews: 456, bounces: 313, duration: 31_370 })
+		// the bucket is the day DataFast says, even in a zone with another offset
+		expect(dim((await readReal('UTC', api([day]))).list, '')['']).toMatchObject({ visitors: 331 })
+	})
+
+	it('names every country of the dashboard by its flag, and by its name alone', async () => {
+		const code = (image: string) => image.match(/\/([A-Z]{2})\.svg$/)![1]
+		const misses = real.countries.filter((c) => countryCode(c.name, c.flag) !== code(c.image) || countryCode(c.name) !== code(c.image) || countryCode('', c.image) !== code(c.image))
+		expect(misses.map((c) => c.name)).toEqual([])
+		expect(real.countries).toHaveLength(133)
+		const { list } = await readReal()
+		expect(sum(list, 'country')).toBe(uv(real.countries))
+		expect(dim(list, 'country').US.visitors).toBe(1217)
+	})
+
+	it("uses misomoon's names for its browsers, systems and devices", async () => {
+		const { list } = await readReal()
+		const n = (field: 'browsers' | 'operating_systems', ...names: string[]) => uv(real[field].filter((r) => names.includes(r.name)))
+		expect(visitors(list, 'os')).toEqual({ macOS: n('operating_systems', 'Mac OS'), iOS: n('operating_systems', 'iOS'), Windows: n('operating_systems', 'Windows'), Android: n('operating_systems', 'Android'), Linux: n('operating_systems', 'Linux', 'Ubuntu'), ChromeOS: n('operating_systems', 'Chromium OS'), Unknown: n('operating_systems', 'unknown') })
+		const browsers = visitors(list, 'browser')
+		expect(['Mobile Safari', 'WebKit', 'Chrome WebView', 'unknown'].filter((b) => b in browsers)).toEqual([])
+		expect([browsers.Safari, browsers.Chrome, browsers.Unknown]).toEqual([n('browsers', 'Safari', 'Mobile Safari', 'WebKit'), n('browsers', 'Chrome', 'Chrome WebView'), n('browsers', 'unknown')])
+		expect(sum(list, 'browser')).toBe(uv(real.browsers))
+		expect(visitors(list, 'device')).toEqual({ Desktop: 3658, Mobile: 2291, Tablet: 11 })
+	})
+
+	it('files each referrer under the channel DataFast gave it', async () => {
+		// DataFast's newsletter and affiliate channels come from the landing URL's tags, which a referrer row lacks
+		const CHANNELS: Record<string, string> = { Referral: 'Referral', 'Organic social': 'Organic Social', 'Organic search': 'Organic Search', Direct: 'Direct', 'A.I.': 'AI Assistants' }
+		const { list } = await readReal()
+		const sources = visitors(list, 'source')
+		expect(sources.Direct).toBe(1156)
+		expect([sources.X, sources.Google, sources.ChatGPT]).toEqual([1739, 445, referrers.find((r) => r.name === 'ChatGPT')!.uv])
+		const misses = referrers
+			.filter((r) => r.channel in CHANNELS)
+			.map((r) => [r.name, r.channel, referrerSource(r.name).channel] as const)
+			.filter(([, theirs, ours]) => CHANNELS[theirs] !== ours)
+		// misomoon has a channel for video, and its tracker counts medium.com as a referral too
+		expect(misses).toEqual([
+			['YouTube', 'Organic social', 'Video'],
+			['Medium', 'Organic social', 'Referral'],
+		])
+		expect(referrerSource('Brave').source).toBe('Brave Search')
 	})
 })

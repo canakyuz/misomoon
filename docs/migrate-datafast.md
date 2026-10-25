@@ -116,12 +116,12 @@ the misomoon site's **Timezone** ([Sites](settings.md#sites)). For each day, it 
 | DataFast route | Goes into |
 | --- | --- |
 | `/analytics/timeseries?interval=day` | Which days have visitors, 90 days in one request |
-| `/analytics/overview` | Visitors, visits, page views, bounces, and visit duration for the day. Bounces are `sessions` times `bounce_rate` divided by 100, and visit duration is `sessions` times `avg_session_duration`, read as seconds. |
+| `/analytics/overview` | Visitors, visits, page views, bounces, and visit duration for the day. Bounces are `sessions` times `bounce_rate` divided by 100, and visit duration is `sessions` times `avg_session_duration`, read as seconds. DataFast doesn't document the unit, and its dashboard works in milliseconds, so an average above an hour is read as milliseconds. |
 | `/analytics/pages` | Visitors per page, without a trailing slash or query, as misomoon stores paths. Pages on other hostnames of the site count under the same path. |
-| `/analytics/referrers` | Visitors per source and channel. A domain also fills referrers and gets misomoon's name for a known site, such as `Google` for `google.com`. `Direct / None` counts as `Direct`, and a name DataFast gives, such as `Google`, is the source. |
+| `/analytics/referrers` | Visitors per source and channel. A domain also fills referrers and gets misomoon's name for a known site, such as `Google` for `google.com`. `Direct/None` counts as `Direct`, and a name DataFast gives, such as `Google`, is the source; `Brave` becomes `Brave Search`. The channel is misomoon's, so YouTube counts as Video, where DataFast says Organic social. |
 | `/analytics/campaigns` | Visitors per UTM tag, each tag on its own. A campaign row holds all five tags, so a tag's visitors are the sum of its rows. `ref`, `source`, and `via` stay behind. |
-| `/analytics/countries`, `regions`, `cities` | Visitors per country, region, and city. A country's code comes from the flag DataFast sends, or else from its English name. A name misomoon doesn't know is left out of countries. |
-| `/analytics/devices`, `browsers`, `operating-systems` | Visitors per device, browser, and operating system, with misomoon's names: `desktop` becomes `Desktop`, `Mobile Safari` becomes `Safari`, and `Mac OS` becomes `macOS` |
+| `/analytics/countries`, `regions`, `cities` | Visitors per country, region, and city. A country's code comes from the flag DataFast sends, as an emoji or a picture's URL, or else from its English name. A name misomoon doesn't know is left out of countries. |
+| `/analytics/devices`, `browsers`, `operating-systems` | Visitors per device, browser, and operating system, with misomoon's names: `desktop` becomes `Desktop`, `Mobile Safari` and `WebKit` become `Safari`, `Mac OS` becomes `macOS`, `Chromium OS` becomes `ChromeOS`, `Ubuntu` becomes `Linux`, and `unknown` becomes `Unknown` |
 | `/analytics/goals` | Custom events: completions and the visitors who completed each goal |
 
 The breakdowns return visitors only, so imported days add visitors to pages, sources, and
@@ -157,8 +157,10 @@ Once misomoon's revenue matches DataFast's for a billing cycle:
 Checked on 2026-10-26.
 
 The import was built from DataFast's API reference and tested on the example answers in
-it. It has not yet been run on a real DataFast site, because DataFast's API needs a key
-and has no public demo.
+it and on the values of a real public DataFast dashboard: its days, referrers and their
+channels, 133 countries with their flags, browsers, systems, and devices. The dashboard
+reads the same data as the API under other names, so the test asks for the API's names.
+The import has not yet run against the API itself, which needs a key.
 
 - DataFast: [docs index](https://datafa.st/llms.txt),
   [custom goals](https://datafa.st/docs/custom-goals.md),
@@ -187,3 +189,5 @@ and has no public demo.
   [cities](https://datafa.st/docs/api/website/breakdowns/cities.md),
   [metadata](https://datafa.st/docs/api/website/analytics/metadata.md),
   [goals breakdown](https://datafa.st/docs/api/website/goals/analyze.md)
+- Real data: [CodeFast's public DataFast dashboard](https://datafa.st/share/66d5711aa2f1fb254ce42c0b),
+  read for its last 30 days
