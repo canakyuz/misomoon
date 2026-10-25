@@ -115,6 +115,8 @@ describe('API imports', () => {
 	it('refuses an unknown importer and fields that are not text', async () => {
 		const env = await site()
 		expect((await call(env, 'POST', '/api/v1/sites/shop-com/imports/api', { importer: 'nope' })).status).toBe(400)
+		// a name every object has is no importer either
+		expect((await call(env, 'POST', '/api/v1/sites/shop-com/imports/api', { importer: 'constructor' })).status).toBe(400)
 		const res = await start(env, { input: { website: SITE, key: { $gt: '' } } })
 		expect([res.status, await res.json()]).toEqual([400, { error: 'API key must be text of at most 500 characters' }])
 	})

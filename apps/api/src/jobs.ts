@@ -120,7 +120,7 @@ function asHttp(e: unknown): never {
 
 /** Checks the fields and the sign-in while the person waits, then reads the first days. */
 export async function startApiImport(env: Env, ctx: ExecutionContext, site: Site, body: { importer?: string; input?: unknown; from?: string; to?: string }) {
-	const imp = body.importer ? IMPORTERS[body.importer] : undefined
+	const imp = body.importer && Object.hasOwn(IMPORTERS, body.importer) ? IMPORTERS[body.importer] : undefined
 	if (!imp) throw new HttpError(400, `importer must be one of ${Object.keys(IMPORTERS).join(', ')}`)
 	const input = fields(imp, body.input)
 	const opened = await imp.open(input, caller(imp), site.timezone).catch(asHttp)
