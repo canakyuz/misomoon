@@ -40,6 +40,8 @@ read public sites, such as the demo.
 | `ms_` | Browser session, valid for 30 days | `POST /api/v1/auth/login`. The dashboard stores it. |
 | `sh_` | Shared link: read-only, one site, with the link's segment applied to every query | `POST /api/v1/share/:slug` |
 
+A Google sign-in hands the dashboard a one-time `ml_` code, which `POST /api/v1/auth/exchange` trades for an `ms_` session.
+
 The **Role** column in the tables below names the least access a route needs.
 
 | Role | Who has it |
@@ -545,26 +547,31 @@ Roles, from most to least access: owner, admin, editor, viewer, and billing.
 | `POST /api/v1/auth/logout` | Any | Ends the `ms_` session in the header. Returns `204`. |
 | `POST /api/v1/auth/forgot` | Public | Emails a reset link for `email`, valid for an hour, replacing any earlier link. Always returns `{"ok": true, "sending": ...}`. `sending` is `false` without an email provider. |
 | `POST /api/v1/auth/reset` | Public | Takes `token` (the code from the link) and `password`. Signs out every other session and returns a new `token` and `expires_at`. An expired link returns `400`. |
+| `POST /api/v1/auth/oauth/:provider` | Any | Starts a sign-in with `google`, the one provider. Takes an optional `invite` (the `mi_` code from an invitation link) to accept on the way. Returns `{"url": "..."}`, the provider's page to open, and sets the `misomoon_login` cookie, which the callback checks. With an `ms_` session, it connects the provider to your account instead. Returns `404` for another provider, and `501` without the provider's client secrets. |
+| `GET /api/v1/auth/oauth/:provider/callback` | Public | The provider sends the browser here. Redirects to the dashboard with `login=<ml_ code>`, valid for a minute, or `login_error=<reason>` ([When sign-in fails](sign-in.md#when-sign-in-fails)). Connecting a provider redirects to `/?view=settings&tab=account` with `linked=<provider>` or `login_error=<reason>`. |
+| `POST /api/v1/auth/exchange` | Public | Takes `code`, the `ml_` code from the callback, and works only with the `misomoon_login` cookie the callback set, so only in the browser that signed in. Returns `token`, `expires_at`, `user`, and `site` (the site an accepted invitation opens, or `null`). Each code works once: a used or expired one returns `400`. |
 
 A password has 10 to 200 characters. `SIGNUPS` ([Variables](configuration.md#variables))
 decides who can sign up: anyone when it is unset or `open`, only the first account when it
 is `invite`, and no one when it is `closed`. A closed sign-up returns `403`. Invitations
-work in every mode.
+work in every mode. Sign-in with Google follows the same rules
+([Sign in with Google](sign-in.md)).
 
 ### Your account
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
 | `GET /api/v1/me` | Any | Who you are, and what you can open. |
-| `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
-| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
+| `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. An account without a password sets its first one without `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
+| `DELETE /api/v1/me/logins/:provider` | Session | Disconnects `google` from your account. Returns `204`, `404` for another provider, or `409` when it is the last way to sign in to an account without a password. |
+| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or `{"email": "..."}` (your email address) for an account without a password, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
 
 `GET /api/v1/me` returns:
 
 | Field | Meaning |
 | --- | --- |
 | `kind` | `user`, `key`, `share`, or `anonymous` |
-| `user` | `id`, `email`, and `name` of the signed-in user or the key's owner, or `null` |
+| `user` | `id`, `email`, and `name` of the signed-in user or the key's owner, `has_password` (`false` for an account made with Google that hasn't set one), and `logins` (the connected providers, such as `["google"]`), or `null` |
 | `teams` | Your teams with `id`, `name`, your `role`, and `plan`. Empty except for a browser session. `plan` is `null` on a server without plans. Otherwise it is `id` and `name` of the plan the team works under (the trial's without a plan); `state`: `plan`, `trial` (no plan, and the free trial runs), or `lapsed` (no plan, and no trial running); `trial` and `lapsed` (`true` for those states); `trial_ends_at` (when the free trial ends or ended, in ms, or `null` for a team that had none); `events` (included a month); `events_used` (pageviews and custom events this UTC month, across the team's sites); `events_stop` (where the month stops recording: 125% of `events`); `stopped` (`true` while its beacons are dropped: lapsed, or `events_used` reached `events_stop`); `month_ends_at` (when the next UTC month starts, in ms); `retention_days` (the longest a site may keep stats); `retention_default_days` (what a site without a setting keeps); `sites` (`null` for no limit); and `sites_used`. |
 | `sites` | The same list as `GET /api/v1/sites`, and on each site `retention`: its `max` and `default` days, the server's within its team's plan |
 | `plans` | Whether the server enforces plans (`PLANS=on`) |
@@ -572,6 +579,7 @@ work in every mode.
 | `demo` | The public demo site's id (`DEMO_SITE`), or `null` |
 | `sample` | The sample site's id (`SAMPLE_SITE`), shown at `/demo`, or `null` |
 | `signups` | Whether `POST /api/v1/auth/signup` is open |
+| `providers` | The sign-in providers this server has a client for: `["google"]`, or `[]` |
 | `imported` | The ids of your sites with a finished import |
 | `search` | The ids of your sites with Search Console connected |
 | `regions` | The data regions a new site can use, in the order `eu`, `us`, `apac`. Empty without regional shards. |

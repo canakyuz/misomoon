@@ -153,6 +153,7 @@ then **Settings** > **Variables and Secrets**. From the command line, run
 | Emails: invitations, password resets, reports, and alerts | One provider, and the variable `EMAIL_FROM` with an address on a domain that the provider verified. For [Cloudflare Email Service](https://developers.cloudflare.com/email-service/), add `"send_email": [{ "name": "EMAIL" }]` to `wrangler.jsonc`. For Amazon SES, set the variable `AWS_SES_REGION` and the secrets `AWS_SES_ACCESS_KEY_ID` and `AWS_SES_SECRET_ACCESS_KEY`. |
 | Email reports with the right links | The variable `PUBLIC_URL` |
 | Google Analytics import and Search Console | The secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` |
+| Sign-in with Google ([how](sign-in.md#set-it-up-on-your-own-server)) | The secrets `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` |
 | A managed proxy subdomain for each site | The secret `CF_API_TOKEN`, and the variables `CF_ZONE_ID` and `PROXY_CNAME_TARGET` |
 | Deleting old data | The variables `RETENTION_DAYS` (the longest any site keeps) and `RETENTION_DEFAULT_DAYS` (for sites that set none) |
 | A limit on events per site per day | The variable `INGEST_DAILY_CAP` |

@@ -14,8 +14,10 @@ can run yourself, and how to report a vulnerability.
   AES-256 and protects traffic inside its network with TLS
   ([D1 data security](https://developers.cloudflare.com/d1/reference/data-security/)).
 - **Accounts.** Passwords are hashed with PBKDF2-SHA256 (100,000 iterations, a random salt
-  per user). Session tokens, API keys, invitation links, and reset links are stored only
-  as SHA-256 hashes. Sign-in, sign-up, password resets, shared-link passwords, and the
+  per user). Session tokens, API keys, invitation links, reset links, and Google
+  sign-in codes are stored only as SHA-256 hashes. Sign-in with Google uses
+  PKCE and a state cookie that the callback and the code exchange both check, and never
+  opens an existing account by its email address ([Sign in with Google](sign-in.md)). Sign-in, sign-up, password resets, shared-link passwords, and the
   Stats API are rate-limited.
 - **Access.** Team roles and per-site guests decide who sees what
   ([roles](teams.md#what-each-role-can-do)). Every query is scoped to the sites the user or

@@ -26,6 +26,17 @@ export const signupLink: boolean = !demoPath && new URLSearchParams(location.sea
 /** `?checkout_id=` on the URL: back from paying in Polar's checkout, before Polar's webhook may have set the plan. Read at load, since the dashboard rewrites the URL. */
 export const checkoutReturn: boolean = !demoPath && new URLSearchParams(location.search).has('checkout_id')
 
+/**
+ * Back from Google: `?login=` a one-time code to trade for a session,
+ * `?login_error=` why there is none, or `?linked=` the provider just connected in Settings.
+ * `settings` marks a return from connecting a provider there, which shows its error in
+ * Settings, not on the sign-in screen. Read at load, since the dashboard rewrites the URL.
+ */
+export const loginReturn: { code: string | null; error: string | null; linked: string | null; settings: boolean } = (() => {
+	const q = new URLSearchParams(demoPath ? '' : location.search)
+	return { code: q.get('login'), error: q.get('login_error'), linked: q.get('linked'), settings: q.get('view') === 'settings' }
+})()
+
 /** The slug when the dashboard is opened from a shared link (/share/<slug>). */
 export const shareSlug: string | null = /^\/share\/([a-z0-9]+)\/?$/.exec(location.pathname)?.[1] ?? null
 
@@ -153,7 +164,14 @@ export interface User {
 	id: string
 	email: string
 	name: string
+	/** false for an account made through Google that hasn't set a password */
+	has_password?: boolean
+	/** the providers connected for signing in: google */
+	logins?: Provider[]
 }
+
+/** Sign-in with another account */
+export type Provider = 'google'
 
 export interface Team {
 	id: string
@@ -194,6 +212,8 @@ export interface Me {
 	sample?: string | null
 	/** open sign-up on this server */
 	signups: boolean
+	/** the sign-in buttons this server offers */
+	providers?: Provider[]
 	share: { slug: string; segment: string | null } | null
 	/** sites that have imported history */
 	imported?: string[]

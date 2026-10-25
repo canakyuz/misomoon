@@ -1,8 +1,9 @@
 <script lang="ts">
 	import X from '@lucide/svelte/icons/x'
-	import { get, send, setToken, signupLink } from '../lib/api'
+	import { get, send, setToken, signupLink, type Provider } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
-	import { otherAccount } from '../lib/account'
+	import { otherAccount, PROVIDER_NAME } from '../lib/account'
+	import BrandIcon from './BrandIcon.svelte'
 	import Logo from './Logo.svelte'
 
 	type Mode = 'signin' | 'signup' | 'forgot' | 'reset' | 'invite'
@@ -27,7 +28,7 @@
 	let email = $state('')
 	let name = $state('')
 	let password = $state('')
-	let error = $state<string | null>(null)
+	let error = $state<string | null>(dash.loginError)
 	let note = $state<string | null>(null)
 	let busy = $state(false)
 	let invite = $state<Invite | null>(null)
@@ -53,6 +54,7 @@
 	/** Leaves an invitation or reset link for the dashboard (or the sign-in screen it was on). */
 	function leave() {
 		if (emailLink) history.replaceState(null, '', '/')
+		dash.loginError = null
 		dash.authOpen = false
 		dash.authLink = null
 	}
@@ -66,6 +68,22 @@
 	}
 
 	const wrong = $derived(invite ? otherAccount(invite.email, dash.me) : null)
+
+	/** Off to Google, which sends the browser back with a one-time code. With an invitation, the sign-in accepts it. */
+	async function social(p: Provider) {
+		error = dash.loginError = null
+		busy = true
+		try {
+			const r = await send<{ url: string }>('POST', `/api/v1/auth/oauth/${p}`, invite && emailLink ? { invite: emailLink.token } : {})
+			location.href = r.url
+		} catch (e) {
+			error = (e as Error).message
+			busy = false
+		}
+	}
+	const providers = $derived(dash.me?.providers ?? [])
+	// sign-in, sign-up, and an invitation for someone not yet signed in
+	const showSocial = $derived(providers.length > 0 && !dash.signedIn && (mode === 'signin' || mode === 'signup' || (mode === 'invite' && !!invite)))
 
 	async function enter(token: string | undefined, site?: string | null) {
 		if (token) setToken(token)
@@ -125,6 +143,9 @@
 	)
 </script>
 
+<!-- Back from Google's page can restore this screen from the back/forward cache, still busy -->
+<svelte:window onpageshow={(e) => e.persisted && (busy = false)} />
+
 <main class="auth">
 	<button class="btn ghost icon close" onclick={leave} aria-label="Close"><X size={16} /></button>
 	<section class="card sheet">
@@ -136,7 +157,7 @@
 			{#if invite}
 				<p class="muted">
 					{invite.invited_by ?? 'Someone'} invited <strong>{invite.email}</strong> to {invite.site ? `see ${invite.site}` : `the ${invite.team} team`} as {ROLE[invite.role] ?? invite.role}.
-					{#if invite.has_account && !dash.signedIn}Sign in to accept.{:else if !dash.signedIn}Pick a password to create your account.{/if}
+					{#if invite.has_account && !dash.signedIn}Sign in to accept.{:else if !dash.signedIn}{providers.length ? `Continue with ${providers.map((p) => PROVIDER_NAME[p]).join(' or ')}, or pick a password, to create your account.` : 'Pick a password to create your account.'}{/if}
 				</p>
 				{#if invite.has_account && !dash.signedIn}
 					<button class="btn primary wide" onclick={() => (mode = 'signin')}>Sign in as {invite.email}</button>
@@ -153,6 +174,15 @@
 			<p class="muted">We'll email you a link to choose a new password.</p>
 		{:else}
 			<p class="muted">At least 10 characters. You'll be signed out everywhere else.</p>
+		{/if}
+
+		{#if showSocial}
+			<div class="social">
+				{#each providers as p (p)}
+					<button class="btn wide" onclick={() => social(p)} disabled={busy}><BrandIcon brand={p} size={16} /> Continue with {PROVIDER_NAME[p]}</button>
+				{/each}
+			</div>
+			{#if mode !== 'invite' || !(invite?.has_account && !dash.signedIn)}<p class="or"><span>or with email</span></p>{/if}
 		{/if}
 
 		{#if mode !== 'invite' || (invite && !(invite.has_account && !dash.signedIn) && !wrong)}
@@ -268,6 +298,32 @@
 	}
 	.error {
 		color: var(--miso-strong);
+	}
+	.social {
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+		margin-top: 8px;
+	}
+	.social .wide {
+		gap: 10px;
+		margin-top: 0;
+	}
+	.or {
+		display: flex;
+		align-items: center;
+		gap: 10px;
+		font-size: 11px;
+		font-weight: 600;
+		letter-spacing: 0.06em;
+		text-transform: uppercase;
+		color: var(--text-3);
+	}
+	.or::before,
+	.or::after {
+		content: '';
+		flex: 1;
+		border-top: 1.5px solid var(--line);
 	}
 	.note {
 		padding: 10px 12px;

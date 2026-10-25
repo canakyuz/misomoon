@@ -58,6 +58,8 @@ export class Dash {
 	authOpen = $state(signupLink)
 	/** an invitation or reset link being handled */
 	authLink = $state(emailLink)
+	/** why a Google sign-in came back without an account, for the sign-in screen */
+	loginError = $state<string | null>(null)
 	hasSearch = $derived(!!this.site && (this.me?.search ?? []).includes(this.site))
 	hasImports = $derived(!!this.site && (this.me?.imported ?? []).includes(this.site))
 

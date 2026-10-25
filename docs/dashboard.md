@@ -355,6 +355,8 @@ f=country==DE|FR;page~/blog
 | `/share/<slug>` | A [shared link](#open-a-shared-or-public-dashboard) |
 | `/invite/<token>` | An invitation from an email, on the sign-in screen |
 | `/reset/<token>` | A password reset from an email, on the sign-in screen |
+| `/?login=<code>` | The way back from Google: the dashboard trades the code for a session ([Sign in with Google](sign-in.md)) |
+| `/?login_error=<reason>` | A Google sign-in that failed, on the sign-in screen ([When sign-in fails](sign-in.md#when-sign-in-fails)) |
 | `/?signup` | The sign-up form, or **Sign in** when `SIGNUPS` is `invite` or `closed` ([Configuration](configuration.md)) |
 
 ## Open a shared or public dashboard

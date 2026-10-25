@@ -10,6 +10,7 @@ import { acceptBeacon, writeEvents } from './ingest'
 import { fillSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
+import { loginProviders } from './social'
 import { deleteImport, expireImports, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
 import { runImportJobs, startApiImport } from './jobs'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
@@ -130,7 +131,9 @@ app.get('/api/v1/me', async (c) => {
 		c.env.CONTROL.prepare("SELECT DISTINCT site_id FROM imports WHERE status = 'done'").all<{ site_id: string }>(),
 		c.env.CONTROL.prepare('SELECT site_id FROM search_console').all<{ site_id: string }>(),
 	])
-	const user = who.userId ? await c.env.CONTROL.prepare('SELECT id, email, name FROM users WHERE id = ?').bind(who.userId).first() : null
+	const row = who.userId ? await c.env.CONTROL.prepare("SELECT id, email, name, password_hash != '' AS has_password FROM users WHERE id = ?").bind(who.userId).first<{ id: string; email: string; name: string; has_password: number }>() : null
+	const logins = row ? (await c.env.CONTROL.prepare('SELECT provider FROM user_logins WHERE user_id = ? ORDER BY provider').bind(row.id).all<{ provider: string }>()).results.map((l) => l.provider) : []
+	const user = row ? { ...row, has_password: !!row.has_password, logins } : null
 	const enforced = plansEnforced(c.env)
 	const server = serverRetention(c.env)
 	// with plans on, also each team's trial and its events this UTC month
@@ -168,6 +171,8 @@ app.get('/api/v1/me', async (c) => {
 		/** the sample site the demo dashboard (/demo) shows */
 		sample: c.env.SAMPLE_SITE || null,
 		signups: await signupsOpen(c.env),
+		/** the sign-in buttons this server has a client for: google */
+		providers: loginProviders(c.env),
 		/** where a new site's events can be stored (core REGIONS); empty on a server without regional shards */
 		regions: serverRegions(await getShards(c.env)),
 		/** days of data a site keeps: the server's longest, and what a site that sets none keeps; 0 is no limit */

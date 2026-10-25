@@ -238,12 +238,18 @@ and the cap as [Daily ingest cap](configuration.md#daily-ingest-cap) describes.
 
 - To change your name, edit it and select **Save**.
 - To change your password, type the current one and a new one of at least 10 characters,
-  and select **Save**.
+  and select **Save**. An account made with Google has no password yet: type one in **Set a
+  password** and select **Save**.
+- **Sign in with** appears when the server offers sign-in with Google. **Connect** opens
+  Google and connects the account you pick, and **Disconnect** removes it. An account
+  without a password can't disconnect its only way to sign in
+  ([Sign in with Google](sign-in.md)).
 - **Sign out** ends your session.
 - **API keys** lists your keys, with the site each one reads or **all your sites**, and
   when each was last used. Select the delete button to revoke a key. A key acts with your
   role, so it loses access when you do.
-- **Delete account…** asks for your password, then deletes your account
+- **Delete account…** asks for your password, or your email address for an account
+  without a password, then deletes your account
   ([Delete your account](teams.md#delete-your-account)).
 
 When you are signed out, **Account** shows **Sign in or create an account**.

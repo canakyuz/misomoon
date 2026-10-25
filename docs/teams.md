@@ -75,7 +75,8 @@ name, or remove them with the trash icon.
 ## Accept an invitation
 
 Open the link, and select **Accept invitation**. Without an account, enter your name and a
-password of at least 10 characters first. With an account, sign in as the invited email
+password of at least 10 characters first, or select **Continue with Google** with the
+invited address ([Sign in with Google](sign-in.md#accept-an-invitation)). With an account, sign in as the invited email
 address. If you're signed in with another email, the invitation says so: select **Sign
 out**, then sign in or create the account as the invited email. An expired or withdrawn
 link shows an error, so ask for a new one.
@@ -167,6 +168,9 @@ there ends the session in this browser only. A session lasts 30 days.
 2. Edit your name, or enter your **Current password** and a **New password**.
 3. Select **Save**.
 
+An account made with Google has no current password: type a new one in **Set a
+password**, then select **Save**.
+
 A password has 10 to 200 characters. Your other sessions stay signed in.
 
 ### Reset a forgotten password
@@ -187,7 +191,8 @@ The new password signs you out of every other browser and device.
 ### Delete your account
 
 1. Go to **Settings** > **Account**, and select **Delete account…**.
-2. Enter your password, and select **Delete account**.
+2. Enter your password, and select **Delete account**. An account without a password
+   types its email address instead.
 
 misomoon deletes the account at once:
 

@@ -63,6 +63,8 @@ The first public release.
 - An MCP server with 13 tools for Claude, Cursor, and other MCP clients.
 - The Stats API (v1 and v2), with filters, comparisons, and ZIP export.
 - Teams with roles, invitations, API keys, public sites, and shared links.
+- Sign-in with Google, with PKCE. A Google account never opens an account that has a
+  password by its email: its owner connects Google in Settings.
 - Email reports and traffic-spike and traffic-drop alerts.
 - Google Analytics import, CSV import, and Google Search Console queries.
 - A first-party proxy: a managed subdomain, or one-click proxies for Cloudflare and

@@ -70,6 +70,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Use the dashboard](dashboard.md): views, periods, filters, and shortcuts.
 - [Settings](settings.md): the script tag, install guides, goals, sharing, and sites.
 - [Team and roles](teams.md): invite people, roles, guests, and API keys.
+- [Sign in with Google](sign-in.md): one-click sign-in, connecting Google to your account, and setting it up.
 - [Share a dashboard](sharing.md): shared links, passwords, and public sites.
 - [Email reports and alerts](reports.md): weekly reports, spikes, and drops.
 

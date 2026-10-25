@@ -30,7 +30,7 @@ async function sameSecret(a: string, b: string): Promise<boolean> {
 	return diff === 0
 }
 
-/** A random bearer secret with a readable prefix: ms_ sessions, sh_ shared links, mm_ API keys, mi_ invitations, mr_ resets. */
+/** A random bearer secret with a readable prefix: ms_ sessions, sh_ shared links, mm_ API keys, mi_ invitations, mr_ resets, ml_ Google sign-in codes. */
 export function secret(prefix: string): string {
 	return prefix + [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('')
 }
@@ -43,10 +43,11 @@ export async function hashPassword(password: string, salt = crypto.getRandomValu
 	return `${hex(salt)}:${hex(new Uint8Array(bits))}`
 }
 
+/** An account made through Google has no password (`''`) until it sets one; nothing matches it. */
 export async function checkPassword(password: string, stored: string): Promise<boolean> {
-	const [salt] = stored.split(':')
-	const again = await hashPassword(password, new Uint8Array(salt.match(/../g)!.map((h) => parseInt(h, 16))))
-	return sameSecret(again, stored)
+	const salt = stored.split(':')[0].match(/../g) ?? ['00']
+	const again = await hashPassword(password, new Uint8Array(salt.map((h) => parseInt(h, 16))))
+	return stored !== '' && (await sameSecret(again, stored))
 }
 
 // When each key's last_used_at was last written by this isolate, so a busy client
