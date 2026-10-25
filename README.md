@@ -218,6 +218,7 @@ Ask Claude "Where did last week's visitors come from?" The
 - [Track apps and servers with the SDK](docs/sdk.md)
 - [Ask AI tools about your traffic](docs/mcp.md)
 - [Serve the tracker from your own domain](docs/PROXY.md)
+- [Track a WordPress site and WooCommerce store](docs/wordpress.md)
 - [Configuration](docs/configuration.md) and [API](docs/api.md) references
 - [Upgrade](docs/upgrading.md), [troubleshooting](docs/troubleshooting.md), and the
   [FAQ](docs/faq.md)
@@ -233,9 +234,12 @@ dashboard.
 | `apps/api` | Worker, Hono, D1, Queues | Ingest, the APIs, MCP, and cron jobs. Serves the dashboard. |
 | `apps/dashboard` | Svelte 5, Vite+ | The dashboard |
 | `apps/landing` | SvelteKit | The marketing site. You don't need it to run misomoon. |
+| `apps/docs` | SvelteKit | The docs site, built from `docs/` |
 | `packages/core` | TypeScript | The event schema, filters, SQL builders, the shard planner, and merges |
 | `packages/tracker` | JavaScript | `m.js` |
+| `packages/sdk` | TypeScript | `@misomoon/sdk`, for React, Next.js, React Native, and servers |
 | `packages/brand` | CSS, SVG | Design tokens and the logo |
+| `plugins/wordpress` | PHP | The WordPress plugin |
 | `templates` | Workers, Vercel | One-click proxy templates |
 
 ## Feedback and contributing
