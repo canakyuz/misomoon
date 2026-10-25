@@ -196,7 +196,9 @@ the pages, so neither says anything the pages don't.
 
 Each docs page prints a `TechArticle` with a `BreadcrumbList` (docs home, the sidebar
 section, the page), a canonical URL on docs.misomoon.com, Open Graph tags with the
-site's 1200 by 630 image, and a `text/markdown` alternate link to its `.md` version.
+site's 1200 by 630 image, and a `text/markdown` alternate link to its `.md` version. Its
+meta description is the page's first paragraph, cut to the whole sentences that fit in 160
+characters.
 
 ## Links that hold the site together
 
