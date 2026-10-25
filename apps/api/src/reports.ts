@@ -99,7 +99,8 @@ async function sendWithSes(env: Env, to: string, msg: Email) {
 		await new Promise((r) => setTimeout(r, 250))
 		res = await post()
 	}
-	if (!res.ok) throw new Error(`ses ${res.status}: ${(await res.text()).slice(0, 200)}`)
+	// SES's message can quote the recipient, so the error keeps only its type (x-amzn-ErrorType)
+	if (!res.ok) throw Object.assign(new Error(`ses ${res.status}`), { code: `ses ${res.status} ${(res.headers.get('x-amzn-errortype') ?? '').split(':')[0]}`.trim() })
 }
 
 /** Base64 in chunks: one spread of a whole PDF would overflow the call stack. */

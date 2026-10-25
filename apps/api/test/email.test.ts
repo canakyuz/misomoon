@@ -98,9 +98,14 @@ describe('Amazon SES', () => {
 		expect(calls.map((c) => c.url)).toEqual(['https://email.us-east-1.amazonaws.com/v2/email/outbound-emails'])
 	})
 
-	it('answers false when SES refuses', async () => {
-		http(400)
-		expect(await send(fakeEnv({ EMAIL_PROVIDER: 'ses', ...SES }))).toBe(false)
+	it("answers false when SES refuses, and logs SES's error type, not its message, which can quote the recipient", async () => {
+		vi.stubGlobal('fetch', async () => Response.json({ message: 'Email address is not verified: jane@client.example' }, { status: 400, headers: { 'x-amzn-errortype': 'MessageRejected:http://internal.amazon.com/coral/com.amazonaws.sesv2/' } }))
+		const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+		expect(await send(fakeEnv({ EMAIL_PROVIDER: 'ses', ...SES }), 'jane@client.example')).toBe(false)
+		const logged = log.mock.calls.map((c) => String(c[0])).join('\n')
+		log.mockRestore()
+		expect(logged).not.toContain('jane@client.example')
+		expect(logged).toContain('ses 400 MessageRejected')
 	})
 
 	it('does not send again after a 5xx, when SES may have sent the email already', async () => {
