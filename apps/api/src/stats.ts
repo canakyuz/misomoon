@@ -37,7 +37,7 @@ import {
 	type Target,
 	type Window,
 } from '@misomoon/core'
-import { authorize, SYSTEM, type Principal } from './auth'
+import { authorize, siteRole, SYSTEM, type Principal } from './auth'
 import { d1Runner, getRanges, HttpError, shardReader, type Site } from './control'
 import { searchTerms } from './searchconsole'
 
@@ -205,6 +205,8 @@ export async function breakdownStats(env: Env, who: Principal, input: StatsInput
 /** Google search terms for the period, from Search Console (clicks stand in for visitors). */
 export async function searchTermStats(env: Env, who: Principal, input: StatsInput) {
 	const p = await prepare(env, who, input)
+	// a public dashboard or a shared link shows the reports, but not what people searched for
+	if (who.kind !== 'system' && !(await siteRole(env, who, p.site))) throw new HttpError(403, "search terms are shown to the site's team only")
 	const limit = Math.min(Number(input.limit) || 10, 1000)
 	const { rows, has_more } = await searchTerms(env, p.site, { window: p.window, tzOffset: offsetAt(p.scope.tz, p.window.from), filters: p.scope.filters, limit, page: Number(input.page) || 1, search: input.search })
 	return { property: SEARCH_TERMS, rows, total_visitors: rows.reduce((n, r) => n + r.clicks, 0), has_more }

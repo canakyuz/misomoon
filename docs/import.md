@@ -120,7 +120,9 @@ property. Connecting another one replaces it.
 
 To see the search terms, open **Overview**, click the **Organic Search** channel in
 **Where they come from**, then click the **Search terms** tab. The tab lists the terms
-with the most clicks from Google in the period. For impressions, click-through rate, and position, call
+with the most clicks from Google in the period. Only the site's team and its guests see
+the tab: a [shared link](sharing.md#what-a-viewer-sees) or a
+[public site](sharing.md#what-public-means) viewer doesn't. For impressions, click-through rate, and position, call
 [the breakdown endpoint](api.md#get-apiv1statsbreakdown) with `property=search_term`, or
 use the `get_search_terms` [MCP tool](mcp.md#tools).
 
@@ -219,7 +221,8 @@ other secrets.
 | --- | --- |
 | Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` | Whoever deploys the Worker |
 | Import, see, and delete imports, and connect or disconnect Search Console | Owner, admin, editor, and guest editor |
-| See imported numbers, **Include imported history**, and search terms | Everyone who can see the site's reports |
+| See imported numbers and **Include imported history** | Everyone who can see the site's reports |
+| See search terms | Members of the site's team and its guests. A shared link or a public site viewer gets `403` with `search terms are shown to the site's team only`. |
 
 An API key acts with its owner's role. The routes are in the API reference under
 [Imports](api.md#imports) and [Google Search Console](api.md#google-search-console).

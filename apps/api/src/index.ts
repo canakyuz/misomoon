@@ -172,8 +172,8 @@ app.get('/api/v1/me', async (c) => {
 		/** days of data a site keeps: the server's longest, and what a site that sets none keeps; 0 is no limit */
 		retention: server,
 		imported: imported.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id)),
-		/** sites with Google Search Console connected */
-		search: search.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id)),
+		/** sites with Google Search Console connected, where `who` is on the team: search terms are for the team only */
+		search: search.map((r) => r.site_id).filter((id) => sites.some((s) => s.id === id && s.role)),
 		share: who.share ? { slug: who.share.slug, segment: who.share.filters } : null,
 	})
 })

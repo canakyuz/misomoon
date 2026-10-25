@@ -206,7 +206,8 @@ rows have more:
 `search_term` rows have `key`, `clicks`, `impressions`, `ctr` (percent), `position` (1 is
 the top), and `visitors`, which holds the clicks. They come live from Google and stay
 cached for ten minutes. A site without [Search Console](#google-search-console) returns
-`409`.
+`409`. Search terms need a role on the site: a shared link token, or a request without a
+token for a public site, returns `403` with `search terms are shown to the site's team only`.
 
 ### POST /api/v1/stats/funnel
 

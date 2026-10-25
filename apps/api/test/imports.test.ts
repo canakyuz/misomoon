@@ -122,4 +122,46 @@ describe('Search Console', () => {
 		expect(sent).toEqual([{ url: 'https://oauth2.googleapis.com/revoke', body: 'token=1%2F%2Frefresh', type: 'application/x-www-form-urlencoded' }])
 		expect(env.CONTROL.rows('SELECT 1 FROM search_console')).toEqual([])
 	})
+
+	describe('search terms are for the team only', () => {
+		const TEAM_ONLY = { error: "search terms are shown to the site's team only" }
+		const terms = '/api/v1/stats/breakdown?site=shop-com&period=30d&property=search_term'
+		/** a public site with Search Console connected, and the token of a shared link to it */
+		async function connected() {
+			const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+			await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com', public: true }), { 'content-type': 'application/json' })
+			env.CONTROL.db.prepare(`INSERT INTO search_console (site_id, property, access_token, refresh_token, expires_at, created_at) VALUES ('shop-com', 'sc-domain:shop.com', 'ya29', '1//refresh', ${Date.now() + 3_600_000}, 0)`).run()
+			vi.stubGlobal('fetch', async () => Response.json({ rows: [{ keys: ['shop analytics'], clicks: 9, impressions: 120, ctr: 0.075, position: 4 }] }))
+			const { slug } = await (await call(env, 'POST', '/api/v1/sites/shop-com/shared', JSON.stringify({ name: 'Client' }), { 'content-type': 'application/json' })).json()
+			const { token } = await (await call(env, 'POST', `/api/v1/share/${slug}`, '{}', { 'content-type': 'application/json' })).json()
+			return { env, shared: { authorization: `Bearer ${token}` } }
+		}
+
+		it('shows them to a member of the team', async () => {
+			const { env } = await connected()
+			const res = await call(env, 'GET', terms)
+			expect([res.status, (await res.json()).rows.map((r: { key: string }) => r.key)]).toEqual([200, ['shop analytics']])
+		})
+
+		it('refuses a shared link and an anonymous viewer of a public site with 403', async () => {
+			const { env, shared } = await connected()
+			for (const auth of [shared, { authorization: '' }]) {
+				const res = await call(env, 'GET', terms, undefined, auth)
+				expect([res.status, await res.json()]).toEqual([403, TEAM_ONLY])
+			}
+		})
+
+		it('refuses the get_search_terms MCP tool to a shared link', async () => {
+			const { env, shared } = await connected()
+			const rpc = JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'get_search_terms', arguments: { site: 'shop-com', period: '30d' } } })
+			const res = await call(env, 'POST', '/mcp', rpc, { ...shared, 'content-type': 'application/json' })
+			expect((await res.json()).result).toEqual({ content: [{ type: 'text', text: TEAM_ONLY.error }], isError: true })
+		})
+
+		it('lists the site under search in /me for the team, not for a shared link or a public viewer', async () => {
+			const { env, shared } = await connected()
+			const search = async (auth: Record<string, string>) => (await (await call(env, 'GET', '/api/v1/me', undefined, auth)).json()).search
+			expect([await search({}), await search(shared), await search({ authorization: '' })]).toEqual([['shop-com'], [], []])
+		})
+	})
 })
