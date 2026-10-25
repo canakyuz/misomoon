@@ -961,10 +961,11 @@
 					<p class="muted small">Leave the dates empty to import everything up to yesterday. Import only days before you added misomoon, or they count twice.</p>
 				{:else}
 					<div class="inline">
-						<label class="btn">
+						<label class="btn file">
 							<Upload size={14} />
 							{uploading ? 'Uploading…' : 'Upload CSV or zip'}
-							<input type="file" accept=".zip,.csv" multiple hidden onchange={upload} disabled={uploading} />
+							<!-- visually hidden, not `hidden`, so the keyboard can reach it -->
+							<input type="file" accept=".zip,.csv" multiple onchange={upload} disabled={uploading} />
 						</label>
 						<button class="btn" onclick={connectGoogle}>Connect Google</button>
 					</div>
@@ -1240,6 +1241,19 @@
 </div>
 
 <style>
+	.file {
+		position: relative;
+	}
+	.file input {
+		position: absolute;
+		width: 1px;
+		height: 1px;
+		opacity: 0;
+		pointer-events: none;
+	}
+	.file:has(input:focus-visible) {
+		box-shadow: var(--focus);
+	}
 	.split {
 		display: grid;
 		grid-template-columns: 210px minmax(0, 1fr);
