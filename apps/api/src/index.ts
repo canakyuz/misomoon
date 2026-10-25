@@ -495,6 +495,11 @@ app.post('/api/v1/share/:slug', async (c) => {
 
 // ---------------------------------------------------------------- email reports and alerts
 
+// Anyone who can edit a site can send to any address, so a site gets a few test reports
+// an hour and a bounded list of recipients (docs/reports.md#limits).
+const MAX_REPORT_TESTS = 10
+const MAX_SUBSCRIPTIONS = 20
+
 app.get('/api/v1/sites/:id/reports', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const { results } = await c.env.CONTROL.prepare('SELECT id, email, kind, threshold, last_sent_at FROM email_reports WHERE site_id = ? ORDER BY kind, email').bind(site.id).all()
@@ -511,9 +516,13 @@ app.post('/api/v1/sites/:id/reports', async (c) => {
 	if (body.kind === 'spike' && t != null && !(whole && t >= 1)) throw new HttpError(400, 'threshold for spike is a whole number of visitors, 1 or more')
 	// reports have no threshold
 	const threshold = body.kind === 'drop' || body.kind === 'spike' ? (t ?? null) : null
+	const email = body.email.trim().toLowerCase()
+	// changing the threshold of a subscription the site has is not a new one
+	const others = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM email_reports WHERE site_id = ? AND NOT (email = ? AND kind = ?)').bind(site.id, email, body.kind).first<number>('n')
+	if ((others ?? 0) >= MAX_SUBSCRIPTIONS) throw new HttpError(400, `a site has at most ${MAX_SUBSCRIPTIONS} report and alert subscriptions`)
 	const id = crypto.randomUUID()
 	await c.env.CONTROL.prepare('INSERT INTO email_reports (id, site_id, email, kind, threshold, created_at) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (site_id, email, kind) DO UPDATE SET threshold = excluded.threshold')
-		.bind(id, site.id, body.email.trim().toLowerCase(), body.kind, threshold, Date.now())
+		.bind(id, site.id, email, body.kind, threshold, Date.now())
 		.run()
 	return c.json({ ok: true }, 201)
 })
@@ -536,6 +545,11 @@ app.post('/api/v1/sites/:id/reports/test', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const body = await c.req.json<{ email?: string; kind?: string }>()
 	if (!body.email) throw new HttpError(400, 'email is required')
+	const now = Date.now()
+	const sent = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM report_tests WHERE site_id = ? AND sent_at > ?').bind(site.id, now - 3_600_000).first<number>('n')
+	if ((sent ?? 0) >= MAX_REPORT_TESTS) throw new HttpError(429, `a site sends at most ${MAX_REPORT_TESTS} test reports an hour; try again later`)
+	// counted before the send: a failed send still printed the PDF
+	await c.env.CONTROL.prepare('INSERT INTO report_tests (site_id, sent_at) VALUES (?, ?)').bind(site.id, now).run()
 	const ok = await sendEmail(c.env, body.email, await withPdf(c.env, await buildReport(c.env, site, body.kind === 'monthly' ? 'monthly' : 'weekly')))
 	if (!ok) throw new HttpError(503, emailConfigured(c.env) ? 'the email provider refused the message' : 'set up an email provider to send email (docs/configuration.md)')
 	return c.json({ ok })
@@ -661,6 +675,8 @@ async function maintenance(env: Env, cleanup: boolean) {
 	await env.CONTROL.batch([
 		env.CONTROL.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(Date.now()),
 		env.CONTROL.prepare('DELETE FROM password_resets WHERE expires_at < ?').bind(Date.now()),
+		// test sends count for an hour (MAX_REPORT_TESTS)
+		env.CONTROL.prepare('DELETE FROM report_tests WHERE sent_at <= ?').bind(Date.now() - 3_600_000),
 	])
 	await expireAttribution(env)
 	await expireImports(env)

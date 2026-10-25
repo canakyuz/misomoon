@@ -433,3 +433,58 @@ describe('the no-traffic alert', () => {
 		])
 	})
 })
+
+describe('report limits', () => {
+	const request = (env: FakeEnv) => (method: string, path: string, body?: unknown) =>
+		worker.fetch(new Request(`https://app.test${path}`, { method, headers: { 'content-type': 'application/json', ...OWNER }, body: body ? JSON.stringify(body) : undefined }), env as unknown as Env, fakeCtx() as unknown as ExecutionContext)
+
+	afterEach(() => vi.useRealTimers())
+
+	it('sends at most 10 test reports a site an hour, then answers 429 until the oldest is an hour old', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		const start = Date.UTC(2026, 9, 22, 9)
+		vi.setSystemTime(start)
+		const b = binding()
+		const env = fakeEnv({ EMAIL: b.EMAIL })
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		await request(env)('POST', '/api/v1/sites', { domain: 'blog.com' })
+		const test = (site = 'shop-com') => request(env)('POST', `/api/v1/sites/${site}/reports/test`, { email: 'me@shop.com', kind: 'weekly' })
+		const statuses: number[] = []
+		for (let i = 0; i < 10; i++) statuses.push((await test()).status)
+		expect(statuses).toEqual(Array(10).fill(200))
+		const over = await test()
+		expect([over.status, await over.json()]).toEqual([429, { error: 'a site sends at most 10 test reports an hour; try again later' }])
+		expect(b.sent).toHaveLength(10)
+		// another site has its own count
+		expect((await test('blog-com')).status).toBe(200)
+		vi.setSystemTime(start + 3_600_000)
+		expect((await test()).status).toBe(200)
+	})
+
+	it('forgets test sends older than an hour in the hourly run', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		const now = Date.UTC(2026, 9, 22, 9, 15)
+		vi.setSystemTime(now)
+		const env = fakeEnv()
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		env.CONTROL.db.prepare("INSERT INTO report_tests (site_id, sent_at) VALUES ('shop-com', ?), ('shop-com', ?)").run(now - 3_600_001, now - 60_000)
+		const ctx = fakeCtx()
+		await worker.scheduled({ cron: '*/5 * * * *', scheduledTime: now } as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+		expect(env.CONTROL.rows('SELECT sent_at FROM report_tests').map((r) => r.sent_at)).toEqual([now - 60_000])
+	})
+
+	it('keeps at most 20 report and alert subscriptions a site, and still updates one it has', async () => {
+		const env = fakeEnv()
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		const add = (email: string, kind = 'weekly', threshold?: number) => request(env)('POST', '/api/v1/sites/shop-com/reports', { email, kind, threshold })
+		const statuses: number[] = []
+		for (let i = 0; i < 19; i++) statuses.push((await add(`p${i}@shop.com`)).status)
+		statuses.push((await add('alerts@shop.com', 'drop', 6)).status)
+		expect(statuses).toEqual(Array(20).fill(201))
+		const over = await add('one-more@shop.com')
+		expect([over.status, await over.json()]).toEqual([400, { error: 'a site has at most 20 report and alert subscriptions' }])
+		expect((await add('alerts@shop.com', 'drop', 12)).status).toBe(201)
+		expect(env.CONTROL.rows("SELECT threshold FROM email_reports WHERE email = 'alerts@shop.com'")[0].threshold).toBe(12)
+	})
+})

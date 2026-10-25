@@ -422,10 +422,10 @@ A `sh_` token lasts 7 days, or until the link expires if that is sooner.
 | Method and path | Role | What it does |
 | --- | --- | --- |
 | `GET /api/v1/sites/:id/reports` | Editor | `{"subscriptions": [...], "sending": true}`. A subscription has `id`, `email`, `kind`, `threshold`, `last_sent_at`. `sending` is `false` without an email provider. |
-| `POST /api/v1/sites/:id/reports` | Editor | Subscribes `email` to `kind`, with an optional whole-number `threshold`. Returns `201` with `{"ok": true}`. |
+| `POST /api/v1/sites/:id/reports` | Editor | Subscribes `email` to `kind`, with an optional whole-number `threshold`. Returns `201` with `{"ok": true}`, or `400` when the site already has 20 subscriptions ([the limits](reports.md#limits)). |
 | `DELETE /api/v1/sites/:id/reports/:report` | Editor | Deletes a subscription. Returns `204`. |
 | `GET /api/v1/sites/:id/reports/preview` | Editor | The report as it would go out now, as HTML. `kind` is `weekly` (default) or `monthly`. `format=pdf` returns the PDF attachment, which needs the `BROWSER` binding (`501` without it, `503` when printing fails). |
-| `POST /api/v1/sites/:id/reports/test` | Editor | Sends the `weekly` (default) or `monthly` report now to `email`. Returns `{"ok": true}`, or `503` when the email could not go out. |
+| `POST /api/v1/sites/:id/reports/test` | Editor | Sends the `weekly` (default) or `monthly` report now to `email`. Returns `{"ok": true}`, `429` after 10 tests from the site in an hour ([the limits](reports.md#limits)), or `503` when the email could not go out. |
 
 A second subscription for the same email and kind replaces the threshold. A threshold
 out of range returns `400`.
