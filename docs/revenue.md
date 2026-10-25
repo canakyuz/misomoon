@@ -34,6 +34,10 @@ subscription. A ref or a checkout id is kept for 30 days.
 A payment that finds no visit still counts toward total revenue. Reports list it under
 **Unknown**.
 
+Totals add the revenue of every event, the tracker's included. If your site also sends
+`misomoon('Purchase', { revenue })` for a sale that a webhook reports, that sale counts
+twice. Leave `revenue` out of the tracker event once a provider is connected.
+
 ## Connect a provider
 
 1. Open **Settings** > **Revenue** and pick your provider.

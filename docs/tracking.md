@@ -97,7 +97,9 @@ currencies are stored but left out of the totals, so the dashboard never adds eu
 dollars.
 
 To count payments from Stripe, Polar, Lemon Squeezy, or Dodo Payments without calling
-`misomoon()`, connect the provider's webhook: [Connect payments](revenue.md).
+`misomoon()`, connect the provider's webhook: [Connect payments](revenue.md). Totals add
+the revenue of every event, so pick one way per sale. With a webhook connected, send
+`Purchase` without `revenue`, or the sale counts twice.
 
 ## Turn goals into conversions
 
