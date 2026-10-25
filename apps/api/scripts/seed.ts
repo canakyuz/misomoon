@@ -2,6 +2,11 @@
 // realistic traffic through the running dev server (`pnpm dev` in apps/api), exercising
 // the real write path. Sign in to the dashboard with SEED_EMAIL / SEED_PASSWORD.
 const api = process.env.API_URL ?? 'http://localhost:8787'
+// the account's password is known and the site claims misomoon.com, so never on a real server
+if (!['localhost', '127.0.0.1', '[::1]'].includes(new URL(api).hostname)) {
+	console.error(`the seed fills a local dev server; API_URL is ${api}`)
+	process.exit(1)
+}
 const email = process.env.SEED_EMAIL ?? 'demo@misomoon.dev'
 const password = process.env.SEED_PASSWORD ?? 'misomoon-demo'
 const headers: Record<string, string> = { 'Content-Type': 'application/json' }

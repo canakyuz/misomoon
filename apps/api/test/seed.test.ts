@@ -1,3 +1,5 @@
+import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { invalidate } from '../src/control'
 import { fakeCtx, fakeEnv, type FakeEnv } from './fake'
@@ -33,5 +35,18 @@ describe('synthetic demo traffic (F33)', () => {
 		const res = await call(env, 'POST', '/api/v1/sites/demo/demo', { days: 2, perDay: 5 })
 		expect(res.status).toBe(200)
 		expect(events(env)).toBeGreaterThan(0)
+	})
+})
+
+describe('the seed script', () => {
+	it('refuses a server other than a local one, before it signs anyone up', () => {
+		const script = fileURLToPath(new URL('../scripts/seed.ts', import.meta.url))
+		let out = ''
+		try {
+			execFileSync(process.execPath, ['--experimental-strip-types', script], { env: { ...process.env, API_URL: 'https://analytics.example.com' }, encoding: 'utf8', stdio: 'pipe' })
+		} catch (e) {
+			out = String((e as { stderr: string }).stderr)
+		}
+		expect(out).toContain('the seed fills a local dev server; API_URL is https://analytics.example.com')
 	})
 })
