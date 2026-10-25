@@ -83,6 +83,15 @@ describe('Stripe events', () => {
 		expect(link).toEqual({ provider: 'stripe', kind: 'link', id: 'cs_3', amount: 0, currency: '', ts: SEC * 1000, keys: ['link_ref_9', 'cs_3'], links: ['stripe:sub:sub_1', 'stripe:invoice:in_1', 'stripe:customer:cus_1'] })
 	})
 
+	it('links an invoice to the payment intent or charge its InvoicePayment names', () => {
+		const paid = (payment: Record<string, unknown>) => parsePayments('stripe', ev('invoice_payment.paid', { id: 'inpay_1', invoice: 'in_1', status: 'paid', created: SEC, payment })).payments
+		expect(paid({ type: 'payment_intent', payment_intent: 'pi_1' })).toEqual([
+			{ provider: 'stripe', kind: 'link', id: 'inpay_1', amount: 0, currency: '', ts: SEC * 1000, keys: ['stripe:paid:in_1'], links: ['stripe:pi:pi_1'] },
+		])
+		expect(paid({ type: 'charge', charge: 'ch_1' })[0].links).toEqual(['stripe:charge:ch_1'])
+		expect(paid({ type: 'out_of_band_payment' })).toEqual([])
+	})
+
 	it('counts subscription invoices, first and renewal, and skips invoices outside a subscription', () => {
 		const invoice = (billing_reason: string, extra: Record<string, unknown> = {}) =>
 			ev('invoice.paid', {
@@ -103,7 +112,7 @@ describe('Stripe events', () => {
 			currency: 'EUR',
 			ts: (SEC + 5) * 1000,
 			keys: ['ref_sub_1', 'stripe:invoice:in_1', 'stripe:sub:sub_1', 'stripe:customer:cus_1'],
-			links: ['stripe:sub:sub_1', 'stripe:customer:cus_1'],
+			links: ['stripe:paid:in_1', 'stripe:sub:sub_1', 'stripe:customer:cus_1'],
 			billing: 'new',
 		})
 		expect(parsePayments('stripe', invoice('subscription_cycle')).payments[0].billing).toBe('renewal')

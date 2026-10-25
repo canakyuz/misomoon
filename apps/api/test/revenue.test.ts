@@ -178,6 +178,22 @@ describe('crediting payments to visits, without cookies', () => {
 		expect(renewal).toEqual([{ visitor_id: '', source: 'X', revenue: 15, props: '{"provider":"stripe","billing":"renewal"}' }])
 	})
 
+	it('takes a renewal refund off its source on API versions whose invoices name no payment', async () => {
+		const env = await shop()
+		const sub = { parent: { subscription_details: { subscription: 'sub_9' } }, customer: 'cus_9', currency: 'usd', amount_paid: 1500 }
+		await beacon(env, { n: 'pageview', r: 'https://twitter.com/' })
+		await beacon(env, { n: 'engagement', e: 0, k: 'link_ref_9' })
+		await stripe(env, 'checkout.session.completed', { id: 'cs_live_9', mode: 'subscription', subscription: 'sub_9', customer: 'cus_9', client_reference_id: 'link_ref_9' })
+		// since 2025-03-31 the invoice has no payment_intent; its InvoicePayment names it
+		await stripe(env, 'invoice_payment.paid', { id: 'inpay_9', invoice: 'in_9', status: 'paid', payment: { type: 'payment_intent', payment_intent: 'pi_9' } })
+		await stripe(env, 'invoice.paid', { id: 'in_9', billing_reason: 'subscription_cycle', ...sub })
+		await stripe(env, 'refund.created', { id: 're_9', amount: 1500, currency: 'usd', status: 'succeeded', payment_intent: 'pi_9' })
+		expect(payments(env)).toEqual([
+			{ name: 'Payment', visitor: 1, source: 'X', revenue: 15 },
+			{ name: 'Refund', visitor: 1, source: 'X', revenue: -15 },
+		])
+	})
+
 	it('takes a refund off the source that earned the payment', async () => {
 		const env = await shop()
 		await beacon(env, { n: 'pageview', r: 'https://news.ycombinator.com/' })

@@ -142,13 +142,23 @@ function stripe(e: Json, now: number): Parsed {
 						...m,
 						ts: paid,
 						keys: keys(ref(subMeta[REF_KEY]), ref(meta[REF_KEY]), link('stripe', 'invoice', id), sub, cus),
-						links: keys(link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge), sub, cus),
+						// API versions before 2025-03-31 name the payment here; later ones in
+						// invoice_payment.paid, which finds this payment's visit through `paid`
+						links: keys(link('stripe', 'paid', id), link('stripe', 'pi', o.payment_intent), link('stripe', 'charge', o.charge), sub, cus),
 						billing: o.billing_reason === 'subscription_create' ? 'new' : 'renewal',
 					},
 				],
 			}
 		}
-		// a refund counts from refund.created; it can still fail up to 30 days later
+		case 'invoice_payment.paid': {
+			// ties the invoice to the payment intent or charge that paid it, which its refunds name
+			const id = str(o.id)
+			const pay = obj(o.payment)
+			const paidBy = keys(link('stripe', 'pi', pay.payment_intent), link('stripe', 'charge', pay.charge))
+			if (!id || !paidBy.length) return { test, payments: [] }
+			return { test, payments: [{ provider: 'stripe', kind: 'link', id, amount: 0, currency: '', ts: at, keys: keys(link('stripe', 'paid', o.invoice)), links: paidBy }] }
+		}
+		// a refund counts from refund.created; it can still fail weeks later
 		case 'refund.created':
 		case 'refund.updated':
 		case 'refund.failed': {

@@ -55,11 +55,15 @@ gets no ref but still works.
 
 | Provider | Id | Where to add the webhook | Events |
 | --- | --- | --- | --- |
-| Stripe | `stripe` | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `refund.created`, `refund.updated`, `refund.failed` |
+| Stripe | `stripe` | **Developers** > **Webhooks** | `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `invoice.paid`, `invoice_payment.paid`, `refund.created`, `refund.updated`, `refund.failed` |
 | Polar | `polar` | **Settings** > **Webhooks**, format **Raw** | `order.paid`, `refund.created`, `refund.updated` |
 | Lemon Squeezy | `lemonsqueezy` | **Settings** > **Webhooks** | `order_created`, `order_refunded`, `subscription_created`, `subscription_payment_success`, `subscription_payment_refunded` |
 | Dodo Payments | `dodo` | **Developer** > **Webhooks** | `payment.succeeded`, `refund.succeeded` |
 | Your server | `custom` | Your own code ([Send payments from your own server](#send-payments-from-your-own-server)) | Payments and refunds |
+
+Stripe API versions from 2025-03-31 on leave the payment out of an invoice, so
+`invoice_payment.paid` tells misomoon which payment paid it. Without that event, a refund
+of a subscription payment still counts toward total revenue, under **Unknown**.
 
 A refund counts when Stripe creates it, or when Polar marks it succeeded. A Stripe refund
 can still fail weeks later. When a refund fails or is canceled, misomoon deletes its
