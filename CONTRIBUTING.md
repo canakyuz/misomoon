@@ -119,6 +119,32 @@ pnpm check
 Write commit messages in the imperative mood, for example "Count form submits once".
 Keep the first line under 72 characters.
 
+## Publish the SDK
+
+`@misomoon/sdk` is on npm under the `misomoon` organization. To publish a new version,
+you need to be a member of that organization with two-factor authentication on.
+
+1. Raise `version` in `packages/sdk/package.json`, and add the change to `CHANGELOG.md`.
+2. Build, test, and pack it. `pnpm pack` replaces the `workspace:*` versions, which
+   `npm publish` from the folder would leave in the published `package.json`:
+
+   ```sh
+   cd packages/sdk
+   pnpm run build && pnpm test && pnpm run check
+   pnpm pack
+   ```
+
+3. Check the files in the tarball with `tar -tzf misomoon-sdk-<version>.tgz`: only
+   `dist`, `react-native`, `README.md`, `LICENSE`, and `package.json`.
+4. Publish the tarball. npm opens a page to confirm with your second factor:
+
+   ```sh
+   npm publish misomoon-sdk-<version>.tgz --access public --auth-type=web
+   ```
+
+npm answers `403` without the second factor, and `404 Scope not found` when you are not
+signed in to an account in the `misomoon` organization. `npm whoami` shows the account.
+
 ## Docs
 
 The docs are in `docs/`. They follow the writing rules in
