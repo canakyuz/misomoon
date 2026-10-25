@@ -99,10 +99,6 @@ export async function get<T>(path: string, signal?: AbortSignal, ttl = TTL): Pro
 	return value
 }
 
-export function peek<T>(path: string): T | null {
-	return (cache.get(path)?.value as T) ?? null
-}
-
 /** Loads a page the API renders, such as an email report preview, uncached. */
 export async function getHtml(path: string): Promise<string> {
 	const res = await fetch(path, { headers: headers() })
@@ -115,33 +111,6 @@ export async function send<T>(method: string, path: string, body?: unknown): Pro
 	if (!res.ok) throw await failure(res)
 	cache.clear()
 	return res.status === 204 ? (null as T) : ((await res.json()) as T)
-}
-
-/** POSTs and yields Server-Sent Events as they arrive. */
-export async function* stream(path: string, body: unknown, signal?: AbortSignal): AsyncGenerator<{ event: string; data: any }> {
-	const res = await fetch(path, { method: 'POST', headers: headers(true), body: JSON.stringify(body), signal })
-	if (!res.ok || !res.body) throw await failure(res)
-	const reader = res.body.pipeThrough(new TextDecoderStream()).getReader()
-	let buf = ''
-	for (;;) {
-		const { done, value } = await reader.read()
-		if (done) return
-		buf += value
-		let idx: number
-		while ((idx = buf.indexOf('\n\n')) >= 0) {
-			const block = buf.slice(0, idx)
-			buf = buf.slice(idx + 2)
-			let event = 'message'
-			let data = ''
-			for (const line of block.split('\n')) {
-				if (line.startsWith('event:')) event = line.slice(6).trim()
-				else if (line.startsWith('data:')) data += line.slice(5).trim()
-			}
-			try {
-				yield { event, data: data ? JSON.parse(data) : null }
-			} catch {}
-		}
-	}
 }
 
 // ---------------------------------------------------------------- types
@@ -462,12 +431,3 @@ export async function download(path: string) {
 	setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
-export interface Model {
-	id: string
-	name: string
-	provider: string
-	context: number
-	input: number | null
-	output: number | null
-	featured: boolean
-}

@@ -87,7 +87,6 @@
 	let button: HTMLButtonElement | undefined = $state()
 	let valueInput: HTMLInputElement | undefined = $state()
 
-	const isProp = (d: string) => d === 'prop' || d.startsWith('prop:')
 	/** the filter already set for a picker dimension; custom properties share one entry */
 	const existing = (d: string) => dash.filters.find((f) => (d === 'prop' ? f.dim.startsWith('prop:') : f.dim === d))
 	const shown = $derived(
