@@ -95,7 +95,7 @@ describe('proxy snippets', () => {
 		}
 
 		it('in the one-click template', async () => {
-			const { default: worker } = await import('../../../templates/proxy-cloudflare/src/index.js')
+			const { default: worker } = await import('../../../templates/proxy-cloudflare/src/index.js' as string)
 			expect(await forwarded(worker, 'https://stats.shop.com/api/event')).toEqual(['1', '1', 'fr-FR'])
 		})
 
