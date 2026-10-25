@@ -161,6 +161,35 @@ Three Polar settings change what customers see:
 
 [Configuration](configuration.md#billing) lists each setting.
 
+### Test billing on your machine
+
+The [Polar CLI](https://polar.sh/docs/integrate/cli/webhooks) forwards the sandbox
+organization's webhooks to `wrangler dev`, so you can pay for a plan without deploying and
+without a webhook endpoint in Polar.
+
+1. Do steps 1 and 2 above in the sandbox.
+2. Install the CLI, and sign in to the sandbox:
+
+   ```sh
+   npm install -g @polar-sh/cli
+   polar auth login --sandbox
+   ```
+
+3. Start forwarding, and leave it running. It prints a secret.
+
+   ```sh
+   polar webhook listen http://localhost:8787/api/billing/polar/webhook
+   ```
+
+4. In `apps/api/.dev.vars`, set `POLAR_ACCESS_TOKEN` to the sandbox token,
+   `POLAR_WEBHOOK_SECRET` to the secret the CLI printed, `POLAR_SERVER` to `sandbox`, and
+   the three `POLAR_PRODUCT_*` ids. Start the API and the dashboard as
+   [CONTRIBUTING.md](../CONTRIBUTING.md#run-it-locally) shows.
+5. Open the dashboard at `http://localhost:5173`, choose a plan, and pay with a test card.
+
+The CLI logs each event with misomoon's answer: `200` when it set the team's plan, and
+`202` for an event that changes nothing, such as `order.paid`.
+
 ### When something fails
 
 - Without `PLANS=on`, the billing routes answer `404` and the dashboard shows no billing.

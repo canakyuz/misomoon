@@ -74,6 +74,20 @@ describe('revenue settings', () => {
 		expect((await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/paypal', {}, ADMIN)).res.status).toBe(404)
 	})
 
+	it('takes the secret `polar webhook listen` prints, so a local server can count Polar orders', async () => {
+		const env = await shop()
+		const secret = '6t3c8ce2247c493a3ade20uea4484d64'
+		expect((await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret }, ADMIN)).res.status).toBe(200)
+		const body = JSON.stringify({ type: 'order.paid', data: { id: 'ord-local-1', total_amount: 1900, currency: 'usd', billing_reason: 'purchase', customer_id: 'cus-local', metadata: {}, created_at: new Date().toISOString() } })
+		const ts = Math.floor(Date.now() / 1000)
+		const sig = createHmac('sha256', secret).update(`msg_local.${ts}.${body}`).digest('base64')
+		const res = await call(env, 'POST', '/api/webhooks/polar/shop-com', body, { 'webhook-id': 'msg_local', 'webhook-timestamp': String(ts), 'webhook-signature': `v1,${sig}` })
+		expect(res.res.status).toBe(200)
+		expect(payments(env)).toEqual([{ name: 'Payment', visitor: 0, source: null, revenue: 19 }])
+		const bad = await call(env, 'PUT', '/api/v1/sites/shop-com/revenue/polar', { secret: 'polar_oat_123' }, ADMIN)
+		expect([bad.res.status, await bad.json()]).toEqual([400, { error: 'paste the Polar signing secret, which starts with whsec_, or the secret polar webhook listen prints' }])
+	})
+
 	it('keeps signed-out callers out', async () => {
 		const env = await shop()
 		expect((await call(env, 'GET', '/api/v1/sites/shop-com/revenue')).res.status).toBe(401)

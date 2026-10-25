@@ -61,6 +61,25 @@ gets no ref but still works.
 signature check, the page shows the error. Test-mode payments from Stripe and Lemon
 Squeezy mark the connection as working but don't count toward revenue.
 
+### Test Polar on your machine
+
+On a misomoon server running in `wrangler dev`, the
+[Polar CLI](https://polar.sh/docs/integrate/cli/webhooks) can deliver Polar's webhooks
+without a public URL. Use a site kept for testing, because the sample orders count as
+revenue.
+
+1. Sign in to the CLI with `polar auth login --sandbox`, then forward to the site's
+   webhook URL. It prints a secret.
+
+   ```sh
+   polar webhook listen http://localhost:8787/api/webhooks/polar/<site id>
+   ```
+
+2. Paste that secret into **Settings** > **Revenue** > **Polar**. misomoon takes the
+   CLI's 32-character secret as well as one that starts with `whsec_`.
+3. Send a sample order with `polar webhook trigger order.paid`. The CLI shows misomoon's
+   answer, and **Settings** > **Revenue** shows the time of the event.
+
 ## Pass the ref to the checkout
 
 If you use payment links, you don't need to change anything. When a visitor clicks a

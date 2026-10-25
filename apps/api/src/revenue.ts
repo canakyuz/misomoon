@@ -281,14 +281,15 @@ export async function listSources(env: Env, siteId: string, origin: string) {
 	return { sources: results.map((r) => ({ ...r, webhook_url: webhookUrl(origin, r.provider, siteId) })), last_30_days: totals ?? { payments: 0, attributed: 0 } }
 }
 
-const SECRET_FORMAT: Partial<Record<Provider, RegExp>> = { stripe: /^whsec_[A-Za-z0-9]{8,}$/, polar: /^whsec_\S{8,}$/, dodo: /^whsec_[A-Za-z0-9+/=]{8,}$/ }
+// `polar webhook listen` signs what it forwards with a 32-character secret of its own
+const SECRET_FORMAT: Partial<Record<Provider, RegExp>> = { stripe: /^whsec_[A-Za-z0-9]{8,}$/, polar: /^(whsec_\S{8,}|[A-Za-z0-9]{32})$/, dodo: /^whsec_[A-Za-z0-9+/=]{8,}$/ }
 
 /** Saves a provider's signing secret. Lemon Squeezy and custom webhooks get one made here when none is given. */
 export async function saveSource(env: Env, siteId: string, provider: string, secret: unknown, userId: string | null, origin: string) {
 	if (!isProvider(provider)) throw new HttpError(404, 'unknown provider')
 	const given = typeof secret === 'string' ? secret.trim() : ''
 	const format = SECRET_FORMAT[provider]
-	if (format && !format.test(given)) throw new HttpError(400, `paste the ${provider === 'stripe' ? 'Stripe' : provider === 'polar' ? 'Polar' : 'Dodo Payments'} signing secret, which starts with whsec_`)
+	if (format && !format.test(given)) throw new HttpError(400, `paste the ${provider === 'stripe' ? 'Stripe' : provider === 'polar' ? 'Polar' : 'Dodo Payments'} signing secret, which starts with whsec_${provider === 'polar' ? ', or the secret polar webhook listen prints' : ''}`)
 	if (!format && given && given.length < 16) throw new HttpError(400, 'a signing secret needs at least 16 characters')
 	const made = !format && !given
 	const value = made ? [...crypto.getRandomValues(new Uint8Array(24))].map((b) => b.toString(16).padStart(2, '0')).join('') : given
