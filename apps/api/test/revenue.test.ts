@@ -272,6 +272,32 @@ describe('a payment ends up with its strongest key, whatever order things arrive
 		expect(await bySource(env)).toEqual({ 'Hacker News': 49, Google: 19 })
 	})
 
+	it('keeps the ref when its beacon is handled while the webhook is still crediting the customer', async () => {
+		const env = await shop()
+		const post = await ownServer(env)
+		await visit(env, 'https://news.ycombinator.com/', HN_IP)
+		await ref(env, 'ref_first_visit', HN_IP)
+		await post({ id: 'order_1', amount: 49, currency: 'USD', ref: 'ref_first_visit', customer: 'cus_9' })
+		await visit(env, 'https://www.google.com/', GOOGLE_IP)
+		// the webhook finds only the customer's old visit; before it writes that, the ref beacon is handled
+		const batch = env.CONTROL.batch.bind(env.CONTROL)
+		let raced = false
+		env.CONTROL.batch = async (stmts) => {
+			if (!raced && stmts.some((s) => s.sql.startsWith('UPDATE payments SET attributed_by'))) {
+				raced = true
+				await ref(env, 'ref_second_visit', GOOGLE_IP)
+			}
+			return batch(stmts)
+		}
+		await post({ id: 'order_2', amount: 19, currency: 'USD', ref: 'ref_second_visit', customer: 'cus_9' })
+		expect(raced).toBe(true)
+		expect(env.CONTROL.rows("SELECT id, attributed_by FROM payments WHERE id = 'order_2'")).toEqual([{ id: 'order_2', attributed_by: 'ref_second_visit' }])
+		expect(payments(env)).toEqual([
+			{ name: 'Payment', visitor: 1, source: 'Hacker News', revenue: 49 },
+			{ name: 'Payment', visitor: 1, source: 'Google', revenue: 19 },
+		])
+	})
+
 	it('keeps crediting a customer to their first visit when a later payment carries nothing else', async () => {
 		const env = await shop()
 		const post = await ownServer(env)

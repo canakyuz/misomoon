@@ -144,21 +144,30 @@ const newPass = (): Pass => ({ left: MAX_SETTLE, busy: new Set(), moved: new Map
  * Credits a payment to the visit behind its strongest known key. When that moves it, the
  * links it teaches lead to the new visit, and the payments credited through them follow.
  * The payment's own row is written last, so a pass that fails part way is redone on retry.
+ * That write holds only if the row is still as this pass read it. When another pass (a
+ * webhook and a beacon at once) moved it first, this one settles again from that row and
+ * rewrites what it changed, so the stronger key wins whichever pass ends last.
  */
-async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass) {
+async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass, again = false): Promise<void> {
 	const id = `${r.provider}:${r.id}`
 	if (pass.busy.has(id)) return
 	const now = pass.moved.get(id)
 	const by = now ? now.key : r.attributed_by
+	const was = now ? now.visit : r.visit
 	const p = toPayment(r)
 	const hit = await findVisit(env, siteId, p.keys)
 	// nothing known yet, or a stronger key expired: never move to a weaker one
-	if (!hit || (by && p.keys.indexOf(hit.key) > p.keys.indexOf(by))) return
+	if (!hit || (by && p.keys.indexOf(hit.key) > p.keys.indexOf(by))) {
+		// the event may hold the visit the losing pass wrote
+		if (again && r.visit && p.kind !== 'link') await updateRow(env, siteId, p, r.amount, JSON.parse(r.visit))
+		return
+	}
 	const visit = JSON.stringify(hit.visit)
-	if (hit.key === by && visit === (now ? now.visit : r.visit)) return
+	if (!again && hit.key === by && visit === was) return
 	// moves already written stay; the retry carries on from them
 	if (pass.left-- <= 0) throw new Error(`payment chain too long: ${siteId} ${id}`)
 	pass.busy.add(id)
+	let lost = false
 	try {
 		if (p.kind !== 'link') await updateRow(env, siteId, p, r.amount, hit.visit)
 		if (p.links.length) {
@@ -167,14 +176,27 @@ async function settle(env: Env, siteId: string, r: PaymentRow, pass: Pass) {
 			for (const k of fresh) pass.claimed.set(k, visit)
 			await claim(env, siteId, fresh, pass)
 		}
-		await env.CONTROL.batch([
-			env.CONTROL.prepare('UPDATE payments SET attributed_by = ?, visit = ? WHERE site_id = ? AND provider = ? AND id = ?').bind(hit.key, visit, siteId, p.provider, p.id),
+		const [moved] = await env.CONTROL.batch([
+			env.CONTROL.prepare('UPDATE payments SET attributed_by = ?, visit = ? WHERE site_id = ? AND provider = ? AND id = ? AND attributed_by IS ? AND visit IS ?').bind(
+				hit.key,
+				visit,
+				siteId,
+				p.provider,
+				p.id,
+				by,
+				was,
+			),
 			...pendingStmts(env, siteId, p, p.keys.indexOf(hit.key)),
 		])
-		pass.moved.set(id, { key: hit.key, visit })
+		lost = !moved.meta.changes
+		if (!lost) pass.moved.set(id, { key: hit.key, visit })
 	} finally {
 		pass.busy.delete(id)
 	}
+	if (!lost) return
+	pass.moved.delete(id)
+	const fresh = await env.CONTROL.prepare('SELECT * FROM payments WHERE site_id = ? AND provider = ? AND id = ?').bind(siteId, p.provider, p.id).first<PaymentRow>()
+	if (fresh) await settle(env, siteId, fresh, pass, true)
 }
 
 /**
