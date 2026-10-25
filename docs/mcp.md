@@ -106,6 +106,10 @@ ways:
 `get_journeys` takes a `path` of up to 6 pages. `add_annotation` takes `text` of up to
 200 characters and an optional ISO `ts`, which defaults to now.
 
+`tools/list` marks every tool `readOnlyHint: true` except `add_annotation`, which is
+marked `readOnlyHint: false` and `destructiveHint: false`: it adds a note and never
+changes or deletes one. A client that asks before a tool writes asks for that one only.
+
 ## Limits
 
 - The server is stateless JSON-RPC over Streamable HTTP. It answers `POST` only and

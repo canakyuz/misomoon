@@ -652,6 +652,14 @@ describe('mcp', () => {
 		expect([over.res.status, await over.json()]).toEqual([400, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'a batch is limited to 20 requests' } }])
 	})
 
+	it('marks only add_annotation as a tool that writes', async () => {
+		const r = await rpc(fakeEnv(), { jsonrpc: '2.0', id: 1, method: 'tools/list' })
+		const { result } = (await r.json()) as { result: { tools: { name: string; annotations: Record<string, boolean> }[] } }
+		const writes = result.tools.filter((t) => !t.annotations.readOnlyHint)
+		expect(writes.map((t) => [t.name, t.annotations])).toEqual([['add_annotation', { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false }]])
+		expect(result.tools.length).toBeGreaterThan(10)
+	})
+
 	it('refuses a body over 64 KB (F12)', async () => {
 		const r = await rpc(fakeEnv(), JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'ping', params: { pad: 'x'.repeat(70_000) } }))
 		expect([r.res.status, await r.json()]).toEqual([413, { jsonrpc: '2.0', id: null, error: { code: -32600, message: 'request body is limited to 64 KB' } }])
