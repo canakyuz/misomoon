@@ -1,12 +1,10 @@
 import { error } from '@sveltejs/kit'
-import { built, editUrl, nav, pages, rendered } from '#lib/server/docs.ts'
+import { built, editUrl, nav, page, pages } from '#lib/server/docs.ts'
 import { slugOf } from '#lib/server/render.ts'
-
-export const entries = () => built.map((f) => ({ slug: slugOf(f) }))
 
 export async function load({ params }) {
 	const file = built.find((f) => slugOf(f) === params.slug)
-	const doc = file && (await rendered()).get(params.slug)
+	const doc = file && (await page(params.slug))
 	if (!file || !doc) error(404, 'No such page')
 	const i = pages.findIndex((p) => p.slug === params.slug)
 	return {

@@ -28,11 +28,12 @@ kinds, roles, payment providers and WordPress plugin hooks from the code, and fa
 
 ## The docs site
 
-`apps/docs` is a SvelteKit 3 app that prerenders `docs/*.md` into docs.misomoon.com.
+`apps/docs` is a SvelteKit 3 app on a Cloudflare Worker that renders `docs/*.md` into
+docs.misomoon.com on request; each data center caches a page per build.
 Write the docs as plain Markdown that also reads well on GitHub:
 
 - Link to other pages by file name (`[the API](api.md#filters)`) and to repo files by
-  relative path. The build fails on a link to a page or heading that doesn't exist.
+  relative path. `pnpm test` fails on a link to a page or heading that doesn't exist.
 - Code blocks name a language the highlighter loads (`sh`, `html`, `js`, `ts`, `tsx`,
   `json`, `jsonc`, `md`; `LANGS` in `apps/docs/src/lib/server/docs.ts` lists all), or
   `text` for a diagram. `pnpm test` fails on any other.

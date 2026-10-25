@@ -2,8 +2,6 @@ import { json } from '@sveltejs/kit'
 import { nav, rendered } from '#lib/server/docs.ts'
 import { MOVED } from '#lib/server/render.ts'
 
-export const prerender = true
-
 /** One entry per heading of every page this site builds, with its whole text; the search dialog loads it on first use. */
 export async function GET() {
 	const all = await rendered()

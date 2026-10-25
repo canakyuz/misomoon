@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { page } from '$app/state'
+	import { ORIGIN } from '#lib/site.ts'
 	import Marks from '#lib/components/Marks.svelte'
 
 	let { data } = $props()
@@ -14,10 +14,10 @@
 	<meta property="og:type" content="website" />
 	<meta property="og:title" content="misomoon docs" />
 	<meta property="og:description" content={data.nav.intro} />
-	<meta property="og:url" content="{page.url.origin}/" />
+	<meta property="og:url" content="{ORIGIN}/" />
 	<meta property="og:image" content="https://misomoon.com/og.png" />
 	<meta name="twitter:card" content="summary_large_image" />
-	<link rel="canonical" href="{page.url.origin}/" />
+	<link rel="canonical" href="{ORIGIN}/" />
 	<link rel="alternate" type="text/plain" href="https://misomoon.com/llms.txt" title="llms.txt" />
 </svelte:head>
 
