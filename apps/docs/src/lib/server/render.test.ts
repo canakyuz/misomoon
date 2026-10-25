@@ -50,6 +50,13 @@ describe('resolveHref', () => {
 		expect(resolveHref('https://developers.cloudflare.com/d1/', docs).href).toBe('https://developers.cloudflare.com/d1/')
 		expect(resolveHref('mailto:security@misomoon.com', docs).href).toBe('mailto:security@misomoon.com')
 	})
+
+	it('fails the build on a link that runs script or embeds data', () => {
+		for (const href of ['javascript:alert(1)', 'JavaScript:alert(1)', 'data:text/html,<script>alert(1)</script>', 'vbscript:msgbox(1)']) {
+			expect(() => resolveHref(href, docs)).toThrow(`a link must be http, https or mailto: ${href}`)
+		}
+		expect(() => renderPage('a.md', '# A\n\n[Click](javascript:alert(1))\n', docs, {}, raw)).toThrow('docs/a.md: a link must be http, https or mailto: javascript:alert(1)')
+	})
 })
 
 describe('parseNav', () => {
