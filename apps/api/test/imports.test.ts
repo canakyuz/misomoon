@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs'
+import { gzipSync } from 'node:zlib'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vite-plus/test'
 import { invalidate } from '../src/control'
 import { fakeCtx, fakeEnv, OWNER, type FakeEnv } from './fake'
@@ -154,6 +156,30 @@ describe('CSV imports', () => {
 		expect(batches).toBe(2)
 		expect(env.CONTROL.rows("SELECT status FROM imports")).toEqual([{ status: 'failed' }])
 		expect([...env.SHARD_0.rows('SELECT 1 FROM imported'), ...env.SHARD_1.rows('SELECT 1 FROM imported')]).toEqual([])
+	})
+})
+
+describe("another tool's export", () => {
+	/** a real CSV export of page views, gzipped as the tool sends it (packages/core/test/importers/fixtures) */
+	const REAL = readFileSync(new URL('../../../packages/core/test/importers/fixtures/goatcounter-export.csv', import.meta.url))
+
+	it('reads a gzipped export of page views in the site time zone', async () => {
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com', timezone: 'America/New_York' }), { 'content-type': 'application/json' })
+		const res = await upload(env, new File([gzipSync(REAL)], 'export-20201231T000000Z-0.csv.gz', { type: 'application/gzip' }))
+		expect(res.status).toBe(201)
+		expect(await res.json()).toMatchObject({ source: 'csv', status: 'done', from_day: '2020-11-30', to_day: '2020-12-26' })
+		expect(importedDays(env, 'America/New_York')).toEqual(['2020-11-30', '2020-12-26'])
+	})
+
+	it('answers 400 with the reason for an export it reads in another version, or a broken gzip file', async () => {
+		const env = fakeEnv()
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		const old = await upload(env, new File([REAL.toString().replace('2Path', '1Path')], 'export.csv', { type: 'text/csv' }))
+		expect([old.status, (await old.json()).error]).toEqual([400, expect.stringMatching(/version 1; misomoon reads version 2/)])
+		const broken = await upload(env, new File(['not gzip'], 'export.csv.gz'))
+		expect([broken.status, await broken.json()]).toEqual([400, { error: "export.csv.gz isn't a gzip file" }])
+		expect(env.CONTROL.rows('SELECT 1 FROM imports')).toEqual([])
 	})
 })
 

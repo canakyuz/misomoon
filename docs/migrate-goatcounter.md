@@ -1,12 +1,11 @@
 # Switch from GoatCounter
 
-GoatCounter's click events become misomoon's tagged events:
-`data-goatcounter-click="signup"` becomes `data-misomoon-event="signup"`. Neither of
-GoatCounter's exports is in the format misomoon's [CSV import](import.md#csv-format)
-reads, so you write the files from one of them. The CSV export of single pageviews fills
-almost every report. The JSON export has per-page counts only, with no daily total of
-people for the whole site. GoatCounter has no goals, funnels, or revenue, so nothing of
-those moves.
+misomoon reads both of GoatCounter's exports as they come: upload the file under
+**Settings** > **Integrations**. GoatCounter's click events become misomoon's tagged
+events: `data-goatcounter-click="signup"` becomes `data-misomoon-event="signup"`. The CSV
+export of single pageviews fills almost every report. The JSON export has per-page counts
+only, with no daily total of people for the whole site. GoatCounter has no goals, funnels,
+or revenue, so nothing of those moves.
 
 ## Add misomoon next to GoatCounter
 
@@ -38,75 +37,63 @@ conversion, add it in **Settings** > **Goals**
 ## Bring your history
 
 Both exports are under **Settings** > **Export/Import** in GoatCounter, and each runs at
-most once per hour. An export runs up to the day you start it, so the files hold the days
-you ran both scripts. misomoon skips the days it already counted ([Days that count once](import.md#days-that-count-once)).
+most once per hour. An export runs up to the day you start it, so the file holds the days
+you ran both scripts. misomoon skips the days it already counted
+([Days that count once](import.md#days-that-count-once)).
 
 1. Pick the export:
    - The CSV export holds one row per page view, but only if **Settings** >
      **Data collection** > **Individual pageviews** was on when the view happened. That
-     setting is off by default.
+     setting is off by default. GoatCounter sends it gzipped, as
+     `goatcounter-export-….csv.gz`.
    - The JSON export holds hourly and daily counts and works without that setting. On a
-     self-hosted instance, it needs a release after v2.7.0.
+     self-hosted instance, it needs a release after v2.7.0. It comes as a ZIP file.
 2. Start the export and download the file.
-3. Write the files that the matching table below names, one row per day, with a header line
-   of column names. Then zip the files.
-4. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
-   the ZIP file.
+3. In misomoon, open **Settings** > **Integrations**, click **Upload CSV or zip**, and pick
+   the file as you downloaded it ([Upload CSV files](import.md#upload-csv-files)).
+
+misomoon reads the file while you wait. An export in a format version misomoon doesn't
+read fails with the reason, such as `this GoatCounter CSV export is version 1; misomoon
+reads version 2, the one GoatCounter exports since 2020`, and stores nothing.
 
 ### From the CSV export
 
-Leave out rows where `Bot` isn't `0`. Group the rest by the day of `Date` in your
-misomoon site's time zone. A row with `Event` set to `true` is an event, and its `2Path`
-is the event name. Every other row is a page view.
+misomoon leaves out rows where `Bot` isn't `0`, and counts each row on its day in your
+misomoon site's time zone. A row with `Event` set to `1` or `true` is an event, and its
+path is the event name. Every other row is a page view.
 
-| GoatCounter column | misomoon file and column |
+| GoatCounter column | Goes into |
 | --- | --- |
-| Distinct `Session` values among page views | `visitors` and `visits` in `imported_visitors.csv`. GoatCounter has no id for a person beyond the session, so both columns get the same number. |
-| Page views | `pageviews` in `imported_visitors.csv` |
-| Sessions with one page view | `bounces` in `imported_visitors.csv` |
-| The last `Date` minus the first `Date` of each session, in seconds | `visit_duration` in `imported_visitors.csv`. GoatCounter records no time of leaving, so a one-page session is 0. |
-| `2Path` of page views | `page`, `visitors` (sessions), and `pageviews` (rows) in `imported_pages.csv` |
-| `2Path` of each session's first and last page view | `entry_page` and `entrances` in `imported_entry_pages.csv`, and `exit_page` and `exits` in `imported_exit_pages.csv` |
-| `Referrer` of each session's first page view | `imported_sources.csv`. For `Referrer scheme` `h`, put the host in `referrer`, and in `source` the name misomoon gives a known host, such as `Google`, or else the host. For scheme `g`, put the name in `source`. Leave out scheme `c`. |
-| `Location`, such as `US` or `US-TX` | `country` in `imported_locations.csv`: the first two letters |
-| `Browser`, `System` | `browser` and `browser_version` in `imported_browsers.csv`, and `operating_system` and `operating_system_version` in `imported_operating_systems.csv`. Split the name from the version. |
-| `2Path` of events | `name`, `events` (rows), and `visitors` (sessions) in `imported_custom_events.csv` |
+| `Session` | One visit and one visitor per session and day. GoatCounter has no id for a person beyond the session, so visitors and visits are the same number. A one-page session is a bounce, and a visit lasts from its first page view to its last. GoatCounter records no time of leaving, so a one-page visit lasts 0 seconds. |
+| `2Path` of page views | Pages, and each session's first and last page as its entry and exit page. Paths lose a trailing slash, as misomoon stores them. |
+| `Referrer` of each session's first page view | Sources, referrers, and channels. For scheme `h`, the host is the referrer, and the source is misomoon's name for a known host, such as `Reddit`, or else the host. For scheme `g`, the name is the source. Scheme `c` holds campaign text instead of a referrer, so the visit is `Direct` with that UTM campaign. |
+| `Location`, such as `US` or `US-TX` | Countries, by the first two letters |
+| `Browser`, `System` | Browsers and operating systems, with their versions as misomoon writes them, such as `Chrome 86` and `Windows 10/11` |
+| `UserAgent`, or else `Screen size` | Devices. Exports from before GoatCounter stopped storing user agents carry them. Otherwise the screen width says `Mobile` below 576 pixels, `Tablet` below 992, and `Desktop` from there. |
+| `2Path` of events | Custom events, with the sessions that sent each as visitors |
 
-Scheme `c` holds campaign text instead of a referrer. Every row of `imported_sources.csv`
-also counts toward `source` and `channel`, with an empty source as Direct, so campaign
-rows would count those visits under Direct.
+GoatCounter writes the rows in the order it received them. misomoon adds a day once the
+rows are two days past it, so a session whose rows are a little out of order still counts
+once. An export larger than 50 MB unzipped fails with the reason. Upload the JSON export
+of the same site instead.
 
 ### From the JSON export
 
-The ZIP file holds lookup files such as `paths.jsonl`, `refs.jsonl`, `browsers.jsonl`,
-`systems.jsonl`, and `locations.jsonl`, and the counts in `hit_stats.jsonl` (per hour,
-path, and referrer), `browser_stats`, `system_stats`, and `location_stats` (per day).
-Each `count` is a number of visitors, and a visitor counts once on each path.
+misomoon reads `hit_stats.jsonl` for pages, sources, events, and the day's totals, with the
+names from `paths.jsonl` and `refs.jsonl`, and `browser_stats`, `system_stats`,
+`location_stats`, and `size_stats` for browsers, operating systems, countries, and
+devices. The hourly counts go to the local day of their hour in your misomoon site's time
+zone. The daily ones keep GoatCounter's day.
 
-| GoatCounter file and field | misomoon file and column |
-| --- | --- |
-| `hit_stats` `count`, added up per day and path, for paths that aren't events | `page` and `visitors` in `imported_pages.csv`, with the path from `paths.jsonl` |
-| `hit_stats` `count`, added up per day and referrer | `referrer`, `source`, and `visitors` in `imported_sources.csv`, with the referrer from `refs.jsonl`, by the same rules as the CSV export |
-| `location_stats` `count`, with the code from `locations.jsonl` | `country` and `visitors` in `imported_locations.csv`: the first two letters of the code |
-| `browser_stats` and `system_stats` `count`, with names from `browsers.jsonl` and `systems.jsonl` | `imported_browsers.csv` and `imported_operating_systems.csv`, with the name split from the version |
-| `hit_stats` `count` for paths with `"event": true` | `name`, `events`, and `visitors` in `imported_custom_events.csv` |
+Each `count` is a number of visitors, and a visitor counts once on each path. misomoon adds
+them up for a day's total, as GoatCounter's own totals do, so a person who opened three
+pages counts three times. Read imported people as an upper limit. The JSON export has no
+visits, bounces, visit durations, or entry and exit pages, so visits and page views take
+the same number as visitors.
 
-No field gives the people who visited the site on a day. Added up over a day,
-`hit_stats` counts a person once for each page they opened, so it overstates `visitors` in
-`imported_visitors.csv`. If you write it anyway, read imported people as an upper limit.
-`visits`, `pageviews`, `bounces`, and `visit_duration` have no source, and nor do the
-entry and exit page files.
-
-### Columns with no source
-
-From either export, `region` stays empty. GoatCounter writes regions as codes, such as
-`US-TX`, and misomoon names them, such as Texas, so codes would sit on separate rows.
-GoatCounter records screen widths, not devices, and misomoon reads the device from the
-user agent, so leave `imported_devices.csv` out. Imported days appear only in reports
-without filters ([What imported data fills](import.md#what-imported-data-fills)).
-
-If you uploaded the wrong file, [delete the import](import.md#delete-an-import) and upload
-again.
+Imported days appear only in reports without filters
+([What imported data fills](import.md#what-imported-data-fills)). If you uploaded the wrong
+file, [delete the import](import.md#delete-an-import) and upload again.
 
 ## Remove GoatCounter
 
@@ -116,8 +103,8 @@ data only if you set its data retention, so the history stays there until you de
 
 ## What stays behind
 
-- Devices, regions, languages, and screen sizes.
-- Campaign history, which GoatCounter keeps in place of the referrer.
+- Regions, languages, and screen sizes.
+- From the CSV export without user agents, devices beyond what the screen width says.
 - From the JSON export, a true count of people, visits, page views, bounces, visit
   durations, and entry and exit pages.
 - Page views from before you turned on **Individual pageviews**. The CSV export has only
@@ -126,6 +113,10 @@ data only if you set its data retention, so the history stays there until you de
 ## Sources
 
 Checked on 2026-10-25.
+
+The import was tested on the real CSV export in GoatCounter's repository,
+[`cmd/goatcounter/testdata/export.csv`](https://github.com/arp242/goatcounter/blob/main/cmd/goatcounter/testdata/export.csv),
+and on the examples of its JSON export documentation, read on 2026-10-26.
 
 - GoatCounter: [getting started](https://www.goatcounter.com/help/start),
   [events](https://www.goatcounter.com/help/events),

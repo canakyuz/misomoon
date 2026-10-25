@@ -87,7 +87,11 @@ export class ImportedSet {
 // ---------------------------------------------------------------- CSV export
 
 export function parseCsv(text: string): string[][] {
-	const out: string[][] = []
+	return [...csvRows(text)]
+}
+
+/** The rows of a CSV text one at a time, so a large file needn't be held as rows. */
+export function* csvRows(text: string): Generator<string[]> {
 	let row: string[] = []
 	let cell = ''
 	let quoted = false
@@ -106,16 +110,15 @@ export function parseCsv(text: string): string[][] {
 		} else if (c === '\n' || c === '\r') {
 			if (c === '\r' && text[i + 1] === '\n') i++
 			row.push(cell)
-			if (row.length > 1 || row[0] !== '') out.push(row)
+			if (row.length > 1 || row[0] !== '') yield row
 			row = []
 			cell = ''
 		} else cell += c
 	}
 	if (cell !== '' || row.length) {
 		row.push(cell)
-		out.push(row)
+		yield row
 	}
-	return out
 }
 
 /** `imported_sources_20240101_20241231.csv` → `sources`. */

@@ -3,6 +3,7 @@ import { pirsch } from './pirsch'
 import type { Importer } from './types'
 import { umami } from './umami'
 
+export { addExportFiles } from './files'
 export * from './info'
 export * from './types'
 export { dayBounds, nextDay, prevDay, publicBase } from './util'

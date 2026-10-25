@@ -111,17 +111,22 @@ import finishes, fails, or is deleted. A running import stops when you delete it
 ## Upload CSV files
 
 misomoon reads a CSV export as one ZIP file or as the CSV files from it.
-[CSV format](#csv-format) lists the files and columns.
+[CSV format](#csv-format) lists the files and columns. It also reads some analytics tools'
+own export files as they come, ZIP or gzipped `.csv.gz` alike. Each tool's
+[switching guide](README.md#switch-from-another-tool) says whether its export is one of
+them.
 
 1. Open **Settings** > **Integrations**.
 2. In the **Import history** card, click **Upload CSV or zip**.
-3. Pick the ZIP file, or one or more CSV files.
+3. Pick the ZIP file, one or more CSV files, or the other tool's export file.
 
 Include `imported_visitors.csv`, the only file that fills the site totals and the chart.
 misomoon keeps only the days nothing counted yet
 ([Days that count once](#days-that-count-once)). It reads the files while you wait and skips the ones it doesn't read. If no file
 holds rows it reads, the upload fails with
-`no imported_*.csv files found (expected a CSV export)`. To upload from a script, see
+`no imported_*.csv files found (expected a CSV export, or an export misomoon reads from another tool)`.
+An export of another tool's that misomoon reads but can't take, such as one in a format
+version it doesn't know, fails with the reason, and stores nothing. To upload from a script, see
 [the API reference](api.md#imports).
 
 ### CSV format
@@ -288,6 +293,7 @@ other secrets.
 | Time to finish a Google sign-in | 1 hour from the click on **Connect Google** or **Connect Search Console** |
 | Google import dates | `YYYY-MM-DD`. Another form falls back to the default. A **From** after the day before misomoon's first counted day fails with `misomoon has counted this site since 2026-10-12, so the import must start before it`. |
 | Import name, import error, and CSV text value | 120, 500, and 500 characters |
+| Another tool's CSV export of single page views | 50 MB unzipped. A larger one fails with the reason, and the tool's guide names a smaller export to upload instead. |
 | A field of an import from another tool | 500 characters. More fails with `<field> must be text of at most 500 characters`. |
 | Requests an import from another tool makes in one run | 2,000, and no more than the tool allows |
 | Search terms per page | 1,000 from the breakdown, 100 from the MCP tool |

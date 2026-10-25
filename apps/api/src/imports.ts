@@ -1,4 +1,4 @@
-import { addGoogleRows, addCsvExport, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localDay, localMidnight, unzipTexts } from '@misomoon/core'
+import { addExportFiles, addGoogleRows, GOOGLE_PULLS, importedInsertStmts, ImportedSet, localDay, localMidnight, unzipTexts } from '@misomoon/core'
 import { getRanges, HttpError, shardDb, writeShard, type Site } from './control'
 import { google, googleConfigured, grantToken } from './google'
 import { moveTargets, moving } from './moves'
@@ -119,18 +119,27 @@ export async function fail(env: Env, id: string, e: unknown) {
 	await env.CONTROL.prepare("UPDATE imports SET status = 'failed', error = ? WHERE id = ?").bind(String((e as Error)?.message ?? e).slice(0, 500), id).run()
 }
 
-/** A CSV export: one zip, or the imported_*.csv files themselves. */
+/**
+ * Uploaded files: misomoon's CSV format, as one zip or the imported_*.csv files, or another
+ * tool's export that core reads (packages/core/src/importers/files.ts). A .gz file is
+ * unzipped first.
+ */
 export async function importCsv(env: Env, site: Site, files: File[]): Promise<ImportRow> {
 	if (!files.length) throw new HttpError(400, 'upload a CSV export zip or its imported_*.csv files')
 	const texts: { name: string; text: string }[] = []
 	for (const f of files) {
 		if (f.name.endsWith('.zip') || f.type === 'application/zip') texts.push(...(await unzipTexts(new Uint8Array(await f.arrayBuffer()))))
+		else if (f.name.endsWith('.gz')) texts.push({ name: f.name.slice(0, -3), text: await gunzip(f) })
 		else texts.push({ name: f.name, text: await f.text() })
 	}
 	const set = new ImportedSet()
-	let lines = 0
-	for (const t of texts) lines += addCsvExport(set, t.name, t.text)
-	if (!lines) throw new HttpError(400, 'no imported_*.csv files found (expected a CSV export)')
+	let lines: number
+	try {
+		lines = addExportFiles(set, texts, site.timezone)
+	} catch (e) {
+		throw new HttpError(400, String((e as Error)?.message ?? e))
+	}
+	if (!lines) throw new HttpError(400, 'no imported_*.csv files found (expected a CSV export, or an export misomoon reads from another tool)')
 	const skipped = await keepNew(env, site, set)
 	const id = await begin(env, site, 'csv', files.map((f) => f.name).join(', '))
 	try {
@@ -140,6 +149,14 @@ export async function importCsv(env: Env, site: Site, files: File[]): Promise<Im
 		throw e
 	}
 	return (await env.CONTROL.prepare('SELECT * FROM imports WHERE id = ?').bind(id).first<ImportRow>())!
+}
+
+async function gunzip(f: File): Promise<string> {
+	try {
+		return await new Response(f.stream().pipeThrough(new DecompressionStream('gzip'))).text()
+	} catch {
+		throw new HttpError(400, `${f.name} isn't a gzip file`)
+	}
 }
 
 /** Deletes an import's rows from every shard that may hold them. */

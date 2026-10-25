@@ -570,7 +570,7 @@ const goatcounter: Alternative = {
 	],
 	faq: [
 		['Is misomoon as simple as GoatCounter?', 'The install is the same: one script tag. The dashboard has more in it, such as funnels and revenue. The Light preset keeps the tracker at 1.9 KB.'],
-		['Can I keep my GoatCounter history?', 'Not directly. misomoon imports a Google Analytics property, or CSV files in the format on the import page.'],
+		['Can I keep my GoatCounter history?', 'Yes. Upload GoatCounter’s CSV or JSON export under Settings > Integrations as you downloaded it. The CSV export of single pageviews fills almost every report.'],
 		['Is misomoon open source too?', 'Yes, under the MIT license.'],
 	],
 }

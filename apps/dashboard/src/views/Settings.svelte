@@ -1013,7 +1013,7 @@
 							<Upload size={14} />
 							{uploading ? 'Uploading…' : 'Upload CSV or zip'}
 							<!-- visually hidden, not `hidden`, so the keyboard can reach it -->
-							<input type="file" accept=".zip,.csv" multiple onchange={upload} disabled={uploading} />
+							<input type="file" accept=".zip,.csv,.gz" multiple onchange={upload} disabled={uploading} />
 						</label>
 						<button class="btn" onclick={connectGoogle}>Connect Google</button>
 						<Select label="Import from another tool" placeholder="Import from another tool…" bind:value={tool} options={IMPORTER_INFO.map((i) => ({ value: i.id, label: i.name }))} />
