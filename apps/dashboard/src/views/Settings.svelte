@@ -316,9 +316,17 @@
 			inviteLink = r
 			invite = { ...invite, email: '' }
 		})
-	const setRole = (userId: string, role: string) => run('setRole', () => send('PATCH', `/api/v1/teams/${team!.id}/members/${userId}`, { role }))
+	// a refused role change redraws the role menus, which had already moved to the new role
+	let roleReset = $state(0)
+	const setRole = async (userId: string, role: string) => {
+		await run('setRole', () => send('PATCH', `/api/v1/teams/${team!.id}/members/${userId}`, { role }))
+		if (error) roleReset++
+	}
 	const removeMember = (userId: string) => run('removeMember', async () => (await send('DELETE', `/api/v1/teams/${team!.id}/members/${userId}`), isMe(userId) && (await dash.load())))
-	const setGuest = (userId: string, role: string) => run('setGuest', () => send('PATCH', `/api/v1/sites/${dash.site}/guests/${userId}`, { role }))
+	const setGuest = async (userId: string, role: string) => {
+		await run('setGuest', () => send('PATCH', `/api/v1/sites/${dash.site}/guests/${userId}`, { role }))
+		if (error) roleReset++
+	}
 	const removeGuest = (userId: string) => run('removeGuest', () => send('DELETE', `/api/v1/sites/${dash.site}/guests/${userId}`))
 	const withdraw = (id: string) => run('withdraw', () => send('DELETE', `/api/v1/teams/${team!.id}/invitations/${id}`))
 	const renameTeam = () => run('renameTeam', async () => (await send('PATCH', `/api/v1/teams/${team!.id}`, { name: teamName }), await dash.load()))
@@ -1054,12 +1062,14 @@
 							{#if m.role === 'owner' && teamRole !== 'owner'}
 								<span class="pill" title="Only an owner can change another owner">Owner</span>
 							{:else}
-								<Select
-									label="Role of {m.name}"
-									value={m.role}
-									onchange={(role) => setRole(m.id, role)}
-									options={TEAM_ROLES.map((r) => ({ value: r.role, label: r.label, disabled: r.role === 'owner' && teamRole !== 'owner' }))}
-								/>
+								{#key roleReset}
+									<Select
+										label="Role of {m.name}"
+										value={m.role}
+										onchange={(role) => setRole(m.id, role)}
+										options={TEAM_ROLES.map((r) => ({ value: r.role, label: r.label, disabled: r.role === 'owner' && teamRole !== 'owner' }))}
+									/>
+								{/key}
 								<button class="btn ghost icon" onclick={() => removeMember(m.id)} aria-label={isMe(m.id) ? 'Leave team' : `Remove ${m.name}`}><Trash size={14} /></button>
 							{/if}
 						</li>
@@ -1068,7 +1078,7 @@
 						<li>
 							<span class="avatar guest">{g.name.slice(0, 1)}</span>
 							<span class="grow person"><strong>{g.name}</strong><span class="muted small">{g.email} · guest on {dash.current?.name}</span></span>
-							<Select label="Guest role of {g.name}" value={g.role} onchange={(role) => setGuest(g.id, role)} options={GUEST_ROLES} />
+							{#key roleReset}<Select label="Guest role of {g.name}" value={g.role} onchange={(role) => setGuest(g.id, role)} options={GUEST_ROLES} />{/key}
 							<button class="btn ghost icon" onclick={() => removeGuest(g.id)} aria-label="Remove {g.name}"><Trash size={14} /></button>
 						</li>
 					{/each}
