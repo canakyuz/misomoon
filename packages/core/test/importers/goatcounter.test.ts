@@ -4,7 +4,7 @@ import { ImportedSet, type ImportedRow } from '../../src/imported'
 import { addExportFiles } from '../../src/importers/files'
 import { addGoatCounterCsv, GOATCOUNTER_CSV_MAX } from '../../src/importers/goatcounter'
 
-/** GoatCounter's own test export, cmd/goatcounter/testdata/export.csv in its repository: three real page views of arp242.net */
+/** GoatCounter's own test export, cmd/goatcounter/testdata/export.csv in its repository: three real page views of arp242.net, with each Session replaced by a number */
 const REAL = readFileSync(new URL('./fixtures/goatcounter-export.csv', import.meta.url), 'utf8')
 const [HEAD, EVENT, CHROME, SAFARI] = REAL.trim().split('\n')
 
@@ -71,7 +71,7 @@ describe("GoatCounter's CSV export", () => {
 		const { list } = read([HEAD, second, SAFARI].join('\n'))
 		expect(at(list, '2020-12-27', '')['']).toMatchObject({ visits: 1, pageviews: 2, duration: 120 })
 		// a row of the next day between them doesn't close the day yet
-		const next = edit(edit(CHROME, '2020-12-01T00:07:44Z', '2020-12-28T09:00:00Z'), '287fb97cbed4e4f-8e4f5c975b8fee06', 'other-session')
+		const next = edit(edit(CHROME, '2020-12-01T00:07:44Z', '2020-12-28T09:00:00Z'), 'session-0001', 'other-session')
 		const { list: mixed } = read([HEAD, second, next, SAFARI].join('\n'))
 		expect(at(mixed, '2020-12-27', '')['']).toMatchObject({ visits: 1, pageviews: 2 })
 		expect(at(mixed, '2020-12-28', '')['']).toMatchObject({ visits: 1, pageviews: 1 })

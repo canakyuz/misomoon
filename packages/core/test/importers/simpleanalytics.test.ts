@@ -7,7 +7,8 @@ import { isSimpleAnalyticsCsv, simpleAnalyticsHits } from '../../src/importers/s
 /**
  * One day of Simple Analytics' own public dashboard, simpleanalytics.com, as its Export API
  * gave it on 2026-10-26: `/api/export/datapoints?version=6&format=csv&type=pageviews` and
- * `type=events`, for 2026-10-20 in Europe/Amsterdam, without robots.
+ * `type=events`, for 2026-10-20 in Europe/Amsterdam, without robots. Each session_id is
+ * replaced by a number, the same in both files.
  */
 const DAY = '2026-10-20'
 const ZONE = 'Europe/Amsterdam'
