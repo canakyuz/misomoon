@@ -59,6 +59,22 @@ const grant = (env: FakeEnv, id: string, createdAt: number) =>
 	env.CONTROL.db.prepare("INSERT INTO google_auth (id, site_id, purpose, access_token, refresh_token, expires_at, created_at) VALUES (?, 'shop-com', 'import', 'ya29.token', '1//refresh', ?, ?)").run(id, Date.now() + HOUR, createdAt)
 
 describe('Google imports', () => {
+	it('takes only a property id that names a Google property, and encodes the page token', async () => {
+		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
+		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })
+		grant(env, 'g1', Date.now())
+		const urls: string[] = []
+		vi.stubGlobal('fetch', async (url: string) => {
+			urls.push(url)
+			return Response.json(urls.length === 1 ? { accountSummaries: [], nextPageToken: 'a+b/c=' } : { accountSummaries: [] })
+		})
+		for (const property of ['properties/123/../../v1alpha/x', 'properties/123?key=1', 'properties/'])
+			expect((await call(env, 'POST', '/api/v1/sites/shop-com/imports/google', JSON.stringify({ grant: 'g1', property }), { 'content-type': 'application/json' })).status).toBe(400)
+		expect(urls).toEqual([])
+		expect((await call(env, 'GET', '/api/v1/sites/shop-com/imports/google/properties?grant=g1')).status).toBe(200)
+		expect(urls[1]).toBe('https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200&pageToken=a%2Bb%2Fc%3D')
+	})
+
 	it('drops the Google grant when the import fails', async () => {
 		const env = fakeEnv({ GOOGLE_CLIENT_ID: 'id', GOOGLE_CLIENT_SECRET: 'secret' })
 		await call(env, 'POST', '/api/v1/sites', JSON.stringify({ domain: 'shop.com' }), { 'content-type': 'application/json' })

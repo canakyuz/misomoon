@@ -129,7 +129,7 @@ export async function googleProperties(env: Env, site: Site, grantId: string) {
 	do {
 		const r = await google<{ accountSummaries?: { displayName: string; propertySummaries?: { property: string; displayName: string }[] }[]; nextPageToken?: string }>(
 			token,
-			`https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200${pageToken ? `&pageToken=${pageToken}` : ''}`,
+			`https://analyticsadmin.googleapis.com/v1beta/accountSummaries?pageSize=200${pageToken ? `&pageToken=${encodeURIComponent(pageToken)}` : ''}`,
 		)
 		for (const a of r.accountSummaries ?? []) for (const p of a.propertySummaries ?? []) out.push({ id: p.property, name: p.displayName, account: a.displayName })
 		pageToken = r.nextPageToken ?? ''
@@ -174,7 +174,8 @@ export async function googleImport(env: Env, site: Site, grantId: string, proper
 
 export async function startGoogleImport(env: Env, ctx: ExecutionContext, site: Site, body: { grant?: string; property?: string; from?: string; to?: string; label?: string }) {
 	googleConfigured(env)
-	if (!body.grant || !body.property?.startsWith('properties/')) throw new HttpError(400, 'grant and property (properties/123) are required')
+	// the property goes into the runReport URL, so it is a property id and nothing else
+	if (!body.grant || !/^properties\/\d+$/.test(body.property ?? '')) throw new HttpError(400, 'grant and property (properties/123) are required')
 	const day = /^\d{4}-\d{2}-\d{2}$/
 	const to = body.to && day.test(body.to) ? body.to : new Date(Date.now() - 86_400_000).toISOString().slice(0, 10)
 	const from = body.from && day.test(body.from) ? body.from : '2015-08-14' // earliest date Google serves
