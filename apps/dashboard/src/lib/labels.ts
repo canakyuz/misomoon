@@ -37,7 +37,7 @@ const SOURCE_DOMAINS: Record<string, string> = {
 export function iconDomain(dim: string, key: string): string | null {
 	if (dim === 'referrer') return key === '(none)' ? null : key
 	if (dim === 'source' || dim === 'utm_source') {
-		if (key in SOURCE_DOMAINS) return SOURCE_DOMAINS[key] || null
+		if (Object.hasOwn(SOURCE_DOMAINS, key)) return SOURCE_DOMAINS[key] || null
 		if (/^[a-z0-9-]+(\.[a-z0-9-]+)+$/i.test(key)) return key
 	}
 	return null
