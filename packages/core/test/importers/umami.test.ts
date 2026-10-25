@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vite-plus/test'
 import { ImportedSet } from '../../src/imported'
 import { ImportError, type CallInit } from '../../src/importers/types'
 import { umami } from '../../src/importers/umami'
+import real from './fixtures/umami-day.json'
 
 const SITE = '94db1cb1-74f4-4a40-ad6c-962362670409'
 const row = (name: string, visitors: number, extra: Partial<Record<'pageviews' | 'visits' | 'bounces' | 'totaltime', number>> = {}) => ({
@@ -124,5 +125,51 @@ describe('the Umami importer', () => {
 		const set = new ImportedSet()
 		await umami.day({ base: 'https://api.umami.is/v1', headers: {}, website: SITE, domain: '' }, '2024-05-01', 'UTC', call, set)
 		expect([asked, set.list()]).toEqual([[`/v1/websites/${SITE}/stats`], []])
+	})
+
+	describe("a real day from Umami Cloud's public demo", () => {
+		const call = async (url: string) => {
+			const u = new URL(url)
+			if (u.pathname.endsWith('/stats')) return real.stats
+			if (u.pathname.endsWith(`/websites/${real.website.id}`)) return real.website
+			return u.searchParams.get('offset') === '0' ? real.metrics[u.searchParams.get('type') as keyof typeof real.metrics] : []
+		}
+		const read = async () => {
+			const { state } = await umami.open({ website: real.website.id, key: 'k' }, call, 'UTC')
+			const set = new ImportedSet()
+			await umami.day(state, '2026-10-20', 'UTC', call, set)
+			return set.list()
+		}
+		const rows = (list: Awaited<ReturnType<typeof read>>, dim: string) => Object.fromEntries(list.filter((r) => r.dim === dim).map((r) => [r.key, r]))
+		const visits = (list: Awaited<ReturnType<typeof read>>, dim: string) => Object.fromEntries(list.filter((r) => r.dim === dim).map((r) => [r.key, r.visits]))
+
+		it('stores the day as Umami counted it', async () => {
+			const list = await read()
+			expect(rows(list, '')['']).toMatchObject({ visitors: 4374, visits: 5089, pageviews: 7221, bounces: 1900, duration: 364445 })
+			expect(rows(list, 'page')['/']).toMatchObject({ visitors: 3824, visits: 4471, pageviews: 5178 })
+			expect(rows(list, 'country').US).toMatchObject({ visitors: 738, visits: 840, bounces: 386, duration: 52678 })
+			expect(rows(list, 'event')['login-button-header']).toMatchObject({ visitors: 1355, events: 1847 })
+		})
+
+		it('gives Direct the visits no referrer row has, and none of the bounces Umami leaves off referrers', async () => {
+			const list = await read()
+			const refs = real.metrics.referrer
+			const sum = (k: 'visits' | 'visitors' | 'pageviews') => refs.reduce((n, r) => n + r[k], 0)
+			// Umami reports no bounces or time for referrers, so Direct can't take the day's
+			expect(refs.every((r) => !r.bounces && !r.totaltime)).toBe(true)
+			expect(rows(list, 'source').Direct).toMatchObject({ visits: 5089 - sum('visits'), visitors: 4374 - sum('visitors'), pageviews: 7221 - sum('pageviews'), bounces: 0, duration: 0 })
+			expect(Object.values(visits(list, 'source')).reduce((a, b) => a + b, 0)).toBe(5089)
+			expect(Object.values(visits(list, 'channel')).reduce((a, b) => a + b, 0)).toBe(5089)
+		})
+
+		it("names each browser, system and device as misomoon's tracker does", async () => {
+			const list = await read()
+			// chrome + crios + chromium-webview, safari + ios + ios-webview, edge-chromium + edge + edge-ios, firefox + fxios
+			expect(visits(list, 'browser')).toEqual({ Chrome: 3572, Safari: 690, Edge: 270, Firefox: 498, Opera: 25, Unknown: 17, Yandex: 8, 'Samsung Internet': 6, Facebook: 1 })
+			expect(visits(list, 'os')).toEqual({ macOS: 2090, Windows: 1691, Linux: 517, iOS: 453, Android: 330, ChromeOS: 5 })
+			expect(visits(list, 'os_version')).toEqual({ 'Windows 10/11': 1687, 'Windows 7': 4 })
+			// laptop + desktop
+			expect(visits(list, 'device')).toEqual({ Desktop: 4306, Mobile: 769, Tablet: 19 })
+		})
 	})
 })

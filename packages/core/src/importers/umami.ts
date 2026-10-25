@@ -32,6 +32,9 @@ interface Row {
 
 /** Umami's browser keys (BROWSERS in src/lib/constants.ts), as misomoon names browsers. */
 const BROWSERS: Record<string, string> = {
+	browser: 'Unknown',
+	android: 'Android Browser',
+	ie: 'Internet Explorer',
 	chrome: 'Chrome',
 	crios: 'Chrome',
 	'chromium-webview': 'Chrome',
@@ -50,6 +53,8 @@ const BROWSERS: Record<string, string> = {
 	facebook: 'Facebook',
 	instagram: 'Instagram',
 }
+/** Umami's bot and tool keys, which misomoon doesn't count */
+const BOTS = new Set(['searchbot', 'curl', 'phantomjs'])
 
 /** Umami's OS names, which carry Windows' version, as misomoon's name and version. */
 function os(name: string): [string, string | null] {
@@ -129,8 +134,10 @@ function addRows(set: ImportedSet, day: string, type: (typeof TYPES)[number], ro
 			for (const r of rows) set.add(day, type === 'entry' ? 'entry_page' : 'exit_page', normalizeImportedPath(r.name), visit(r))
 			return
 		case 'referrer': {
-			// visits without a referrer, or from the site itself, are direct
-			const direct = { ...total }
+			// visits without a referrer, or from the site itself, are direct. Umami leaves
+			// bounces and time off its referrer rows, so Direct gets none of the day's either.
+			const timed = rows.some((r) => count(r.bounces) || count(r.totaltime))
+			const direct = { ...total, ...(timed ? {} : { bounces: 0, totaltime: 0 }) }
 			for (const r of rows) {
 				const host = r.name.toLowerCase().replace(/^www\./, '')
 				if (!host || host === domain) continue
@@ -151,7 +158,7 @@ function addRows(set: ImportedSet, day: string, type: (typeof TYPES)[number], ro
 			for (const r of rows) if (r.name) set.add(day, 'country', r.name.toUpperCase(), visit(r))
 			return
 		case 'browser':
-			for (const r of rows) set.add(day, 'browser', BROWSERS[r.name] ?? r.name, visit(r))
+			for (const r of rows) if (!BOTS.has(r.name)) set.add(day, 'browser', BROWSERS[r.name] ?? r.name, visit(r))
 			return
 		case 'os':
 			for (const r of rows) {

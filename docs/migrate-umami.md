@@ -75,7 +75,7 @@ For each day, it reads:
 | Umami call | Goes into |
 | --- | --- |
 | `/stats` | Visitors, visits, page views, bounces, and visit duration for the day |
-| `/metrics/expanded?type=path`, `entry`, `exit` | Pages, entry pages, and exit pages |
+| `/metrics/expanded?type=path`, `entry`, `exit` | Pages, entry pages, and exit pages, without a trailing slash or query, as misomoon stores paths |
 | `/metrics/expanded?type=referrer` | Sources, referrers, and channels. A known site gets misomoon's name, such as `Google` for `google.com`. Visits without a referrer, or from your own site, count as `Direct`. |
 | `/metrics/expanded?type=country`, `browser`, `os`, `device` | Countries, browsers, operating systems, and devices, with misomoon's names: `chrome` becomes `Chrome`, `Mac OS` becomes `macOS`, and `Windows 10` becomes `Windows` 10/11 |
 | `/metrics/expanded?type=event` | Custom events, with the visitors who sent each |
@@ -118,13 +118,20 @@ calls.
 - Revenue history. Umami keeps revenue in its `revenue` table, and misomoon imports none.
 - Event data. misomoon imports event counts without properties.
 - Browser versions, time on page, and scroll depth. Umami's API has none of them.
+- Bounces and visit duration per page, entry page, exit page, source, and UTM tag. Umami
+  Cloud answers `0` for both on those breakdowns, so imported days add visits there but
+  no bounces, and `Direct` gets none of the day's bounces either. The day's totals,
+  countries, browsers, operating systems, and devices keep them.
+- Bot and tool visits Umami names `searchbot`, `curl`, or `phantomjs`. misomoon counts
+  no bots, so they stay out of browsers, though the day's totals still hold them.
 - UTM tags by source. The API reports each tag on its own.
 - Regions and cities. Umami stores region codes, such as `US-CA`, and misomoon names the
   region, such as California, so misomoon leaves them out.
 
 ## Sources
 
-Checked on 2026-10-25.
+Checked on 2026-10-25. The import was tested on one day of Umami Cloud's public demo,
+read on 2026-10-26.
 
 - Umami: [export data](https://docs.umami.is/docs/cloud/export-data),
   [API](https://docs.umami.is/docs/api),
