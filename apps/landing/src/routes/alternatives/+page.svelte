@@ -107,7 +107,7 @@
 		<p>“Not found” means we looked in their docs and pricing and didn’t find it. It may still exist. Tracker sizes are our own download, gzipped at the default level.</p>
 		<p>
 			Prices and features change. If a fact is wrong or out of date, <a href="https://github.com/jackzard/misomoon/issues">open an issue</a> with the source. The full
-			tables are in <a href={docLink(data.docsUrl, 'comparison')}>the comparison docs</a>.
+			tables are in <a href={docLink(null, 'comparison')}>the comparison docs</a>.
 		</p>
 	</div>
 </section>
