@@ -42,7 +42,7 @@ describe('the sample site', () => {
 			targets = [{ run: runner(db), window: { from: NOW - 4 * DAY, to: NOW + DAY } }]
 		})
 
-		it('fills every report the dashboard shows', async () => {
+		it('fills the totals, the shop funnel events, and the shop pages', async () => {
 			const agg = await aggregate(targets, scope)
 			expect(agg.visitors).toBeGreaterThan(200)
 			expect(agg.bounce_rate).toBeGreaterThan(15)

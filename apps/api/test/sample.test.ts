@@ -67,10 +67,9 @@ describe('the sample site', () => {
 		// the run starts at the newest stored hit, which inserts nothing again
 		await fill(env, NOW, 40)
 		expect(events(env)).toBe(filled)
-		// five minutes later, only the new hits are added
+		// five minutes later a run adds what is new, and below no hit is stored twice
 		await fill(env, NOW + 5 * MINUTE, 40)
-		const after = events(env)
-		expect(after).toBeGreaterThanOrEqual(filled)
+		expect(events(env)).toBeGreaterThanOrEqual(filled)
 		const ids = (db: FakeEnv['SHARD_0']) => db.rows("SELECT event_id FROM events WHERE site_id = 'acme'").map((r) => r.event_id)
 		const all = [...ids(env.SHARD_0), ...ids(env.SHARD_1)]
 		expect(new Set(all).size).toBe(all.length)

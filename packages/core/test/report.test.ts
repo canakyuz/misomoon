@@ -194,8 +194,12 @@ describe('email reports', () => {
 
 	it('stacks columns and shrinks type on phones', () => {
 		const r = renderReport(data())
-		expect(r.html).toContain('@media (max-width:480px)')
-		expect(r.html).toContain('class="mm-stack"')
+		const phone = /@media \(max-width:480px\)\{([\s\S]*?)\n\}/.exec(r.html)?.[1] ?? ''
+		expect(phone).toContain('.mm-stack{display:block!important;width:100%!important')
+		expect(phone).toContain('.mm-h1{font-size:32px!important}')
+		// the columns are table cells that phones turn into rows, under a 44px headline that shrinks
+		expect(r.html.match(/<td class="mm-stack"/g)!.length).toBeGreaterThanOrEqual(2)
+		expect(r.html).toMatch(/<h1 class="mm-h1" style="font:800 44px/)
 	})
 })
 
