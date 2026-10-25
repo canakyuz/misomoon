@@ -25,6 +25,17 @@ describe('the sample site', () => {
 		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM sites WHERE id = 'acme'")[0].n).toBe(0)
 	})
 
+	it('sets the sample site up whole on the next run when its goals failed to save', async () => {
+		const env = fakeEnv({ SAMPLE_SITE: 'acme' })
+		const batch = env.CONTROL.batch.bind(env.CONTROL)
+		env.CONTROL.batch = async (stmts) => (stmts.some((s) => s.sql.startsWith('INSERT OR IGNORE INTO goals')) ? Promise.reject(new Error('D1 network error')) : batch(stmts))
+		await expect(fill(env, NOW, 2)).rejects.toThrow('D1 network error')
+		env.CONTROL.batch = batch
+		await fill(env, NOW, 2)
+		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM goals WHERE site_id = 'acme'")[0].n).toBe(SAMPLE.goals.length)
+		expect(env.CONTROL.rows("SELECT COUNT(*) AS n FROM funnels WHERE site_id = 'acme'")[0].n).toBe(SAMPLE.funnels.length)
+	})
+
 	it('creates a public site with goals and funnels on the sample team, and fills its history a day per run', async () => {
 		const env = fakeEnv({ SAMPLE_SITE: 'acme' })
 		await fill(env, NOW)
