@@ -59,9 +59,9 @@ unset variable means. Where `wrangler.jsonc` sets another value, the row says so
 | `PLANS` | `on` | `on` enforces the misomoon Cloud plans: the free trial, how many sites a team can have, how long its sites can keep their stats, and how many events they record a month. See [Plans](#plans). Unset, or any other value, enforces no plan. `wrangler.jsonc` and the deploy bundle leave it out, so a self-hosted server has no plan limits. |
 | `SHARD_SOFT_LIMIT_MB` | `8000` | The size at which a shard stops taking new sites and starts draining. D1's hard limit is 10 GB per database. |
 | `INGEST_DAILY_CAP` | unset | The most events a site can store per UTC day, unless the site has its own cap. Unset means no cap. A value that is not a positive whole number also means no cap. See [Daily ingest cap](#daily-ingest-cap). |
-| `EMAIL_PROVIDER` | unset | `cloudflare` or `ses`. Unset picks the `EMAIL` binding when it is bound, then SES. A provider named here that is not set up sends nothing; email does not go out through another provider. |
+| `EMAIL_PROVIDER` | `ses` | `cloudflare` or `ses`. misomoon Cloud sets `ses`. Unset picks the `EMAIL` binding when it is bound, then SES. A provider named here that is not set up sends nothing; email does not go out through another provider. |
 | `EMAIL_FROM` | `misomoon <reports@misomoon.com>` | The sender of every email. Use an address on a domain that your provider verified. |
-| `AWS_SES_REGION` | unset | Amazon SES: the region of your SES identity, for example `us-east-1`. Email goes through SES when this and both `AWS_SES_*` secrets are set. |
+| `AWS_SES_REGION` | `ap-southeast-2` | Amazon SES: the region of your SES identity. misomoon Cloud uses Sydney, `ap-southeast-2`. Email goes through SES when this and both `AWS_SES_*` secrets are set. |
 | `DEMO_SEED` | unset | `1` allows `POST /api/v1/sites/:id/demo`, which writes synthetic traffic. Use it only locally. |
 | `CF_ZONE_ID` | unset | Managed proxy: the zone that owns `PROXY_CNAME_TARGET` and has Cloudflare for SaaS turned on. |
 | `PROXY_CNAME_TARGET` | unset | Managed proxy: the fallback origin that customer hostnames point a CNAME at, for example `proxy.example.com`. |
@@ -76,6 +76,17 @@ unset variable means. Where `wrangler.jsonc` sets another value, the row says so
 
 Without an email provider, the dashboard shows invitation links to copy by hand, and
 reports, alerts, password resets, and the daily-cap notice are not sent.
+
+misomoon Cloud sends from `misomoon <reports@misomoon.com>` through SES in Sydney.
+Its IAM user, `misomoon-ses`, may call only `ses:SendEmail`, using the `misomoon.com`
+identity in `ap-southeast-2` with `reports@misomoon.com` as the From address. Its access
+key is stored in the two `AWS_SES_*` Worker secrets. The domain uses SES DKIM and
+`bounce.misomoon.com` as its custom MAIL FROM domain, with DNS hosted by Cloudflare.
+Changing the sender or region also requires updating the IAM policy and verifying the
+identity in that region. SES failures are logged as `email failed`; invitations then
+show a link to copy, and reports stay due for a later attempt.
+The self-hosted template and deploy bundle leave out misomoon Cloud's email provider,
+sender, and SES region. Set your own provider and credentials to send email there.
 
 The managed proxy is on only when `CF_API_TOKEN`, `CF_ZONE_ID`, and `PROXY_CNAME_TARGET`
 are all set. [Serve the tracker from your own domain](PROXY.md) explains the proxy and its other options.
