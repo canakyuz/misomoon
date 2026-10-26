@@ -34,7 +34,9 @@
 	})
 	const pages = new Resource<BreakdownResponse>(() => (dash.site && perPage && !filtered ? `/api/v1/stats/breakdown?${dash.params}&property=page&limit=50&_=${dash.tick}` : null))
 	let picked = $state<string | null>(null)
-	const page = $derived(filtered ?? (picked && pages.data?.rows.some((r) => r.key === picked) ? picked : (pages.data?.rows[0]?.key ?? null)))
+	// the demo's recordings predate the sample site's clicks on /shop, its top page, so it opens on the home page
+	const first = $derived(dash.isSample ? (pages.data?.rows.find((r) => r.key === '/') ?? pages.data?.rows[0]) : pages.data?.rows[0])
+	const page = $derived(filtered ?? (picked && pages.data?.rows.some((r) => r.key === picked) ? picked : (first?.key ?? null)))
 	const pageOptions = $derived((pages.data?.rows ?? []).map((r) => ({ value: r.key, label: r.key })))
 
 	const url = (report: BehaviorReport, extra = '') => `/api/v1/stats/behavior?${dash.params}&report=${report}${extra}&_=${dash.tick}`
@@ -188,6 +190,7 @@
 							</div>
 						{/each}
 					</div>
+					{#if !f.fields.length}<p class="muted small">No field use recorded for this form in this period.</p>{/if}
 				</section>
 			{/each}
 		</div>

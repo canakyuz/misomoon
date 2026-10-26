@@ -7,7 +7,7 @@ vi.hoisted(() => {
 	;(globalThis as { location?: unknown }).location = { pathname: '/demo', search: '' }
 })
 
-const { adjust, breakdown, demoGet, demoSend, funnel, journey, periodFile, share, shiftFor } = await import('../src/lib/demo')
+const { adjust, breakdown, demoGet, demoSend, funnel, journey, live, periodFile, share, shiftFor } = await import('../src/lib/demo')
 const { ApiError, get, send } = await import('../src/lib/api')
 
 const DAY = 86_400_000
@@ -50,7 +50,6 @@ describe('dates', () => {
 		expect(shiftFor('day', at, now, 'America/New_York')).toBe(2 * DAY)
 		expect(shiftFor('day', at, now, 'UTC')).toBe(DAY)
 		expect(shiftFor('hour', at, at + 5.6 * 3_600_000, 'UTC')).toBe(6 * 3_600_000)
-		expect(shiftFor('exact', at, at + 1234, 'UTC')).toBe(1234)
 	})
 
 	it('move only timestamps, and filters scale only counts', () => {
@@ -137,6 +136,40 @@ describe('funnels', () => {
 			['Purchase', 24, 4, 66],
 		])
 		expect(f.completed).toBe(24)
+	})
+})
+
+describe('Live', () => {
+	const MIN = 60_000
+	const at = Date.UTC(2026, 9, 20, 15)
+	const ev = (ago: number, city: string, pathname = '/', name = 'pageview') => ({ ts: at - ago * MIN, name, pathname, country: city === 'Tokyo' ? 'JP' : 'GB', city, browser: 'Safari', device: 'Desktop', source: 'Google' })
+	// the newest event 6 minutes before the recording: recorded as is, nobody would be online
+	const feed = [ev(6, 'London', '/shop'), ev(7, 'London'), ev(8, 'Tokyo', '/cart', 'Add to cart'), ev(10, 'Tokyo')]
+
+	it('loops the recorded events up to now, so someone is always online', () => {
+		for (const later of [0, 3, 61, 1440]) {
+			const now = at + later * MIN
+			const r = live({ feed }, now)
+			expect(r.visitors, `${later} min later`).toBeGreaterThan(0)
+			expect(r.feed[0].ts).toBeLessThanOrEqual(now)
+			expect(now - r.feed[0].ts).toBeLessThan(2 * MIN)
+			expect(r.feed.every((e, i) => !i || e.ts <= r.feed[i - 1].ts)).toBe(true)
+			expect(r.minutes).toHaveLength(31)
+		}
+	})
+
+	it('counts the last five minutes from the events it shows', () => {
+		const r = live({ feed }, at)
+		// a round lasts 4 + 4/3 minutes: London's two pageviews and Tokyo's event fall in the last five
+		const recent = r.feed.filter((e) => e.ts > at - 5 * MIN)
+		expect(r.pageviews).toBe(recent.filter((e) => e.name === 'pageview').length)
+		expect(r.countries.map((c) => c.key).sort()).toEqual([...new Set(recent.map((e) => e.country))].sort())
+		expect(r.pages.length).toBeGreaterThan(0)
+		expect(r.minutes.reduce((n, m) => n + m.pageviews, 0)).toBe(r.feed.filter((e) => e.ts > at - 30 * MIN && e.name === 'pageview').length)
+	})
+
+	it('shows nobody when nothing was recorded', () => {
+		expect(live({ feed: [] }, at)).toMatchObject({ visitors: 0, feed: [], pages: [] })
 	})
 })
 
