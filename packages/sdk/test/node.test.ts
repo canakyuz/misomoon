@@ -162,7 +162,9 @@ describe('payment', () => {
 			const m = createMisomoon({ site: 'shop-com', host: 'https://analytics.test', secret: 's', fetch: f.fetch })
 			let result: boolean | undefined
 			void m.payment(order).then((ok) => (result = ok))
-			for (let i = 0; i < 50 && result === undefined; i++) {
+			// bounded by real time, not by steps: signing takes real time, which a slow CI runner stretches
+			const deadline = performance.now() + 5000
+			while (result === undefined && performance.now() < deadline) {
 				await new Promise((r) => setImmediate(r))
 				await vi.advanceTimersByTimeAsync(1000)
 			}
