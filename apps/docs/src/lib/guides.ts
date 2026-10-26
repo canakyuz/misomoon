@@ -14,6 +14,7 @@ export const GUIDE_BRANDS: Record<string, Brand[]> = {
 	vue: ['vuedotjs'],
 	sveltekit: ['svelte'],
 	astro: ['astro'],
+	gatsby: ['gatsby'],
 	angular: ['angular'],
 	'server-frameworks': ['laravel', 'django', 'rubyonrails'],
 	'static-sites': ['hugo', 'jekyll', 'eleventy'],

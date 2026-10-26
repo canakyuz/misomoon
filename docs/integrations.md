@@ -18,7 +18,7 @@ Pick your platform for the exact steps:
 | [Wix](wix.md) | [Angular](angular.md) | |
 | [Squarespace](squarespace.md) | [Laravel, Django, and Rails](server-frameworks.md) | |
 | [Ghost](ghost.md) | [Hugo, Jekyll, and Eleventy](static-sites.md) | |
-| [Carrd](carrd.md) | | |
+| [Carrd](carrd.md) | [Gatsby](gatsby.md) | |
 
 ## Any other site
 

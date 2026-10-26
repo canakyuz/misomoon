@@ -25,6 +25,7 @@ on misomoon Cloud or in your own Cloudflare account.
 - [Vue and Nuxt](vue.md): the tag, or the SDK.
 - [SvelteKit](sveltekit.md): the tag in app.html.
 - [Astro](astro.md): the tag in your base layout.
+- [Gatsby](gatsby.md): the tag in gatsby-ssr.js.
 - [Angular](angular.md): the tag in index.html.
 - [Laravel, Django, and Rails](server-frameworks.md): the tag in your base layout.
 - [Hugo, Jekyll, and Eleventy](static-sites.md): the tag in your head partial.
