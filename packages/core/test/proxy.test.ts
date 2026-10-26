@@ -117,9 +117,17 @@ describe('proxy snippets', () => {
 })
 
 describe('deploy links', () => {
-	it('point the one-click deploys at the templates in this repo', () => {
+	// the Deploy to Cloudflare page answers 400 for a category it doesn't list, such as "analytics"
+	it('give the Worker template only the deploy metadata the Deploy to Cloudflare page accepts', async () => {
+		const { readFileSync } = await import('node:fs')
+		const pkg = JSON.parse(readFileSync(new URL('../../../templates/proxy-cloudflare/package.json', import.meta.url), 'utf8'))
+		expect(Object.keys(pkg.cloudflare).sort()).toEqual(['bindings', 'label', 'products'])
+		expect(Object.keys(pkg.cloudflare.bindings)).toEqual(['MISOMOON_URL'])
+	})
+
+	it('point the one-click deploys at the public template repository, which the deploy services can clone', () => {
 		const [cf, vercel] = deployLinks()
-		expect(decodeURIComponent(cf.href)).toBe('https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-cloudflare')
-		expect(decodeURIComponent(vercel.href)).toContain('repository-url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-vercel')
+		expect(decodeURIComponent(cf.href)).toBe('https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-cloudflare')
+		expect(decodeURIComponent(vercel.href)).toContain('repository-url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-vercel')
 	})
 })

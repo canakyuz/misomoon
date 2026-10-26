@@ -27,7 +27,7 @@ need a tool that runs on your own hardware, a Docker-based option fits better.
 
 | | misomoon | Plausible CE | Umami | Matomo | PostHog | Rybbit |
 | --- | --- | --- | --- | --- | --- | --- |
-| License | MIT | AGPL-3.0 | MIT | GPL-3.0 | MIT, except the proprietary `ee/` folder | AGPL-3.0 |
+| License | AGPL-3.0 | AGPL-3.0 | MIT | GPL-3.0 | MIT, except the proprietary `ee/` folder | AGPL-3.0 |
 | What self-hosting needs | A Cloudflare account | Docker, Postgres, ClickHouse, 2 GB RAM | Node.js and Postgres | PHP 8.1+, MySQL or MariaDB, a web server | Docker with ClickHouse, Postgres, Kafka, Redis, MinIO; 4 vCPU and 16 GB RAM | Docker with ClickHouse, Postgres, and Redis; 2 GB RAM |
 | Servers to maintain | None | Yes | Yes | Yes | Yes | Yes |
 | Self-hosted edition limits | None | No funnels, journeys, or revenue goals | No email reports | Funnels and Web Vitals are paid plugins | Paid features are cloud-only. Self-hosting is "officially unsupported". | No email reports or Pages view |
@@ -53,7 +53,7 @@ same size covers fewer pageviews if your sites also send custom events.
 | | misomoon | Google Analytics 4 | Fathom | Simple Analytics | Cloudflare Web Analytics |
 | --- | --- | --- | --- | --- | --- |
 | Where your data lives | Your Cloudflare account | Google | Fathom (EU collection, then US) | The Netherlands | Cloudflare |
-| Open source | Yes (MIT) | No | No (Fathom Lite, an older version, is MIT and gets no new features) | No (only the tracker scripts) | No |
+| Open source | Yes (AGPL-3.0) | No | No (Fathom Lite, an older version, is MIT and gets no new features) | No (only the tracker scripts) | No |
 | Price | misomoon Cloud from $5/month for 100k events on 1 site, or $14/month for 1M events on unlimited sites, after a 7-day trial. Free to self-host | Free | From $15/month for 100k pageviews | Free for 5 sites with a 1-month history; from $20/month | Free |
 | Cookies | None | `_ga` cookies for 2 years. Google's EU policy requires consent where the law requires it. | None (their claim) | None (their claim) | None |
 | Funnels | Yes | Yes | Not found | No; goals on some plans | No |
@@ -80,7 +80,7 @@ Checked on 2026-10-25.
 | Core Web Vitals | Yes | Not found in its docs | Not on its feature list | Speed Insights, a separate product; all vitals at $10 per project a month |
 | Import from Google | GA4 | No, Plausible only ("Next is Google Analytics") | Universal Analytics (GA3) only, plus Plausible and Fathom | Not found |
 | Official MCP server | Yes | Yes | No, an unsupported community project | Vercel MCP can query Web Analytics |
-| Open source | MIT | Not found | AGPL-3.0 core library; on-premise on Enterprise | Only the client package (MIT) |
+| Open source | AGPL-3.0 | Not found | AGPL-3.0 core library; on-premise on Enterprise | Only the client package (MIT) |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | Not found | Not found | SOC 2 Type 2, ISO 27001:2022 |
 | Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 5.3 KB (measured) | 3.5 KB (measured, `pa.js`) | 2 KB (measured, 2,029 bytes) |
 
@@ -90,7 +90,7 @@ Checked on 2026-10-25.
 
 | | misomoon | GoatCounter | Swetrix |
 | --- | --- | --- | --- |
-| License | MIT | A modified EUPL 1.2 | AGPL-3.0 |
+| License | AGPL-3.0 | A modified EUPL 1.2 | AGPL-3.0 |
 | What self-hosting needs | A Cloudflare account | A server for its Go binary, with SQLite or PostgreSQL | Docker, MySQL, ClickHouse, and Redis |
 | Self-hosted edition limits | None | None stated | No revenue, alerts, feature flags, or experiments (cloud only) |
 | Hosted price | $5/month for 100k events on 1 site, or $14/month for 1M events on unlimited sites, after a 7-day trial | Free, supported by donations | From $19/month; the 14-day trial needs a payment method |
@@ -118,7 +118,7 @@ experiments and feature flags, which misomoon doesn't. Checked on 2026-10-25.
 | Funnels | Yes | Yes | Yes |
 | Data retention | Cloud: 2 years on Starter, 3 years on Growth and Scale. Self-hosted: no limit | 2 years by default; set your own on Enterprise | Recordings 30 days, heatmaps 9 months |
 | Official MCP server | Yes | Yes | Yes, 10 requests a day over the last 3 days of data |
-| Open source | MIT | Only the SDKs (Apache 2.0); the platform is hosted only | Only the tracking script |
+| Open source | AGPL-3.0 | Only the SDKs (Apache 2.0); the platform is hosted only | Only the tracking script |
 | SOC 2 or ISO 27001 | No (Cloudflare has both) | SOC 2 Type II, ISO 27001 and 27701 | Not found |
 | Tracker size, gzipped | 987 bytes core, 1.9 KB Light (measured) | 34 KB (measured, `mixpanel-2-latest.min.js`) | 26 KB (measured, `clarity.js` 0.8.73) |
 

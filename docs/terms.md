@@ -1,15 +1,12 @@
 # Terms of service
 
 These terms cover the hosted service at app.misomoon.com. The misomoon software is open
-source under the MIT license, and running it yourself is governed by that license and by
+source under AGPL-3.0, and running it yourself is governed by that license and by
 your agreement with Cloudflare, not by these terms.
-
-**Draft.** Items in square brackets need filling in, and a lawyer should review the terms
-before they are published.
 
 ## 1. Who we are
 
-[Legal name], [registered address], [registration number] ("we"). Contact:
+PT Jackzard Inovasi Digital, a single-founder limited liability company (perseroan perorangan) registered in Indonesia, at Jl. Pulau Bawean No. 20, Banjar Anyar, Kediri, Tabanan, Bali 82121, Indonesia. Business registration number (NIB) 2110260020255; incorporated by decree AHU-A132977.AH.01.30.Tahun 2026 of the Indonesian Minister of Law ("we"). Contact:
 [support@misomoon.com](mailto:support@misomoon.com).
 
 ## 2. Your account
@@ -47,19 +44,18 @@ past its plan's monthly events, misomoon keeps counting up to 125% of them, then
 storing the team's events until the next month or until you move to a bigger plan
 ([what happens past the limit](cloud.md#go-past-your-monthly-events)).
 
-Prices may change with [30] days' notice; a change applies from your next billing
+Prices may change with 30 days' notice; a change applies from your next billing
 period.
 
 ## 6. Availability and changes
 
-We work to keep the service running, but don't promise it is never down. Status:
-[status page]. We may change or remove features; we tell you [30] days before removing
-one you pay for.
+We work to keep the service running, but don't promise it is never down. We may change or remove features; we tell you 30
+days before removing one you pay for.
 
 ## 7. Ending
 
 You can delete your account at any time in **Settings** > **Account**. We may end the
-service for you with [30] days' notice, or at once if you seriously break these terms.
+service for you with 30 days' notice, or at once if you seriously break these terms.
 After the account ends, we delete your data as the
 [data processing agreement](dpa.md#12-deletion-and-return) says.
 
@@ -72,12 +68,13 @@ allow to be limited, such as for fraud or for death or injury caused by negligen
 
 ## 9. Changes to these terms
 
-We date every change here, and email account owners [30] days before a change takes
+We date every change here, and email account owners 30 days before a change takes
 effect. If you don't agree, you can delete your account before then.
 
-- [date]: first version.
+- 2026-10-26: first version.
 
 ## 10. Law
 
-These terms are governed by [governing law], and the courts of [place] decide disputes.
+These terms are governed by the law of the Republic of Indonesia, and the District Court
+of Tabanan (Pengadilan Negeri Tabanan) decides disputes.
 If you are a consumer, you keep the protection of the law where you live.

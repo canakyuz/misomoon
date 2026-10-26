@@ -1,7 +1,7 @@
 # Tests every push to main and every pull request. On main, it then builds the
 # self-contained deploy bundle (pnpm bundle) and publishes it to the `deploy` branch, in
 # the `misomoon/` folder. The Deploy to Cloudflare button points there, because the
-# button can't build a pnpm workspace.
+# button can't build a pnpm workspace. Only the publish job can push.
 name: CI
 
 on:
@@ -11,7 +11,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: ci-${{ github.ref }}
@@ -33,11 +33,25 @@ jobs:
       - run: pnpm test
       - run: pnpm check
 
+  publish:
+    needs: test
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm --filter @misomoon/tracker build
+      - run: pnpm --filter @misomoon/dashboard build
       - name: Build the deploy bundle
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: pnpm bundle
       - name: Publish to the deploy branch
-        if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"

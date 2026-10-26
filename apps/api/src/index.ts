@@ -7,21 +7,23 @@ import { authenticate, authorize, getSharedLink, hashPassword, requireUser, site
 import { moveTargets, retireShards } from './moves'
 import { checkCurrency, checkTimezone, conflict, createSite, getRanges, getShards, getSite, HttpError, invalidate, listSites, purge, shardDb, shardLimit, SITE_ID } from './control'
 import { acceptBeacon, writeEvents } from './ingest'
-import { fillSample } from './sample'
+import { fillSample, topUpSample } from './sample'
 import { deleteSite } from './sites'
 import { googleCallback, googleConnect } from './google'
+import { loginProviders } from './social'
 import { deleteImport, expireImports, googleProperties, importCsv, listImports, startGoogleImport } from './imports'
 import { runImportJobs, startApiImport } from './jobs'
 import { connectSearch, disconnectSearch, searchProperties, searchStatus } from './searchconsole'
 import { expireAttribution, handleWebhook, listSources, removeSource, saveSource } from './revenue'
 import { checkout, polarWebhook, portal, reconcileBilling, teamBilling, withBilling } from './billing'
 import { handleMcp } from './mcp'
+import { clientKey, TooMany } from './limits'
 import { buildReport, emailConfigured, reportPdf, runAlerts, runReports, sendEmail, withPdf } from './reports'
-import { dailyCap } from './usage'
+import { dailyCap, resendCapNotices } from './usage'
 import { checkInstall } from './install'
 import { v2Query } from './v2'
 import { getProxy, isProxyHost, removeProxy, setProxy } from './proxy'
-import { monthEvents, plansEnforced, serverRetention, setPlans, siteRetention, teamPlanOf, teamPlans, teamTermsOf } from './plans'
+import { monthEvents, plansEnforced, resendPlanNotices, serverRetention, setPlans, siteRetention, teamPlanOf, teamPlans, teamTermsOf } from './plans'
 import { aggregateStats, behaviorStats, breakdownStats, cleanSteps, dimensions, exportStats, funnelStats, journeyStats, listGoals, realtimeStats, timeseriesStats, vitalsStats, type StatsInput } from './stats'
 
 type App = { Bindings: Env; Variables: { who: Principal } }
@@ -95,23 +97,26 @@ app.options('/api/event', () => new Response(null, { status: 204, headers: { 'Ac
 
 // ---------------------------------------------------------------- authenticated API
 
-app.use('/api/v1/*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], maxAge: 86400 }))
+app.use('/api/v1/*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], exposeHeaders: ['Retry-After'], maxAge: 86400 }))
 app.use('/api/v1/*', async (c, next) => {
 	c.set('who', await authenticate(c.env, c.req.raw))
 	await next()
 })
-// Stats API rate limit per key (or per IP without one).
-// Signed-in dashboards and shared links aren't limited.
+// Stats API rate limit per key (or per whole IP address without one, so viewers who share
+// an IPv6 /64, like an office, each get their own). Signed-in dashboards and shared links
+// aren't limited.
 async function overLimit(c: Context<App>, who: Principal) {
 	if ((who.kind !== 'key' && who.kind !== 'anonymous') || !c.env.STATS_LIMIT) return false
-	const key = who.keyId ?? `ip:${c.req.header('cf-connecting-ip') ?? 'unknown'}`
+	const key = who.keyId ?? `ip:${clientKey(c.req.header('cf-connecting-ip'), false)}`
 	return !(await c.env.STATS_LIMIT.limit({ key })).success
 }
+const OVER_LIMIT = 'rate limit exceeded, try again in a minute'
+const RETRY = { 'Retry-After': '60' }
 app.use('/api/v1/stats/*', async (c, next) => {
-	if (await overLimit(c, c.get('who'))) return c.json({ error: 'rate limit exceeded, try again in a minute' }, 429)
+	if (await overLimit(c, c.get('who'))) return c.json({ error: OVER_LIMIT }, 429, RETRY)
 	await next()
 })
-app.use('/mcp', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type', 'Mcp-Session-Id', 'Mcp-Protocol-Version'], exposeHeaders: ['Mcp-Session-Id'] }))
+app.use('/mcp', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type', 'Mcp-Session-Id', 'Mcp-Protocol-Version'], exposeHeaders: ['Mcp-Session-Id', 'Retry-After'] }))
 
 app.get('/api/health', (c) => c.json({ ok: true }))
 
@@ -130,7 +135,9 @@ app.get('/api/v1/me', async (c) => {
 		c.env.CONTROL.prepare("SELECT DISTINCT site_id FROM imports WHERE status = 'done'").all<{ site_id: string }>(),
 		c.env.CONTROL.prepare('SELECT site_id FROM search_console').all<{ site_id: string }>(),
 	])
-	const user = who.userId ? await c.env.CONTROL.prepare('SELECT id, email, name FROM users WHERE id = ?').bind(who.userId).first() : null
+	const row = who.userId ? await c.env.CONTROL.prepare("SELECT id, email, name, password_hash != '' AS has_password FROM users WHERE id = ?").bind(who.userId).first<{ id: string; email: string; name: string; has_password: number }>() : null
+	const logins = row ? (await c.env.CONTROL.prepare('SELECT provider FROM user_logins WHERE user_id = ? ORDER BY provider').bind(row.id).all<{ provider: string }>()).results.map((l) => l.provider) : []
+	const user = row ? { ...row, has_password: !!row.has_password, logins } : null
 	const enforced = plansEnforced(c.env)
 	const server = serverRetention(c.env)
 	// with plans on, also each team's trial and its events this UTC month
@@ -168,6 +175,8 @@ app.get('/api/v1/me', async (c) => {
 		/** the sample site the demo dashboard (/demo) shows */
 		sample: c.env.SAMPLE_SITE || null,
 		signups: await signupsOpen(c.env),
+		/** the sign-in buttons this server has a client for: google */
+		providers: loginProviders(c.env),
 		/** where a new site's events can be stored (core REGIONS); empty on a server without regional shards */
 		regions: serverRegions(await getShards(c.env)),
 		/** days of data a site keeps: the server's longest, and what a site that sets none keeps; 0 is no limit */
@@ -492,8 +501,8 @@ app.get('/api/v1/share/:slug', async (c) => {
 	return c.json({ name: link.name, protected: !!link.password_hash })
 })
 app.post('/api/v1/share/:slug', async (c) => {
-	const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key: `share:${ip}` })).success) throw new HttpError(429, 'too many attempts, wait a minute')
+	const key = `share:${clientKey(c.req.header('cf-connecting-ip'))}`
+	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key })).success) throw new TooMany('too many attempts, wait a minute')
 	const body = await c.req.json<{ password?: string }>().catch(() => ({}) as { password?: string })
 	return c.json(await unlockShare(c.env, c.req.param('slug'), body.password))
 })
@@ -550,13 +559,19 @@ app.post('/api/v1/sites/:id/reports/test', async (c) => {
 	const site = await authorize(c.env, c.get('who'), c.req.param('id'), 'edit')
 	const body = await c.req.json<{ email?: string; kind?: string }>()
 	if (!body.email) throw new HttpError(400, 'email is required')
+	// before the PDF: it costs browser time, and nothing would send it
+	if (!emailConfigured(c.env)) throw new HttpError(503, 'set up an email provider to send email (docs/configuration.md)')
 	const now = Date.now()
-	const sent = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM report_tests WHERE site_id = ? AND sent_at > ?').bind(site.id, now - 3_600_000).first<number>('n')
-	if ((sent ?? 0) >= MAX_REPORT_TESTS) throw new HttpError(429, `a site sends at most ${MAX_REPORT_TESTS} test reports an hour; try again later`)
+	const sent = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n, MIN(sent_at) AS oldest FROM report_tests WHERE site_id = ? AND sent_at > ?')
+		.bind(site.id, now - 3_600_000)
+		.first<{ n: number; oldest: number | null }>()
+	// another test goes once the oldest send of the hour is an hour old
+	if ((sent?.n ?? 0) >= MAX_REPORT_TESTS)
+		throw new TooMany(`a site sends at most ${MAX_REPORT_TESTS} test reports an hour; try again later`, Math.max(1, Math.ceil((sent!.oldest! + 3_600_000 - now) / 1000)))
 	// counted before the send: a failed send still printed the PDF
 	await c.env.CONTROL.prepare('INSERT INTO report_tests (site_id, sent_at) VALUES (?, ?)').bind(site.id, now).run()
 	const ok = await sendEmail(c.env, body.email, await withPdf(c.env, await buildReport(c.env, site, body.kind === 'monthly' ? 'monthly' : 'weekly')))
-	if (!ok) throw new HttpError(503, emailConfigured(c.env) ? 'the email provider refused the message' : 'set up an email provider to send email (docs/configuration.md)')
+	if (!ok) throw new HttpError(503, 'the email provider refused the message')
 	return c.json({ ok })
 })
 
@@ -610,7 +625,10 @@ app.post('/api/v1/sites/:id/demo', async (c) => {
 app.get('/api/v1/stats/aggregate', async (c) => c.json(await aggregateStats(c.env, c.get('who'), q(c))))
 app.get('/api/v1/stats/timeseries', async (c) => c.json(await timeseriesStats(c.env, c.get('who'), q(c))))
 app.get('/api/v1/stats/breakdown', async (c) => c.json(await breakdownStats(c.env, c.get('who'), q(c))))
-app.get('/api/v1/stats/realtime', async (c) => c.json(await realtimeStats(c.env, c.get('who'), q(c))))
+app.get('/api/v1/stats/realtime', async (c) => {
+	c.executionCtx.waitUntil(topUpSample(c.env, c.req.query('site')).catch((e) => console.error(JSON.stringify({ msg: 'sample top-up failed', error: String(e) }))))
+	return c.json(await realtimeStats(c.env, c.get('who'), q(c)))
+})
 app.get('/api/v1/stats/vitals', async (c) => c.json(await vitalsStats(c.env, c.get('who'), q(c))))
 app.post('/api/v1/stats/funnel', async (c) => c.json(await funnelStats(c.env, c.get('who'), await c.req.json())))
 app.get('/api/v1/stats/journeys', async (c) => c.json(await journeyStats(c.env, c.get('who'), q(c))))
@@ -622,18 +640,42 @@ app.get('/api/v1/stats/export', async (c) => {
 app.get('/api/v1/meta/dimensions', (c) => c.json(dimensions()))
 
 // Stats API v2.
-app.use('/api/v2/*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], maxAge: 86400 }))
+app.use('/api/v2/*', cors({ origin: '*', allowHeaders: ['Authorization', 'Content-Type'], exposeHeaders: ['Retry-After'], maxAge: 86400 }))
 app.post('/api/v2/query', async (c) => {
 	const who = await authenticate(c.env, c.req.raw)
-	if (await overLimit(c, who)) return c.json({ error: 'rate limit exceeded, try again in a minute' }, 429)
+	if (await overLimit(c, who)) return c.json({ error: OVER_LIMIT }, 429, RETRY)
 	return c.json(await v2Query(c.env, who, await c.req.json()))
 })
+
+/** The id of a single JSON-RPC request, read from at most 64 KB of its body; null for a batch or anything else. */
+async function rpcId(req: Request): Promise<string | number | null> {
+	const reader = req.body?.getReader()
+	if (!reader) return null
+	const decoder = new TextDecoder()
+	let text = ''
+	let size = 0
+	try {
+		for (;;) {
+			const { done, value } = await reader.read()
+			if (done) break
+			size += value.byteLength
+			if (size > 64 * 1024) return null
+			text += decoder.decode(value, { stream: true })
+		}
+		const body = JSON.parse(text + decoder.decode()) as { id?: unknown } | null
+		return body && !Array.isArray(body) && (typeof body.id === 'string' || typeof body.id === 'number') ? body.id : null
+	} catch {
+		return null
+	} finally {
+		reader.cancel().catch(() => {})
+	}
+}
 
 app.all('/mcp', async (c) => {
 	const who = await authenticate(c.env, c.req.raw)
 	// tools run the same queries as the Stats API, under the same limit
-	if (c.req.method === 'POST' && (await overLimit(c, who))) return c.json({ error: 'rate limit exceeded, try again in a minute' }, 429)
-	return handleMcp(c.env, who, c.req.raw)
+	if (c.req.method === 'POST' && (await overLimit(c, who))) return c.json({ jsonrpc: '2.0', id: await rpcId(c.req.raw), error: { code: -32000, message: OVER_LIMIT } }, 429, RETRY)
+	return handleMcp(c.env, who, c.req.raw, () => overLimit(c, who))
 })
 
 // Everything else is the dashboard (a single-page app in ASSETS).
@@ -652,7 +694,7 @@ app.all('*', async (c) => {
 })
 
 app.onError((err, c) => {
-	if (err instanceof HttpError) return c.json(err.code ? { error: err.message, code: err.code } : { error: err.message }, err.status as 400)
+	if (err instanceof HttpError) return c.json(err.code ? { error: err.message, code: err.code } : { error: err.message }, err.status as 400, err instanceof TooMany ? { 'Retry-After': String(err.retryAfter) } : {})
 	if (err instanceof QueryError) return c.json({ error: err.message }, 400)
 	if (err instanceof SyntaxError) return c.json({ error: 'request body is not valid JSON' }, 400)
 	console.error(JSON.stringify({ msg: 'unhandled error', path: c.req.path, error: String(err), stack: (err as Error).stack }))
@@ -680,6 +722,9 @@ async function maintenance(env: Env, cleanup: boolean) {
 	await env.CONTROL.batch([
 		env.CONTROL.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(Date.now()),
 		env.CONTROL.prepare('DELETE FROM password_resets WHERE expires_at < ?').bind(Date.now()),
+		// Google sign-ins left part way: a state lasts 10 minutes, a code a minute
+		env.CONTROL.prepare('DELETE FROM login_states WHERE created_at < ?').bind(Date.now() - 600_000),
+		env.CONTROL.prepare('DELETE FROM login_codes WHERE expires_at < ?').bind(Date.now()),
 		// test sends count for an hour (MAX_REPORT_TESTS)
 		env.CONTROL.prepare('DELETE FROM report_tests WHERE sent_at <= ?').bind(Date.now() - 3_600_000),
 	])
@@ -730,13 +775,30 @@ async function maintenance(env: Env, cleanup: boolean) {
 export default {
 	fetch: app.fetch,
 	async queue(batch: MessageBatch<EventRow>, env: Env) {
+		// A shard group that fails is retried alone; the groups that were written are acked.
+		const failed: EventRow[] = []
+		let error: unknown
 		try {
-			await writeEvents(env, batch.messages.map((m) => m.body))
-			batch.ackAll()
+			await writeEvents(
+				env,
+				batch.messages.map((m) => m.body),
+				(rows, e) => {
+					failed.push(...rows)
+					error ??= e
+				},
+			)
 		} catch (e) {
 			console.error(JSON.stringify({ msg: 'event batch failed', size: batch.messages.length, error: String(e) }))
-			batch.retryAll({ delaySeconds: 10 })
+			return batch.retryAll({ delaySeconds: 10 })
 		}
+		if (!failed.length) return batch.ackAll()
+		// the failed rows are the messages' own bodies; one that matches none (a copy) retries
+		// the whole batch, since acking what wasn't written would lose it
+		const at = new Map(batch.messages.map((m, i) => [m.body, i]))
+		const retry = new Set(failed.map((r) => at.get(r)))
+		console.error(JSON.stringify({ msg: 'event batch failed', size: batch.messages.length, failed: failed.length, error: String(error) }))
+		if (retry.has(undefined) || retry.size === batch.messages.length) return batch.retryAll({ delaySeconds: 10 })
+		batch.messages.forEach((m, i) => (retry.has(i) ? m.retry({ delaySeconds: 10 }) : m.ack()))
 	},
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
 		// every 5 minutes: spike alerts, moving data off retiring shards, API imports, the
@@ -751,6 +813,8 @@ export default {
 		if (other || at.getUTCMinutes() === 15) {
 			ctx.waitUntil(maintenance(env, other || at.getUTCHours() === CLEANUP_HOUR))
 			ctx.waitUntil(runReports(env))
+			ctx.waitUntil(resendCapNotices(env).catch((e) => console.error(JSON.stringify({ msg: 'cap email retry failed', error: String(e) }))))
+			ctx.waitUntil(resendPlanNotices(env).catch((e) => console.error(JSON.stringify({ msg: 'plan email retry failed', error: String(e) }))))
 		}
 	},
 } satisfies ExportedHandler<Env, EventRow>

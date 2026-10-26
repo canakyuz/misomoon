@@ -5,6 +5,9 @@
 	"name": "misomoon-api",
 	"main": "src/index.ts",
 	"workers_dev": false,
+	// The app. The managed proxy adds { "pattern": "*/*", "zone_name": "misomoon.com" } for
+	// customer hostnames once Cloudflare for SaaS is on for misomoon.com: before that,
+	// Cloudflare refuses the wildcard route and the deploy fails (docs/PROXY.md).
 	"routes": [{ "pattern": "app.misomoon.com", "custom_domain": true }],
 	"compatibility_date": "2026-10-22",
 	"compatibility_flags": ["nodejs_compat"],
@@ -21,10 +24,14 @@
 		"run_worker_first": true
 	},
 	"d1_databases": [
-		{ "binding": "CONTROL", "database_name": "misomoon-control", "database_id": "b115d9d2-e677-4fce-aaf6-6137f3f92feb", "migrations_dir": "migrations/control" },
-		// Event shards, managed by `SHARD_COUNT=<n> pnpm run deploy:cloud` (scripts/deploy.ts).
+		{ "binding": "CONTROL", "database_name": "misomoon-control-eu", "database_id": "71d71ed2-41f5-4bab-af86-6f0b1ba6e452", "migrations_dir": "migrations/control" },
+		// The control database is in the EU jurisdiction. Event shards, managed by
+		// `SHARD_COUNT=<n> SHARD_REGIONS=eu:1,us:1,apac:1 pnpm run deploy:cloud` (scripts/deploy.ts).
 		{ "binding": "SHARD_0", "database_name": "misomoon-shard-0", "database_id": "73fef96c-ec3b-4309-aa6c-69054f8f5292", "migrations_dir": "migrations/shard" },
-		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "7e98e8e2-fcb8-4267-9c7a-4216980b43b2", "migrations_dir": "migrations/shard" }
+		{ "binding": "SHARD_1", "database_name": "misomoon-shard-1", "database_id": "7e98e8e2-fcb8-4267-9c7a-4216980b43b2", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_EU_0", "database_name": "misomoon-shard-eu-0", "database_id": "0f11bf2e-a588-4da1-835f-7a7f66cf90e6", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_US_0", "database_name": "misomoon-shard-us-0", "database_id": "58049fe5-28b4-4918-90e3-ede38ef4229f", "migrations_dir": "migrations/shard" },
+		{ "binding": "SHARD_APAC_0", "database_name": "misomoon-shard-apac-0", "database_id": "a52c8c46-4887-4cd2-888e-b896b2acdb36", "migrations_dir": "migrations/shard" }
 	],
 	"queues": {
 		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
@@ -60,7 +67,11 @@
 		"POLAR_SERVER": "production",
 		"POLAR_PRODUCT_STARTER": "04574b1d-47c0-463f-ade3-630c3cddc106",
 		"POLAR_PRODUCT_GROWTH": "0b6fbf35-6e09-40a2-a3ae-af5fd01ea83a",
-		"POLAR_PRODUCT_SCALE": "b3387bc0-3b0a-475c-82e4-614ec7bf4054"
+		"POLAR_PRODUCT_SCALE": "b3387bc0-3b0a-475c-82e4-614ec7bf4054",
+		// Managed proxy: customers CNAME a subdomain to proxy.misomoon.com, the fallback origin of
+		// misomoon.com's Cloudflare for SaaS. CF_API_TOKEN is a secret.
+		"CF_ZONE_ID": "4deadfb553ab6a9be2122b21d0a7927d",
+		"PROXY_CNAME_TARGET": "proxy.misomoon.com"
 	}
 	// Secrets: AWS_SES_ACCESS_KEY_ID and AWS_SES_SECRET_ACCESS_KEY for Amazon SES (wrangler secret put …, or .dev.vars locally).
 	// Managed proxy (optional, docs/PROXY.md): secret CF_API_TOKEN, vars CF_ZONE_ID and

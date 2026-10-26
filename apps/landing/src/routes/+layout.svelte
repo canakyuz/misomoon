@@ -53,7 +53,7 @@
 		</nav>
 		<div class="right">
 			<span class="theme-top"><ThemeToggle /></span>
-			<a class="signin" href="{data.appUrl}/?view=settings">Sign in</a>
+			<a class="signin" href="{data.appUrl}/">Sign in</a>
 			<a class="cta primary small" href={signupUrl(data.appUrl)}>{CTA} <span class="arrow">→</span></a>
 			<details class="menu" bind:open={menu}>
 				<summary aria-label="Menu"><span></span><span></span></summary>
@@ -62,8 +62,8 @@
 						<a {href} onclick={() => (menu = false)}>{label}</a>
 					{/each}
 					<a href={docLink(data.docsUrl)}>Docs</a>
-					<a href="/demo">Live demo</a>
-					<a href="{data.appUrl}/?view=settings">Sign in</a>
+					<a href="/demo">Live preview</a>
+					<a href="{data.appUrl}/">Sign in</a>
 					<span class="theme-sheet"><ThemeToggle labelled /></span>
 				</div>
 			</details>
@@ -113,7 +113,7 @@
 		</div>
 	</div>
 	<div class="wrap fine mono">
-		<span>© {new Date().getFullYear()} misomoon · MIT license</span>
+		<span>© {new Date().getFullYear()} misomoon · AGPL-3.0 license</span>
 		<span>printed under a quiet moon</span>
 	</div>
 	<!-- the wordmark sinks below the footer's edge: only its top half shows -->

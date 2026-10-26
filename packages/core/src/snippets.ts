@@ -236,8 +236,9 @@ export const POST: RequestHandler = async ({ params, request, getClientAddress, 
 	]
 }
 
-/** Ready-to-deploy proxy templates in this repo (templates/proxy-*), as one-click links. */
-export const TEMPLATES_URL = 'https://github.com/jackzard/misomoon/tree/main/templates'
+/** Ready-to-deploy proxy templates, as one-click links. Their source is templates/proxy-* in
+ * this repo; the deploy services clone them from the public mirror (docs/PROXY.md). */
+export const TEMPLATES_URL = 'https://github.com/jackzard/misomoon-proxy/tree/main'
 
 export interface DeployLink {
 	id: 'cloudflare' | 'vercel'

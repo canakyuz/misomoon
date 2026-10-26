@@ -107,6 +107,8 @@ export interface FakeEnv {
 	AWS_SES_REGION?: string
 	AWS_SES_ACCESS_KEY_ID?: string
 	AWS_SES_SECRET_ACCESS_KEY?: string
+	GOOGLE_CLIENT_ID?: string
+	GOOGLE_CLIENT_SECRET?: string
 }
 
 /** A signed-in browser session of the owner of team `t1`, which every fake env has. */

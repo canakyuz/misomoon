@@ -1,6 +1,6 @@
 # Privacy policy
 
-This policy covers the personal data that [legal name] ("we") keeps as the controller:
+This policy covers the personal data that PT Jackzard Inovasi Digital ("we") keeps as the controller:
 your account on app.misomoon.com, and visits to misomoon.com and its docs. It doesn't
 cover the visitors of the sites our customers measure. For that data, each customer is
 the controller and we are its processor, under the
@@ -8,12 +8,9 @@ the controller and we are its processor, under the
 
 A self-hosted misomoon sends nothing to us. This policy doesn't apply to it.
 
-**Draft.** Items in square brackets need filling in, and a lawyer should review the
-policy before it is published.
-
 ## Who we are
 
-[Legal name], [registered address], [registration number]. For anything about your data,
+PT Jackzard Inovasi Digital, a single-founder limited liability company (perseroan perorangan) registered in Indonesia, at Jl. Pulau Bawean No. 20, Banjar Anyar, Kediri, Tabanan, Bali 82121, Indonesia. Business registration number (NIB) 2110260020255; incorporated by decree AHU-A132977.AH.01.30.Tahun 2026 of the Indonesian Minister of Law. For anything about your data,
 email [privacy@misomoon.com](mailto:privacy@misomoon.com).
 
 ## What we keep, and why
@@ -28,7 +25,7 @@ email [privacy@misomoon.com](mailto:privacy@misomoon.com).
 | Email addresses that receive reports and alerts | To send them | Contract | Until the report is removed |
 | Tokens for Google Search Console, and payment provider webhook secrets, when you connect them | To show and import your own data | Contract | Until you disconnect, or delete the site. A Google Analytics token for an import is deleted when the import ends, and within a day if it never starts |
 | Your IP address, when you sign in, sign up, or reset a password | To slow down password guessing | Legitimate interest in security | Not stored: it is a key for a one-minute rate limit |
-| Emails you send us | To answer you | Legitimate interest | [retention] |
+| Emails you send us | To answer you | Legitimate interest | Two years after the last message |
 | Your team's plan, its status and paid period, Polar's customer and subscription ids, and when your free trial started | To run the plan you pay for, and to give each person one trial | Contract | Until you delete the team; the trial date until you delete your account |
 
 Polar sells the plans as merchant of record and collects your payment and tax details
@@ -55,7 +52,7 @@ nothing to a font service.
 | Who | What for | Where |
 | --- | --- | --- |
 | Cloudflare, Inc. | Hosting, databases, and email | Your account data in the EU; each site's stats in the region you pick for it; requests at the data center nearest you |
-| [Amazon Web Services EMEA SARL] | [Email, if we send it through Amazon SES] | [EU region] |
+| Amazon Web Services (Amazon SES) | Sends sign-in, invitation, password-reset, report, and alert emails | Asia Pacific (Sydney) |
 | Google | Only when you connect Search Console or Google Analytics, to fetch your own data | Google's servers |
 | Polar Software, Inc., merchant of record | Sells and bills misomoon Cloud plans. At checkout it gets your email address and your team's id | United States |
 
@@ -72,7 +69,7 @@ legitimate interest, and complain to your data protection authority.
 - Delete your account in **Settings** > **Account** > **Delete account…**. It deletes
   your account at once, with the teams only you are in and their data
   ([Delete your account](teams.md#delete-your-account)). Backups that could still hold
-  it expire within [30] days.
+  it expire within 30 days.
 - For anything else, email [privacy@misomoon.com](mailto:privacy@misomoon.com). We answer within one month.
 
 ## Security
@@ -81,7 +78,7 @@ legitimate interest, and complain to your data protection authority.
 
 ## Changes
 
-We date every change here, and email account owners [30] days before a change that
+We date every change here, and email account owners 30 days before a change that
 affects their rights.
 
-- [date]: first version.
+- 2026-10-26: first version.

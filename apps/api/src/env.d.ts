@@ -6,7 +6,7 @@ interface Env {
 	CF_ZONE_ID?: string
 	/** Managed proxy: the fallback origin customers CNAME to, e.g. proxy.misomoon.com. */
 	PROXY_CNAME_TARGET?: string
-	/** Google import: an OAuth web client with the Analytics Data and Admin APIs. */
+	/** Google import, Search Console and sign-in with Google: an OAuth web client. */
 	GOOGLE_CLIENT_ID?: string
 	GOOGLE_CLIENT_SECRET?: string
 	/** Email (invitations, password resets, reports, alerts) goes through Cloudflare Email Service when this send_email binding is set. */

@@ -27,12 +27,13 @@
 	import { regionName } from '../lib/places'
 	import Topbar from '../components/Topbar.svelte'
 	import { deployLinks, normalizePrefix, proxiedScriptTag, proxySnippets, type ProxySnippet } from '@misomoon/core/snippets'
-	import { authHeaders, get, getHtml, send, setToken, type ApiKey, type Goal, type ImportRow, type ReportSub, type Segment, type SharedLink, type TeamMembers, ApiError } from '../lib/api'
+	import { authHeaders, get, getHtml, loginReturn, send, setToken, type ApiKey, type Provider, type Goal, type ImportRow, type ReportSub, type Segment, type SharedLink, type TeamMembers, ApiError } from '../lib/api'
 	import { can, type TeamRole } from '@misomoon/core/roles'
 	import { DEFAULT_SEARCH_PARAMS, FEATURES, LIGHT_FEATURES, searchParams, siteFeatures, type Feature } from '@misomoon/core/features'
 	import { OPT_OUT_SNIPPET, privacyPolicy, retentionDays } from '@misomoon/core/privacy'
 	import { getDash, Resource } from '../lib/dash.svelte'
 	import { googleError } from '../lib/google'
+	import { loginMessage, onlyLogin, PROVIDER_NAME } from '../lib/account'
 	import { IMPORTER_INFO, importerInfo } from '@misomoon/core/importers'
 
 	const dash = getDash()
@@ -46,7 +47,7 @@
 	/** the key whose Rotate button was pressed once, waiting for the second press */
 	let confirmRotate = $state<string | null>(null)
 	// a Google sign-in that failed comes back here with google_error=; say why once, then drop it from the URL
-	const signInError = googleError(location.search)
+	const signInError = googleError(location.search) ?? (loginReturn.error && loginReturn.settings ? loginMessage(loginReturn.error) : null)
 	let error = $state<string | null>(signInError)
 	if (signInError) {
 		const u = new URL(location.href)
@@ -265,9 +266,11 @@
 	const siteKeys = $derived((keys.data ?? []).filter((k) => k.site_id === dash.current?.id))
 	let account = $state({ name: dash.me?.user?.name ?? '', current: '', password: '' })
 	let saved = $state(false)
+	// an account made through Google sets its first password without a current one
+	const hasPassword = $derived(dash.me?.user?.has_password !== false)
 	const saveAccount = () =>
 		run('saveAccount', async () => {
-			await send('PATCH', '/api/v1/me', { name: account.name, ...(account.password ? { password: account.password, current_password: account.current } : {}) })
+			await send('PATCH', '/api/v1/me', { name: account.name, ...(account.password ? { password: account.password, ...(hasPassword ? { current_password: account.current } : {}) } : {}) })
 			account = { ...account, current: '', password: '' }
 			await dash.load()
 			saved = true
@@ -278,10 +281,16 @@
 			await send('DELETE', `/api/v1/keys/${id}`)
 			if (newKey?.id === id) newKey = null
 		})
+	/** Connects Google: off to the provider, which sends the browser back here. */
+	const connectLogin = (p: Provider) =>
+		run('connectLogin', async () => {
+			location.href = (await send<{ url: string }>('POST', `/api/v1/auth/oauth/${p}`, {})).url
+		})
+	const disconnectLogin = (p: Provider) => run('disconnectLogin', async () => (await send('DELETE', `/api/v1/me/logins/${p}`), await dash.load()))
 	let closing = $state({ open: false, password: '' })
 	const deleteAccount = () =>
 		run('deleteAccount', async () => {
-			await send('DELETE', '/api/v1/me', { password: closing.password })
+			await send('DELETE', '/api/v1/me', hasPassword ? { password: closing.password } : { email: closing.password })
 			setToken(null)
 			location.href = '/'
 		})
@@ -1186,6 +1195,8 @@
 					<SiteFields bind:timezone={details.timezone} bind:currency={details.currency} />
 					{#if dash.current.region}
 						<p class="region">Data region: {regionName[dash.current.region]}. A site keeps the region it was added with.</p>
+					{:else if dash.me?.regions?.length}
+						<p class="region">Data region: none. This site was added before the server had regions, so its stats may be stored on any of its databases.</p>
 					{/if}
 					<div class="details-save">
 						<button class="btn primary" disabled={!detailsChanged || busy === 'details'}>{busy === 'details' ? 'Saving…' : 'Save'}</button>
@@ -1244,14 +1255,30 @@
 					<input class="input grow" placeholder="Name" bind:value={account.name} aria-label="Name" />
 				</div>
 				<div class="inline">
-					<input class="input grow" type="password" placeholder="Current password" autocomplete="current-password" bind:value={account.current} />
-					<input class="input grow" type="password" placeholder="New password" autocomplete="new-password" bind:value={account.password} />
+					{#if hasPassword}<input class="input grow" type="password" placeholder="Current password" autocomplete="current-password" bind:value={account.current} />{/if}
+					<input class="input grow" type="password" placeholder={hasPassword ? 'New password' : 'Set a password'} autocomplete="new-password" bind:value={account.password} />
 				</div>
 				<div class="inline">
-					<button class="btn primary" onclick={saveAccount} disabled={!account.name.trim() || (!!account.password && !account.current)}>{saved ? 'Saved' : 'Save'}</button>
+					<button class="btn primary" onclick={saveAccount} disabled={!account.name.trim() || (hasPassword && !!account.password && !account.current)}>{saved ? 'Saved' : 'Save'}</button>
 					<button class="btn ghost" onclick={signOut}>Sign out</button>
 				</div>
-				{#if !account.name.trim()}<p class="muted small">Enter your name to save.</p>{:else if account.password && !account.current}<p class="muted small">Enter your current password to set a new one.</p>{/if}
+				{#if !account.name.trim()}<p class="muted small">Enter your name to save.</p>{:else if hasPassword && account.password && !account.current}<p class="muted small">Enter your current password to set a new one.</p>{:else if !hasPassword}<p class="muted small">You sign in with {(dash.me.user.logins ?? []).map((p) => PROVIDER_NAME[p]).join(' or ')}. A password lets you sign in with your email too.</p>{/if}
+				{#if dash.me.providers?.length}
+					<h4 class="gap">Sign in with</h4>
+					{#each dash.me.providers as p (p)}
+						{@const on = (dash.me.user.logins ?? []).includes(p)}
+						<div class="inline">
+							<span class="grow login"><BrandIcon brand={p} size={15} /> {PROVIDER_NAME[p]}{#if on}<span class="muted"> · connected{loginReturn.linked === p ? ' just now' : ''}</span>{/if}</span>
+							{#if on && onlyLogin(dash.me.user, p)}
+								<span class="muted small">Set a password to disconnect</span>
+							{:else if on}
+								<button class="btn ghost" onclick={() => disconnectLogin(p)} disabled={busy === 'disconnectLogin'}>Disconnect</button>
+							{:else}
+								<button class="btn" onclick={() => connectLogin(p)} disabled={busy === 'connectLogin'}>Connect</button>
+							{/if}
+						</div>
+					{/each}
+				{/if}
 				<h4 class="gap">Delete your account</h4>
 				{#if closing.open}
 					<p class="muted small">
@@ -1259,12 +1286,16 @@
 						to keep first. If you are the only owner of a team with other members, make one of them an owner first.
 					</p>
 					<div class="inline">
-						<input class="input grow" type="password" placeholder="Your password" autocomplete="current-password" bind:value={closing.password} aria-label="Your password" />
+						{#if hasPassword}
+							<input class="input grow" type="password" placeholder="Your password" autocomplete="current-password" bind:value={closing.password} aria-label="Your password" />
+						{:else}
+							<input class="input grow" placeholder={dash.me.user.email} bind:value={closing.password} aria-label="Type your email to confirm" />
+						{/if}
 						<button class="btn bad" onclick={deleteAccount} disabled={!closing.password || busy === 'deleteAccount'}>{busy === 'deleteAccount' ? 'Deleting…' : 'Delete account'}</button>
 						<button class="btn ghost" onclick={() => (closing = { open: false, password: '' })}>Cancel</button>
 					</div>
 				{:else}
-					<div class="inline"><button class="btn ghost" onclick={() => (closing = { open: true, password: '' })}>Delete account…</button></div>
+					<div class="inline"><button class="btn ghost bad" onclick={() => (closing = { open: true, password: '' })}>Delete account…</button></div>
 				{/if}
 				{#if keys.data?.length}
 					<h4 class="gap">API keys</h4>
@@ -1637,6 +1668,12 @@
 		font-size: 13px;
 		font-weight: 600;
 	}
+	.login {
+		display: inline-flex;
+		align-items: center;
+		gap: 8px;
+		font-size: 13.5px;
+	}
 	h4.gap {
 		margin-top: 10px;
 	}
@@ -1823,6 +1860,15 @@
 	.btn.bad {
 		background: var(--miso);
 		color: var(--on-vermilion);
+	}
+	/* opens a delete: red text, so it reads as one before the filled button confirms it */
+	.btn.ghost.bad {
+		background: transparent;
+		color: var(--miso);
+	}
+	.btn.ghost.bad:hover {
+		background: var(--surface-hover);
+		color: var(--miso);
 	}
 	.goals li strong {
 		font-weight: 500;

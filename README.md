@@ -20,7 +20,7 @@
 
 <p align="center">
   <a href="https://github.com/jackzard/misomoon/actions/workflows/ci.yml"><img src="https://github.com/jackzard/misomoon/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-E8461A" alt="MIT license"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-AGPL--3.0-E8461A" alt="AGPL-3.0 license"></a>
 </p>
 
 <p align="center">
@@ -107,7 +107,7 @@ deploy creates.
 
 ## What it costs
 
-misomoon is free and MIT-licensed. You pay Cloudflare for what the Worker uses, and you
+misomoon is free and open source under AGPL-3.0. You pay Cloudflare for what the Worker uses, and you
 pay the misomoon project nothing.
 
 The Workers Free plan handles about 3,000 events a day, which fits a personal site or a
@@ -137,7 +137,7 @@ than two shards, or deploy from your own CI.
 
 | | misomoon | Google Analytics 4 | Plausible CE | Umami |
 | --- | --- | --- | --- | --- |
-| Open source | MIT | No | AGPL-3.0 | MIT |
+| Open source | AGPL-3.0 | No | AGPL-3.0 | MIT |
 | What you run | A Worker in your Cloudflare account | Nothing (Google runs it) | Docker, Postgres, and ClickHouse | Node.js and Postgres |
 | Who holds the data | You | Google | You | You |
 | Cookies | None | `_ga`, for 2 years | None | None |
@@ -257,4 +257,13 @@ report a security issue, follow [SECURITY.md](SECURITY.md).
 
 ## License
 
-[MIT](LICENSE).
+misomoon is licensed under [AGPL-3.0](LICENSE). You can run, change and share it. If you
+run a changed copy as a service for other people, AGPL-3.0 asks you to offer them the
+source of your changes.
+
+The parts that go into your own site or app stay under the MIT license, so you can add
+them without AGPL-3.0 applying to your code: the tracker script
+([packages/tracker](packages/tracker/LICENSE)), the SDK
+([packages/sdk](packages/sdk/LICENSE)), the WordPress plugin
+([plugins/wordpress/misomoon](plugins/wordpress/misomoon/LICENSE)) and the proxy templates
+([templates](templates)).

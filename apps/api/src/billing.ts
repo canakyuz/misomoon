@@ -66,6 +66,27 @@ function requirePolar(env: Env): Polar {
 /** The plan a Polar product is, or null for a product that is none of the plans. */
 const planOfProduct = (polar: Polar, productId: string): Plan | null => PLANS.find((p) => polar.products[p.id] === productId) ?? null
 
+/**
+ * The plan `sub` pays for: its product's. A recorded subscription still on the product it
+ * was recorded with keeps its recorded plan after that product leaves the POLAR_PRODUCT_*
+ * settings, and so does one that ended, so its end still ends that plan. A running one
+ * moved to a product that is no plan, or a new one on such a product, is null: it gets no
+ * plan, and its team keeps what it had until support settles it.
+ */
+async function planOf(env: Env, polar: Polar, sub: Subscription): Promise<Plan | null> {
+	const plan = planOfProduct(polar, sub.product_id)
+	if (plan) return plan
+	const known = await env.CONTROL.prepare('SELECT plan, product_id FROM polar_subscriptions WHERE id = ?').bind(sub.id).first<{ plan: string; product_id: string | null }>()
+	if (!known) return null
+	const log = { subscription: sub.id, product: sub.product_id, plan: known.plan }
+	if (known.product_id === sub.product_id || !standing(sub).live) {
+		console.error(JSON.stringify({ msg: 'polar subscription on a product that is no plan', ...log }))
+		return planById(known.plan)
+	}
+	console.error(JSON.stringify({ msg: 'polar subscription moved to a product that is no plan', ...log }))
+	return null
+}
+
 /** Who may pay for a team: a signed-in owner or billing member (the `billing` permission). */
 async function billingUser(env: Env, who: Principal, teamId: string): Promise<string> {
 	const userId = requireUser(who)
@@ -235,12 +256,12 @@ async function record(env: Env, teamId: string, sub: Subscription, plan: Plan, w
 	const stmts = [
 		db
 			.prepare(
-				`INSERT INTO polar_subscriptions (id, team_id, customer_id, plan, status, live, plan_status, period_end, started_at, modified_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+				`INSERT INTO polar_subscriptions (id, team_id, customer_id, plan, status, live, plan_status, period_end, started_at, modified_at, product_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
 				 ON CONFLICT (id) DO UPDATE SET customer_id = excluded.customer_id, plan = excluded.plan, status = excluded.status, live = excluded.live,
-				   plan_status = excluded.plan_status, period_end = excluded.period_end, modified_at = excluded.modified_at
+				   plan_status = excluded.plan_status, period_end = excluded.period_end, modified_at = excluded.modified_at, product_id = excluded.product_id
 				 WHERE excluded.modified_at >= polar_subscriptions.modified_at`,
 			)
-			.bind(sub.id, teamId, sub.customer_id, plan.id, sub.status, s.live ? 1 : 0, s.status, s.periodEnd, ms(sub.started_at) ?? ms(sub.created_at) ?? now, modified),
+			.bind(sub.id, teamId, sub.customer_id, plan.id, sub.status, s.live ? 1 : 0, s.status, s.periodEnd, ms(sub.started_at) ?? ms(sub.created_at) ?? now, modified, sub.product_id),
 		// only when the state above is the stored one: a late webhook leaves the team alone
 		db.prepare(follow(' AND EXISTS (SELECT 1 FROM polar_subscriptions WHERE id = ?3 AND modified_at = ?4)')).bind(teamId, sub.customer_id, sub.id, modified),
 		// the team's last checkout made this subscription, so it no longer holds a new checkout back
@@ -284,7 +305,7 @@ async function paying(env: Env, polar: Polar, teamId: string, team: { polar_subs
 	let gone: string | null = null
 	if (team.polar_subscription_id) {
 		const sub = readSubscription(await find(polar, `/v1/subscriptions/${encodeURIComponent(team.polar_subscription_id)}`))
-		const plan = sub && planOfProduct(polar, sub.product_id)
+		const plan = sub && (await planOf(env, polar, sub))
 		if (!sub) gone = team.polar_subscription_id
 		else if (plan) {
 			// it may have ended without a webhook reaching us
@@ -298,7 +319,7 @@ async function paying(env: Env, polar: Polar, teamId: string, team: { polar_subs
 	// newest first, Polar's default order
 	for (const item of Array.isArray(list.items) ? list.items : []) {
 		const sub = readSubscription(item)
-		const plan = sub && sub.id !== gone && standing(sub).live && planOfProduct(polar, sub.product_id)
+		const plan = sub && sub.id !== gone && standing(sub).live && (await planOf(env, polar, sub))
 		if (!sub || !plan) continue
 		await record(env, teamId, sub, plan)
 		return { sub, gone }
@@ -337,6 +358,39 @@ async function settingsUrl(env: Env, origin: string, teamId: string): Promise<st
 	return `${origin}/?${new URLSearchParams({ ...(site ? { site: site.id } : {}), view: 'settings', tab: 'team' })}`
 }
 
+/**
+ * Cancels at period end again a subscription checkout() resumed for a switch Polar then
+ * refused. If Polar refuses that too, the team keeps the resumed subscription, and the
+ * answer says so instead of saying nothing changed. A reply it can't read leaves the
+ * record to the webhook, since the cancel did go through.
+ */
+async function cancelAgain(env: Env, polar: Polar, teamId: string, path: string, resumed: Subscription, declined: boolean) {
+	let answer: unknown
+	try {
+		answer = await call(polar, 'PATCH', path, { cancel_at_period_end: true })
+	} catch (e) {
+		console.error(JSON.stringify({ msg: 'polar subscription left resumed', team: teamId, subscription: resumed.id, error: String(e) }))
+		try {
+			const plan = await planOf(env, polar, resumed)
+			if (plan) await record(env, teamId, resumed, plan)
+		} catch (err) {
+			console.error(JSON.stringify({ msg: 'polar subscription not recorded', team: teamId, subscription: resumed.id, error: String(err) }))
+		}
+		const renews = 'The subscription was resumed for it and now renews on its current plan; cancel it in Manage billing if you still want it to end.'
+		if (declined) throw new HttpError(402, `Polar could not charge the card for this change. ${renews} Update the card there, then try again.`, 'payment_failed')
+		throw new HttpError(409, `Polar refused the change. ${renews}`)
+	}
+	const sub = readSubscription(answer)
+	if (!sub) return
+	try {
+		const plan = await planOf(env, polar, sub)
+		if (plan) await record(env, teamId, sub, plan)
+	} catch (err) {
+		// Polar has it canceled again; the webhook brings the record up to date
+		console.error(JSON.stringify({ msg: 'polar subscription not recorded', team: teamId, subscription: sub.id, error: String(err) }))
+	}
+}
+
 // ---------------------------------------------------------------- routes
 
 /**
@@ -360,12 +414,20 @@ export async function checkout(env: Env, who: Principal, teamId: string, body: u
 		const product = polar.products[plan.id]
 		try {
 			let sub: Subscription | null = live
-			if (sub.cancel_at_period_end) sub = readSubscription(await call(polar, 'PATCH', path, { cancel_at_period_end: false }))
-			// no proration_behavior: the organization's setting applies, as in the customer portal
-			if (sub && sub.product_id !== product) sub = readSubscription(await call(polar, 'PATCH', path, { product_id: product }))
-			else if (sub?.pending_update) sub = readSubscription(await call(polar, 'PATCH', path, { pending_update: null }))
+			const resumed = live.cancel_at_period_end
+			if (resumed) sub = readSubscription(await call(polar, 'PATCH', path, { cancel_at_period_end: false }))
+			try {
+				// no proration_behavior: the organization's setting applies, as in the customer portal
+				if (sub && sub.product_id !== product) sub = readSubscription(await call(polar, 'PATCH', path, { product_id: product }))
+				else if (sub?.pending_update) sub = readSubscription(await call(polar, 'PATCH', path, { pending_update: null }))
+			} catch (e) {
+				// resumed only for this switch: cancel it again when Polar refused the switch, so a
+				// refusal changes nothing; a timeout or 5xx may have switched it, so it is left alone
+				if (resumed && sub && e instanceof PolarError && e.status >= 400 && e.status < 500) await cancelAgain(env, polar, teamId, path, sub, e.status === 402)
+				throw e
+			}
 			if (!sub) throw new HttpError(502, 'Polar answered without the subscription')
-			const current = planOfProduct(polar, sub.product_id)
+			const current = await planOf(env, polar, sub)
 			if (current) await record(env, teamId, sub, current)
 			return stateOf(env, polar, teamId, sub)
 		} catch (e) {
@@ -403,18 +465,22 @@ export async function checkout(env: Env, who: Principal, teamId: string, body: u
  * Daily: the teams whose paid period ended more than a day ago, read again from Polar. A
  * renewal or an end whose webhook never came then reaches the team, so a plan can't
  * outlive its subscription. A subscription Polar answers 404 for is logged and left for
- * support: a token for the wrong organization answers 404 too.
+ * support: a token for the wrong organization answers 404 too. At most 50 a day, those
+ * asked about longest ago first, so teams left for support don't hold back the rest.
  */
 export async function reconcileBilling(env: Env, now = Date.now()) {
 	const polar = polarConfig(env)
 	if (!polar) return
-	const { results } = await env.CONTROL.prepare('SELECT id, polar_subscription_id FROM teams WHERE polar_subscription_id IS NOT NULL AND plan_period_end < ? ORDER BY plan_period_end LIMIT 50')
+	const { results } = await env.CONTROL.prepare(
+		'SELECT id, polar_subscription_id FROM teams WHERE polar_subscription_id IS NOT NULL AND plan_period_end < ? ORDER BY polar_checked_at, plan_period_end LIMIT 50',
+	)
 		.bind(now - 86_400_000)
 		.all<{ id: string; polar_subscription_id: string }>()
 	for (const team of results) {
 		try {
+			await env.CONTROL.prepare('UPDATE teams SET polar_checked_at = ? WHERE id = ?').bind(now, team.id).run()
 			const sub = readSubscription(await find(polar, `/v1/subscriptions/${encodeURIComponent(team.polar_subscription_id)}`))
-			const plan = sub && planOfProduct(polar, sub.product_id)
+			const plan = sub && (await planOf(env, polar, sub))
 			if (!sub || !plan) {
 				console.error(JSON.stringify({ msg: 'polar subscription missing', team: team.id, subscription: team.polar_subscription_id, product: sub?.product_id ?? null }))
 				continue
@@ -472,7 +538,7 @@ export async function polarWebhook(env: Env, req: Request): Promise<Response> {
 	}
 	const sub = readSubscription(event.data)
 	if (!sub) return ignore('polar subscription unreadable')
-	const plan = planOfProduct(polar, sub.product_id)
+	const plan = await planOf(env, polar, sub)
 	if (!plan) return ignore('unknown Polar product', { subscription: sub.id, product: sub.product_id })
 	if (await env.CONTROL.prepare('SELECT 1 FROM polar_webhooks WHERE id = ?').bind(webhookId).first()) return answer({ ok: true, duplicate: true })
 	// the team a subscription first came with stays its team

@@ -1,6 +1,6 @@
 # misomoon proxy for Cloudflare
 
-[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-cloudflare)
+[![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-cloudflare)
 
 Serves misomoon's tracker and forwards its events from your own domain. Keeps the
 visitor's IP and full location.
@@ -15,4 +15,4 @@ visitor's IP and full location.
 ```
 
 Self-hosting misomoon? Set `MISOMOON_URL` to your instance. More in
-[docs/PROXY.md](../../docs/PROXY.md).
+[the custom domain guide](https://docs.misomoon.com/proxy).

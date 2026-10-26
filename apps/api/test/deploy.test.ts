@@ -68,24 +68,31 @@ describe('deploy: the two configs', () => {
 
 	it("leaves misomoon Cloud's plans, address and billing out of wrangler.jsonc, and sets what the bundle sets", () => {
 		const vars = template.vars as Record<string, string>
-		expect(Object.keys(vars).filter((k) => k === 'PLANS' || k === 'PUBLIC_URL' || k.startsWith('POLAR_'))).toEqual([])
+		expect(Object.keys(vars).filter((k) => ['PLANS', 'PUBLIC_URL', 'CF_ZONE_ID', 'PROXY_CNAME_TARGET'].includes(k) || k.startsWith('POLAR_'))).toEqual([])
 		expect(vars).toEqual(selfHostedVars(cloud.vars))
 		expect(vars).toMatchObject({ SIGNUPS: 'invite', DEMO_SITE: '', SAMPLE_SITE: '', RETENTION_DAYS: '0', RETENTION_DEFAULT_DAYS: '' })
 	})
 
 	it('keeps misomoon Cloud on app.misomoon.com in wrangler.cloud.jsonc, with plans on and its own databases', () => {
 		expect(cloud.workers_dev).toBe(false)
+		// the app first; then every customer hostname of the managed proxy (docs/PROXY.md)
 		expect(cloud.routes).toEqual([{ pattern: 'app.misomoon.com', custom_domain: true }])
+		expect(cloud.vars).toMatchObject({ CF_ZONE_ID: '4deadfb553ab6a9be2122b21d0a7927d', PROXY_CNAME_TARGET: 'proxy.misomoon.com' })
 		expect(cloud.vars).toMatchObject({ PLANS: 'on', PUBLIC_URL: 'https://app.misomoon.com', SIGNUPS: 'open', DEMO_SITE: 'demo', SAMPLE_SITE: 'acme' })
 		expect(cloud.d1_databases.filter((d: { database_id: string }) => PLACEHOLDER.test(d.database_id))).toEqual([])
 	})
 
 	it('runs the same Worker from both: the same bindings, queues, limits, assets and cron', () => {
-		const same = (c: any) => ({
-			...Object.fromEntries(['main', 'compatibility_date', 'compatibility_flags', 'observability', 'rules', 'assets', 'queues', 'ratelimits', 'browser', 'triggers'].map((k) => [k, c[k]])),
-			d1: c.d1_databases.map(({ database_id: _id, ...d }: { database_id: string }) => d),
-		})
+		const same = (c: any) => Object.fromEntries(['main', 'compatibility_date', 'compatibility_flags', 'observability', 'rules', 'assets', 'queues', 'ratelimits', 'browser', 'triggers'].map((k) => [k, c[k]]))
 		expect(same(template)).toEqual(same(cloud))
+		// Cloud names its own databases and adds regional shards; every binding the template has, it has too
+		const d1 = (c: any) => c.d1_databases.map(({ binding, migrations_dir }: { binding: string; migrations_dir: string }) => ({ binding, migrations_dir }))
+		expect(d1(cloud)).toEqual(expect.arrayContaining(d1(template)))
+		expect(d1(cloud).filter((d: { binding: string }) => !d1(template).some((t: { binding: string }) => t.binding === d.binding))).toEqual([
+			{ binding: 'SHARD_EU_0', migrations_dir: 'migrations/shard' },
+			{ binding: 'SHARD_US_0', migrations_dir: 'migrations/shard' },
+			{ binding: 'SHARD_APAC_0', migrations_dir: 'migrations/shard' },
+		])
 		expect(Object.keys(template).filter((k) => !['routes', 'workers_dev', 'vars', 'd1_databases', ...Object.keys(same(cloud))].includes(k)).sort()).toEqual(['$schema', 'name'])
 	})
 })
@@ -97,7 +104,7 @@ describe('deploy: the self-hosted bundle', () => {
 
 	it('builds deploy/ from wrangler.jsonc, so no misomoon Cloud database id, route or address reaches it', () => {
 		const text = JSON.stringify(bundle)
-		const cloudOnly = [...cloudConfig.d1_databases.map((d: { database_id: string }) => d.database_id), ...cloudConfig.routes.map((r: { pattern: string }) => r.pattern), cloud.PUBLIC_URL]
+		const cloudOnly = [...cloudConfig.d1_databases.map((d: { database_id: string }) => d.database_id), ...cloudConfig.routes.map((r: { pattern: string; zone_name?: string }) => r.zone_name ?? r.pattern), cloud.PUBLIC_URL]
 		expect(cloudOnly.filter((v: string) => text.includes(v))).toEqual([])
 		expect(text).not.toContain('misomoon.com')
 		expect(bundle.d1_databases.map((d: { binding: string; database_id: string }) => [d.binding, PLACEHOLDER.test(d.database_id)])).toEqual([

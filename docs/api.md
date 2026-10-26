@@ -40,6 +40,8 @@ read public sites, such as the demo.
 | `ms_` | Browser session, valid for 30 days | `POST /api/v1/auth/login`. The dashboard stores it. |
 | `sh_` | Shared link: read-only, one site, with the link's segment applied to every query | `POST /api/v1/share/:slug` |
 
+A Google sign-in hands the dashboard a one-time `ml_` code, which `POST /api/v1/auth/exchange` trades for an `ms_` session.
+
 The **Role** column in the tables below names the least access a route needs.
 
 | Role | Who has it |
@@ -67,7 +69,7 @@ An error that a client can act on also has a stable `code`.
 | `405` | `GET /mcp`. The MCP server takes `POST` only. |
 | `409` | A conflict: a domain, site id, goal name, account, or team member that already exists, a team that still has sites, a change that leaves a team without an owner, an import while the site's history moves between shards, or search terms for a site without Search Console. For billing, a team that has not paid for a plan yet, or a change Polar refuses. |
 | `413` | A body over 256 KB for a payment webhook or the Polar billing webhook, or 64 KB for `/mcp`. `POST /api/event` drops a body over 16 KB and still answers `202`. |
-| `429` | Over a rate limit. Try again after a minute. |
+| `429` | Over a rate limit. The `Retry-After` header gives the seconds to wait ([Rate limits](#rate-limits)). |
 | `500` | An unexpected error: `{"error": "internal error"}`. |
 | `501` | The server lacks what the feature needs: `CF_API_TOKEN`, `CF_ZONE_ID`, and `PROXY_CNAME_TARGET` for the managed proxy, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google import and Search Console, the `BROWSER` binding for a PDF report preview, or a Polar setting for billing ([Billing](configuration.md#billing)). The message names what is missing. |
 | `502` | Google, the Cloudflare API, or Polar returned an error, or Polar did not answer. The message carries theirs. |
@@ -107,14 +109,38 @@ shows the state as `stopped` on the team's `plan`.
 ## Rate limits
 
 `/api/v1/stats/*`, `/api/v2/query`, and `POST /mcp` share a limit of 100 requests per
-minute per API key, or per IP address without a key (`STATS_LIMIT`). Signed-in dashboards
-and shared links have no limit.
+minute per API key, or per IP address without a key (`STATS_LIMIT`). Each request in an
+MCP batch counts. Signed-in dashboards and shared links have no limit. Over it,
+`/api/v1/stats/*` and `/api/v2/query` return `429` with
+`{"error": "rate limit exceeded, try again in a minute"}`, and `/mcp` returns `429` with
+the JSON-RPC error `{"jsonrpc": "2.0", "id": 1, "error": {"code": -32000, "message": "rate limit exceeded, try again in a minute"}}`.
+Its `id` is the request's own, or `null` for a batch or a body that isn't one request.
 
 These routes have the same limit per IP address, counted for each route on its own:
 `POST /api/v1/share/:slug`, `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`,
-`POST /api/v1/auth/forgot`, `POST /api/v1/auth/reset`, and
+`POST /api/v1/auth/forgot`, `POST /api/v1/auth/reset`, `POST /api/v1/auth/oauth/:provider`,
+`POST /api/v1/auth/exchange`, `DELETE /api/v1/me`, and
 `POST /api/v1/invitations/:token/accept`. Over it, they return `429` with
-`too many attempts, wait a minute`.
+`too many attempts, wait a minute`. `POST /api/v1/teams/:team/invitations` has the same
+limit per person sending the invitations instead of per address.
+
+On these routes an IPv6 address counts by its /64 block, since one subscriber usually
+holds a whole /64. The Stats API and MCP count a signed-out caller by the whole address,
+so people who share a /64, like an office, each get their own 100. An IPv4 address
+counts on its own everywhere.
+
+The limits are approximate, and each Cloudflare location counts on its own, as
+[Cloudflare's rate limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+does.
+
+Every `429` carries a `Retry-After` header with the seconds to wait: `60` for these
+limits, and the time until the oldest send of the hour expires for
+[test reports](reports.md#limits). Pages on another origin can read it: the API's CORS
+headers expose `Retry-After`.
+
+`POST /api/v1/auth/forgot` also sends at most one reset email a minute to an account,
+whoever asks. It answers the same either way, and the link already sent keeps working.
+If the email provider refuses the email, the next request can send one at once.
 
 ## Query parameters
 
@@ -545,33 +571,39 @@ Roles, from most to least access: owner, admin, editor, viewer, and billing.
 | `POST /api/v1/auth/logout` | Any | Ends the `ms_` session in the header. Returns `204`. |
 | `POST /api/v1/auth/forgot` | Public | Emails a reset link for `email`, valid for an hour, replacing any earlier link. Always returns `{"ok": true, "sending": ...}`. `sending` is `false` without an email provider. |
 | `POST /api/v1/auth/reset` | Public | Takes `token` (the code from the link) and `password`. Signs out every other session and returns a new `token` and `expires_at`. An expired link returns `400`. |
+| `POST /api/v1/auth/oauth/:provider` | Any | Starts a sign-in with `google`, the one provider. Takes an optional `invite` (the `mi_` code from an invitation link) to accept on the way. Returns `{"url": "..."}`, the provider's page to open, and sets the `misomoon_login` cookie, which the callback checks. With an `ms_` session, it connects the provider to your account instead. Returns `404` for another provider, and `501` without the provider's client secrets. |
+| `GET /api/v1/auth/oauth/:provider/callback` | Public | The provider sends the browser here. Redirects to the dashboard with `login=<ml_ code>`, valid for a minute, or `login_error=<reason>` ([When sign-in fails](sign-in.md#when-sign-in-fails)). Connecting a provider redirects to `/?view=settings&tab=account` with `linked=<provider>` or `login_error=<reason>`. |
+| `POST /api/v1/auth/exchange` | Public | Takes `code`, the `ml_` code from the callback, and works only with the `misomoon_login` cookie the callback set, so only in the browser that signed in. Returns `token`, `expires_at`, `user`, and `site` (the site an accepted invitation opens, or `null`). Each code works once: a used or expired one returns `400`. |
 
 A password has 10 to 200 characters. `SIGNUPS` ([Variables](configuration.md#variables))
 decides who can sign up: anyone when it is unset or `open`, only the first account when it
 is `invite`, and no one when it is `closed`. A closed sign-up returns `403`. Invitations
-work in every mode.
+work in every mode. Sign-in with Google follows the same rules
+([Sign in with Google](sign-in.md)).
 
 ### Your account
 
 | Method and path | Role | What it does |
 | --- | --- | --- |
 | `GET /api/v1/me` | Any | Who you are, and what you can open. |
-| `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
-| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
+| `PATCH /api/v1/me` | Session | Changes `name` (cut to 80 characters), or `password` with `current_password`. An account without a password sets its first one without `current_password`. Returns `id`, `email`, and `name`. A wrong `current_password` returns `401`. |
+| `DELETE /api/v1/me/logins/:provider` | Session | Disconnects `google` from your account. Returns `204`, `404` for another provider, or `409` when it is the last way to sign in to an account without a password. |
+| `DELETE /api/v1/me` | Session | Deletes your account. Takes `{"password": "..."}`, or `{"email": "..."}` (your email address) for an account without a password, or returns `401`. Deletes the teams only you are in, with their sites and data, and your sessions, API keys, saved segments, pending invitations, and email reports. You leave your other teams and lose guest access. Returns `204`, or `409` while you are the only owner of a team with other members, or while a team only you are in has a paid plan that still renews. |
 
 `GET /api/v1/me` returns:
 
 | Field | Meaning |
 | --- | --- |
 | `kind` | `user`, `key`, `share`, or `anonymous` |
-| `user` | `id`, `email`, and `name` of the signed-in user or the key's owner, or `null` |
+| `user` | `id`, `email`, and `name` of the signed-in user or the key's owner, `has_password` (`false` for an account made with Google that hasn't set one), and `logins` (the connected providers, such as `["google"]`), or `null` |
 | `teams` | Your teams with `id`, `name`, your `role`, and `plan`. Empty except for a browser session. `plan` is `null` on a server without plans. Otherwise it is `id` and `name` of the plan the team works under (the trial's without a plan); `state`: `plan`, `trial` (no plan, and the free trial runs), or `lapsed` (no plan, and no trial running); `trial` and `lapsed` (`true` for those states); `trial_ends_at` (when the free trial ends or ended, in ms, or `null` for a team that had none); `events` (included a month); `events_used` (pageviews and custom events this UTC month, across the team's sites); `events_stop` (where the month stops recording: 125% of `events`); `stopped` (`true` while its beacons are dropped: lapsed, or `events_used` reached `events_stop`); `month_ends_at` (when the next UTC month starts, in ms); `retention_days` (the longest a site may keep stats); `retention_default_days` (what a site without a setting keeps); `sites` (`null` for no limit); and `sites_used`. |
 | `sites` | The same list as `GET /api/v1/sites`, and on each site `retention`: its `max` and `default` days, the server's within its team's plan |
 | `plans` | Whether the server enforces plans (`PLANS=on`) |
 | `billing` | Whether teams can pay for a plan here: `PLANS=on` and every Polar setting ([Billing](configuration.md#billing)). Each team in `teams` also has `plan_status`, `plan_period_end`, and `billing_portal`. `plan_status` is `active`, `past_due` while Polar tries a failed payment again, `canceled` while a canceled plan runs to its end, or `null` without a subscription. `plan_period_end` is the end of the paid period, or the day a canceled plan ends, in ms. `billing_portal` is `true` once the team has a Polar customer. Without billing, they are `null`, `null`, and `false`. |
 | `demo` | The public demo site's id (`DEMO_SITE`), or `null` |
-| `sample` | The sample site's id (`SAMPLE_SITE`), shown at `/demo`, or `null` |
+| `sample` | The sample site's id (`SAMPLE_SITE`), which `/demo` is recorded from, or `null` |
 | `signups` | Whether `POST /api/v1/auth/signup` is open |
+| `providers` | The sign-in providers this server has a client for: `["google"]`, or `[]` |
 | `imported` | The ids of your sites with a finished import |
 | `search` | The ids of your sites with Search Console connected |
 | `regions` | The data regions a new site can use, in the order `eu`, `us`, `apac`. Empty without regional shards. |

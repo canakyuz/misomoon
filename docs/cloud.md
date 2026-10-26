@@ -1,7 +1,7 @@
 # Use misomoon Cloud
 
 misomoon Cloud is misomoon hosted for you at [app.misomoon.com](https://app.misomoon.com).
-It runs the same MIT-licensed code as this repository. You sign up, add the script tag
+It runs the same open-source code as this repository. You sign up, add the script tag
 to your site, and read the dashboard. We deploy, update, and monitor the Worker and its
 databases. To run misomoon in your own Cloudflare account instead, see
 [Run misomoon in your Cloudflare account](self-hosting.md).

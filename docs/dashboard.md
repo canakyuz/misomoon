@@ -11,7 +11,8 @@ The bar across the top holds the site menu, the views, the live counter, the **D
 button, which opens docs.misomoon.com in a new tab, the command palette and theme buttons,
 and your initial, which shows your name, email, and role and
 lets you sign out. Select the site name to switch sites or, when signed in, to
-**Add a site**. The live counter, such as **3 here now**, counts visitors in the last 5
+**Add a site**. The menu opens on **Search sites**, which matches a site's name or domain;
+Enter opens the first match. It shows five sites at a time and scrolls for the rest. The live counter, such as **3 here now**, counts visitors in the last 5
 minutes. Select it to open **Live**.
 
 | View | Key | What it shows |
@@ -30,7 +31,14 @@ under the header, after **Filtered by**. The theme follows your system until you
 one, and the dashboard saves the choice in the `localStorage` key `misomoon.theme`.
 
 With no site yet, the dashboard asks **Which site should we watch?** and shows a form to
-add one. Before a site's first visit, **Overview** is a setup guide: the script tag to
+add one. The same form is under **Settings** > **Sites**. On a server with more than one
+data region, it shows a card for each region below the domain, under **Where to store its
+stats**. These are the regions the server has shards for (`SHARD_EU_0`, `SHARD_US_0`,
+`SHARD_APAC_0`; see [configuration](configuration.md)). The region nearest the site's
+timezone is picked and marked **Nearest**. You can't move a site to another region later.
+With one region, the form says the stats are stored there; with none, it says nothing.
+**Settings** > **Sites** shows each site's region, and **none** for a site added before the
+server had regions, whose stats may be stored on any of its databases. Before a site's first visit, **Overview** is a setup guide: the script tag to
 copy, links to the install guides for common platforms, and a line that turns green when
 the first visit arrives. The dashboard checks for it every 4 seconds. **Check my site**
 opens the site's home page and says whether the tag is there, belongs to another site,
@@ -355,6 +363,8 @@ f=country==DE|FR;page~/blog
 | `/share/<slug>` | A [shared link](#open-a-shared-or-public-dashboard) |
 | `/invite/<token>` | An invitation from an email, on the sign-in screen |
 | `/reset/<token>` | A password reset from an email, on the sign-in screen |
+| `/?login=<code>` | The way back from Google: the dashboard trades the code for a session ([Sign in with Google](sign-in.md)) |
+| `/?login_error=<reason>` | A Google sign-in that failed, on the sign-in screen ([When sign-in fails](sign-in.md#when-sign-in-fails)) |
 | `/?signup` | The sign-up form, or **Sign in** when `SIGNUPS` is `invite` or `closed` ([Configuration](configuration.md)) |
 
 ## Open a shared or public dashboard
@@ -366,18 +376,43 @@ export. They can't add notes, save filters, or save funnels. A link limited to a
 filter applies it to every number and ignores the viewer's own filter on the same
 dimension.
 
-A public site opens read-only for signed-out visitors. Once you sign in, the site menu
+Signed out, the dashboard's address opens the sign-in screen, with a link to the
+[demo](#the-demo-dashboard) under it. A public site opens read-only for signed-out
+visitors from a link with its id, such as `/?site=demo`. Once you sign in, the site menu
 lists only the sites where you have a role. [Share a dashboard](sharing.md) covers both.
 
 ## The demo dashboard
 
 `/demo` on your misomoon host opens the dashboard on Acme, a made-up outdoor store with
 purchases, goals, two funnels, and data for every **Behavior** report. The landing page
-embeds it at `misomoon.com/demo`. It is the real dashboard on the real API, always signed
-out, with **Settings** hidden. The Worker writes Acme's traffic every five minutes, so
-**Live** has people on it. To turn the demo on, set
-[`SAMPLE_SITE`](configuration.md#variables). When it isn't set, `/demo` says the server
-has no sample site.
+embeds it at `misomoon.com/demo`. It is the real dashboard, always signed out, with
+**Settings** hidden, but it doesn't ask the API: it reads a recording of Acme's reports
+that ships with the dashboard, so every view opens at once. Each period's recording loads
+only when that period is shown, and none of it loads anywhere but `/demo`. Its logo leads
+back to misomoon.com, and **Start free trial** at the top right opens the sign-up form.
+
+The recording moves its dates so that it ends today, in Acme's time zone. What it doesn't
+hold is made up from what it does:
+
+- A filter keeps its value's share of visitors, read from the recorded breakdown of that
+  dimension, and scales every count by it. Rates and averages stay the same. The rows
+  under an opened channel or device were recorded with that filter, so they are exact.
+- A custom range shows the preset period closest to it in length.
+- **Paths** past the first pick follow what came after the last page picked, scaled to the
+  people who got there.
+- A funnel other than Acme's two counts each step's visitors from the page and event
+  reports, and never more than the step before.
+- **Live** shows the people and pages that were online when the recording was made, with
+  their times moved to now.
+- Anything that saves, such as a note on the chart, answers that the demo is read-only.
+  **Export CSV** still asks the API.
+
+To record it again, run `pnpm --filter @misomoon/dashboard demo:data`. It reads the
+sample site from misomoon Cloud, or from `API_URL`, two requests at a time and waiting
+whenever the stats API's limit of 100 requests a minute is reached, and writes
+`apps/dashboard/src/demo/`. It records only the periods that have no file yet; `FRESH=1`
+records them all again. The sample site itself comes from
+[`SAMPLE_SITE`](configuration.md#variables).
 
 The landing page's fig. 1 shows the same demo in a frame, at `/demo?embed&theme=dark` or
 `theme=light`. In this mode the dashboard hides its top bar, view tabs, plan banner, and
@@ -388,8 +423,6 @@ without reloading the frame by posting `{"type": "misomoon:theme", "theme": "dar
 `?embed` works only on `/demo`; any other path ignores it.
 
 Fig. 1 loads the frame only when the figure is within a screen of view and the browser is
-idle. It first asks `/api/v1/me` whether the server has a sample site, and it skips the
-frame when the browser asks to save data. Until the frame loads, or when the API can't be
-reached, the figure shows a drawing of the dashboard. The button at the frame's top right
+idle, so it never delays the page. Until then the window is empty. The button at the frame's top right
 opens it full screen; the X, Escape or a click outside closes it, and the dashboard stays
 on the view you left it on.

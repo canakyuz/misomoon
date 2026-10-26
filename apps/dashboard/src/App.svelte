@@ -5,7 +5,8 @@
 	import AddSite from './components/AddSite.svelte'
 	import AuthScreen from './components/AuthScreen.svelte'
 	import PlanBanner from './components/PlanBanner.svelte'
-	import { ApiError, get, getShareToken, send, setShareToken, setToken, shareSlug } from './lib/api'
+	import { ApiError, exchangeLogin, get, getShareToken, getToken, loginReturn, send, setShareToken, setToken, shareSlug } from './lib/api'
+	import { loginMessage } from './lib/account'
 	import { Dash, setDash } from './lib/dash.svelte'
 	import Funnels from './views/Funnels.svelte'
 	import Journeys from './views/Journeys.svelte'
@@ -25,8 +26,34 @@
 	let password = $state('')
 	let gateError = $state<string | null>(null)
 
+	/** Back from Google: trades the one-time code for a session, or opens the sign-in screen with the reason there is none. */
+	async function finishLogin() {
+		const code = loginReturn.code
+		// once: the code is used up, and boot runs again after a shared link unlocks
+		loginReturn.code = null
+		if (code) {
+			try {
+				const r = await exchangeLogin(code)
+				setToken(r.token)
+				dash.loginError = null
+				if (r.site) dash.site = r.site
+			} catch (e) {
+				dash.loginError = (e as Error).message
+				dash.authOpen = true
+			}
+		} else if (loginReturn.error && !loginReturn.settings && getToken()) {
+			// a Connect from Settings that lost its state (cookie blocked, too slow): say why there
+			loginReturn.settings = true
+			dash.view = 'settings'
+			dash.settingsTab = 'account'
+		} else if (loginReturn.error && !loginReturn.settings) {
+			dash.loginError = loginMessage(loginReturn.error)
+			dash.authOpen = true
+		}
+	}
+
 	const boot = () =>
-		dash.load().catch(async (e) => {
+		finishLogin().then(() => dash.load()).catch(async (e) => {
 			if (!(e instanceof ApiError && e.status === 401)) return (failure = e.message)
 			if (shareSlug) return (failure = 'share')
 			// an expired session: carry on signed out, with the sign-in screen up
@@ -127,11 +154,6 @@
 				{/if}
 				{#if !dash.me}
 					<div class="boot"><span class="skeleton" style="width: 220px; height: 40px"></span><span class="skeleton" style="height: 380px; border-radius: 18px"></span></div>
-				{:else if !dash.site && dash.isSample}
-					<div class="center">
-						<h1 class="serif">No demo here.</h1>
-						<p class="muted">This server has no sample site. Set SAMPLE_SITE to show one.</p>
-					</div>
 				{:else if !dash.site && dash.view !== 'settings'}
 					<div class="center">
 						<h1 class="serif">Which site should we watch?</h1>

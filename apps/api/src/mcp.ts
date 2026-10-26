@@ -24,7 +24,11 @@ const INSTRUCTIONS =
 const MAX_BATCH = 20
 const MAX_BODY = 64 * 1024
 
-export async function handleMcp(env: Env, who: Principal, req: Request): Promise<Response> {
+/**
+ * `overLimit` spends one more request of the caller's rate limit and says whether it is used
+ * up. The HTTP request paid for a batch's first call; each other call pays for itself.
+ */
+export async function handleMcp(env: Env, who: Principal, req: Request, overLimit: () => Promise<boolean> = async () => false): Promise<Response> {
 	if (req.method === 'GET') return new Response('This MCP server does not stream; POST JSON-RPC instead.', { status: 405, headers: { Allow: 'POST' } })
 	if (req.method === 'DELETE') return new Response(null, { status: 204 })
 	if (Number(req.headers.get('content-length') ?? 0) > MAX_BODY) return tooLarge()
@@ -41,7 +45,11 @@ export async function handleMcp(env: Env, who: Principal, req: Request): Promise
 	// JSON-RPC 2.0: an empty batch is a single Invalid Request
 	if (batch && !calls.length) return Response.json(rpcError(null, -32600, 'Invalid Request'))
 	if (calls.length > MAX_BATCH) return Response.json(rpcError(null, -32600, `a batch is limited to ${MAX_BATCH} requests`), { status: 400 })
-	const replies = (await Promise.all(calls.map((c) => dispatch(env, who, c)))).filter((r) => r !== null)
+	const over = [false]
+	for (let i = 1; i < calls.length; i++) over.push(await overLimit())
+	const replies = (
+		await Promise.all(calls.map((c, i) => (!over[i] ? dispatch(env, who, c) : c?.id == null ? null : rpcError(c.id, -32000, 'rate limit exceeded, try again in a minute'))))
+	).filter((r) => r !== null)
 	if (!replies.length) return new Response(null, { status: 202 })
 	return Response.json(batch ? replies : replies[0], { headers: { 'Mcp-Protocol-Version': PROTOCOLS[0] } })
 }

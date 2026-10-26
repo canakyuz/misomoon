@@ -1,4 +1,4 @@
-import { buildEvent, checkoutKeys, DAY, edgeFromRequest, eventDetail, ipExcluded, ipRules, OPEN_SESSIONS_CHUNK, openSessionsStmt, pathCounted, pathRules, privacySignal, searchParams, searchTermFromUrl, SESSION_GAP, siteFeatures, utcDay, visitorId, writeRange, type EdgeContext, type EventRow, type OpenSession, type TrackerPayload } from '@misomoon/core'
+import { buildEvent, checkoutKeys, DAY, edgeFromRequest, eventDetail, INHERITED, ipExcluded, ipRules, OPEN_SESSIONS_CHUNK, openSessionsStmt, pathCounted, pathRules, privacySignal, searchParams, searchTermFromUrl, SESSION_GAP, siteFeatures, storedVisitsStmt, utcDay, visitorId, writeRange, type EdgeContext, type EventRow, type OpenSession, type TrackerPayload } from '@misomoon/core'
 import { d1Runner, dailySalt, getRanges, getSite, purge, shardDb, writeShard } from './control'
 import { checkMonths, planStops } from './plans'
 import { recordRefs, takesPayments } from './revenue'
@@ -69,7 +69,8 @@ export async function acceptBeacon(env: Env, req: Request): Promise<EventRow | n
 	// With plans on: the team lapsed (no plan, no trial running), or its month reached
 	// OVERAGE of its plan's events. Both read through the isolate cache. Payments come in
 	// through webhooks (revenue.ts), never here, so they are never dropped.
-	if (await planStops(env, site.team_id, row.ts)) return null
+	// The server's clock: the beacon's own time may be up to 5 minutes off.
+	if (await planStops(env, site.team_id, Date.now())) return null
 	if (await overCap(env, site, row.ts)) return null
 	row.visitor_id = await visitorId(await dailySalt(env, row.ts), row.site_id, edge.ip, edge.ua)
 	// A visit open at 00:00 UTC carries on under yesterday's id (see assignSessions).
@@ -92,8 +93,11 @@ async function liveSites(env: Env, ids: string[]): Promise<Set<string>> {
  * Persists events, grouping by shard and site so each group is one D1 batch. Events
  * past a site's daily cap are dropped as each group is planned (Budget in usage.ts), and
  * what each group inserted is added to the day's usage once the group is written.
+ * A group that fails doesn't stop the others: its events go to `failed`, for the queue
+ * consumer to retry alone, or without `failed` the first error is thrown once every
+ * group was tried. A group written again inserts nothing twice (event ids, see Budget).
  */
-export async function writeEvents(env: Env, all: EventRow[]): Promise<number> {
+export async function writeEvents(env: Env, all: EventRow[], failed?: (rows: EventRow[], error: unknown) => void): Promise<number> {
 	// A site deleted while its events were queued keeps none of them. Other isolates can
 	// hold the site in their cache for a minute after the delete, and accept its beacons.
 	const live = await liveSites(env, [...new Set(all.map((r) => r.site_id))])
@@ -109,58 +113,85 @@ export async function writeEvents(env: Env, all: EventRow[]): Promise<number> {
 		else groups.set(key, [row])
 	}
 	let written = 0
+	let error: unknown = null
 	for (const [key, events] of groups) {
 		const [shard, siteId] = key.split('\u0000')
-		const db = await shardDb(env, shard)
-		const run = d1Runner(db)
-		// Yesterday's visit can only continue when yesterday wrote to this shard too.
-		const ranges = await getRanges(env, siteId)
-		for (const e of events) if (e.prev_visitor_id && writeRange(ranges, utcDay(e.ts) - 1)?.shard !== shard) delete e.prev_visitor_id
-		const visitors = [...new Set(events.flatMap((e) => (e.prev_visitor_id ? [e.visitor_id, e.prev_visitor_id] : [e.visitor_id])))]
-		// no spread: a large backfill would overflow the argument list
-		const before = events.reduce((m, e) => Math.min(m, e.ts), Infinity)
-		const open: OpenSession[] = []
-		for (let i = 0; i < visitors.length; i += OPEN_SESSIONS_CHUNK) {
-			const [rows] = await run([openSessionsStmt(siteId, visitors.slice(i, i + OPEN_SESSIONS_CHUNK), before)])
-			open.push(...(rows as unknown as OpenSession[]))
-		}
-		const { rows: kept, stmts, refs, taken, paidRefs } = await budget.plan(env, db, siteId, events, open)
-		tally.take(siteId, taken)
-		// Every event is a pair of statements, and chunks hold whole pairs: a visit upsert
-		// checks its insert's changes(), and an engagement beacon's visit update must read the
-		// pageview before the beacon is marked on it, so each pair runs in one batch, in order.
-		// The insert of kept[n] is statement 2n, and it changed a row only when the event was
-		// new; the engagement beacons' pairs come after the inserts and store no row.
+		// what the cap drops in this group counts once the group is written, so a retry counts it once
+		const dropped = new Map(budget.drops.counts)
 		try {
-			for (let i = 0; i < stmts.length; i += 200) {
-				const res = await db.batch(stmts.slice(i, i + 200).map((s) => db.prepare(s.sql).bind(...s.params)))
-				for (let j = 0; j < res.length; j += 2) if ((i + j) / 2 < kept.length && (res[j].meta.changes ?? 0) > 0) tally.add(kept[(i + j) / 2])
-			}
-		} finally {
-			// what was written counts, and the room taken for the rest goes back for the retry
-			await tally.flush(env)
+			written += await writeGroup(env, budget, tally, shard, siteId, events)
+		} catch (e) {
+			for (const k of budget.drops.counts.keys()) if (k.startsWith(`${siteId}\u0000`)) dropped.has(k) ? budget.drops.counts.set(k, dropped.get(k)!) : budget.drops.counts.delete(k)
+			if (!failed) error ??= e
+			else failed(events, e)
 		}
-		// Deleted while this group was written: the rows may have landed after the delete's
-		// purges, so they go here. Rows that landed before its last purge, that purge took.
-		if (!(await liveSites(env, [siteId])).has(siteId)) {
-			await purge(db, 'events', 'rowid', 'site_id = ?', [siteId])
-			await purge(db, 'sessions', 'site_id, session_id', 'site_id = ?', [siteId])
-			continue
-		}
-		// keys for payments (refs, success-page checkout ids) go to CONTROL once the events are safe
-		if (refs.length) {
-			await recordRefs(env, refs)
-			// a ref-only beacon stores no event, but the refs it keeps are rows too
-			if (await takesPayments(env, siteId)) for (const r of refs) if (r.ref_only) tally.addRef(r, paidRefs.has(r.event_id))
-			await tally.flush(env)
-		}
-		written += kept.length
 	}
 	await recordDrops(env, budget.drops)
+	if (error) throw error
 	// With plans on, the 80%, 100% and stop emails of the teams whose events this batch
 	// counted. The events are written, so a failure is logged and never replays the batch.
 	if (written) {
 		await checkMonths(env, [...groups.keys()].map((k) => k.split('\u0000')[1])).catch((err) => console.error(JSON.stringify({ msg: 'plan month check failed', error: String(err) })))
 	}
 	return written
+}
+
+/** Writes one group: the events of one site bound for one shard. Returns how many it kept. */
+async function writeGroup(env: Env, budget: Budget, tally: Tally, shard: string, siteId: string, events: EventRow[]): Promise<number> {
+	const db = await shardDb(env, shard)
+	const run = d1Runner(db)
+	// Yesterday's visit can only continue when yesterday wrote to this shard too.
+	const ranges = await getRanges(env, siteId)
+	for (const e of events) if (e.prev_visitor_id && writeRange(ranges, utcDay(e.ts) - 1)?.shard !== shard) delete e.prev_visitor_id
+	const visitors = [...new Set(events.flatMap((e) => (e.prev_visitor_id ? [e.visitor_id, e.prev_visitor_id] : [e.visitor_id])))]
+	// no spread: a large backfill would overflow the argument list
+	const before = events.reduce((m, e) => Math.min(m, e.ts), Infinity)
+	const open: OpenSession[] = []
+	for (let i = 0; i < visitors.length; i += OPEN_SESSIONS_CHUNK) {
+		const [rows] = await run([openSessionsStmt(siteId, visitors.slice(i, i + OPEN_SESSIONS_CHUNK), before)])
+		open.push(...(rows as unknown as OpenSession[]))
+	}
+	const { rows: kept, stmts, refs, taken, paidRefs } = await budget.plan(env, db, siteId, events, open)
+	tally.take(siteId, taken)
+	// Every event is a pair of statements, and chunks hold whole pairs: a visit upsert
+	// checks its insert's changes(), and an engagement beacon's visit update must read the
+	// pageview before the beacon is marked on it, so each pair runs in one batch, in order.
+	// The insert of kept[n] is statement 2n, and it changed a row only when the event was
+	// new; the engagement beacons' pairs come after the inserts and store no row.
+	try {
+		for (let i = 0; i < stmts.length; i += 200) {
+			const res = await db.batch(stmts.slice(i, i + 200).map((s) => db.prepare(s.sql).bind(...s.params)))
+			for (let j = 0; j < res.length; j += 2) if ((i + j) / 2 < kept.length && (res[j].meta.changes ?? 0) > 0) tally.add(kept[(i + j) / 2])
+		}
+	} finally {
+		// what was written counts, and the room taken for the rest goes back for the retry
+		await tally.flush(env)
+	}
+	// Deleted while this group was written: the rows may have landed after the delete's
+	// purges, so they go here. Rows that landed before its last purge, that purge took.
+	if (!(await liveSites(env, [siteId])).has(siteId)) {
+		await purge(db, 'events', 'rowid', 'site_id = ?', [siteId])
+		await purge(db, 'sessions', 'site_id, session_id', 'site_id = ?', [siteId])
+		return 0
+	}
+	// keys for payments (refs, success-page checkout ids) go to CONTROL once the events are safe
+	if (refs.length) {
+		// A stored event's visit is the one its insert found, which another batch written
+		// first may have opened (assignSessions): the keys go with the visit on its row.
+		const stored = refs.filter((r) => !r.ref_only)
+		for (let i = 0; i < stored.length; i += 90) {
+			const chunk = stored.slice(i, i + 90)
+			const [found] = await run([storedVisitsStmt(siteId, chunk.map((r) => r.event_id))])
+			const byId = new Map(found.map((f) => [f.event_id as string, f]))
+			for (const r of chunk) {
+				const f = byId.get(r.event_id)
+				if (f) for (const k of ['session_id', ...INHERITED] as const) (r as unknown as Record<string, unknown>)[k] = f[k]
+			}
+		}
+		await recordRefs(env, refs)
+		// a ref-only beacon stores no event, but the refs it keeps are rows too
+		if (await takesPayments(env, siteId)) for (const r of refs) if (r.ref_only) tally.addRef(r, paidRefs.has(r.event_id))
+		await tally.flush(env)
+	}
+	return kept.length
 }

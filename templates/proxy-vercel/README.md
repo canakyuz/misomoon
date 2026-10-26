@@ -1,6 +1,6 @@
 # misomoon proxy for Vercel
 
-[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-vercel&project-name=misomoon-proxy&repository-name=misomoon-proxy)
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-vercel&project-name=misomoon-proxy&repository-name=misomoon-proxy)
 
 Serves misomoon's tracker and forwards its events from your own domain. Vercel passes
 the visitor's IP and its location headers through.
@@ -14,4 +14,4 @@ the visitor's IP and its location headers through.
 ```
 
 Self-hosting misomoon? Change both destinations in `vercel.json`. More in
-[docs/PROXY.md](../../docs/PROXY.md).
+[the custom domain guide](https://docs.misomoon.com/proxy).

@@ -158,4 +158,7 @@ fails with a list of what the docs miss.
 
 ## License
 
-misomoon is licensed under the [MIT License](LICENSE).
+misomoon is licensed under [AGPL-3.0](LICENSE), except the tracker script
+(`packages/tracker`), the SDK (`packages/sdk`), the WordPress plugin
+(`plugins/wordpress/misomoon`) and the proxy templates (`templates/`), which are MIT. A contribution is licensed under the license
+of the part it changes.

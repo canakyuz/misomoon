@@ -2,6 +2,8 @@ import type { Brand } from '@misomoon/brand/brands'
 
 /** The public docs. A self-hosted instance runs the same code, so it links there too. */
 export const DOCS = 'https://docs.misomoon.com'
+/** misomoon's home page, where the demo dashboard leads back to. */
+export const HOME = 'https://misomoon.com'
 
 /** A docs page by its file name without `.md`, such as `shopify`, with an optional heading id. */
 export const docUrl = (page = '', hash = '') => `${DOCS}/${page}${hash ? `#${hash}` : ''}`

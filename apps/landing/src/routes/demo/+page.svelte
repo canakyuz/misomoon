@@ -21,7 +21,7 @@
 	<div class="wrap">
 		<p class="eyebrow"><b>Demo</b> Sample data</p>
 		<h1 class="display">The dashboard,<br /><em>filled in.</em></h1>
-		<p class="lede">This is the real misomoon dashboard, opened on Acme, a made-up outdoor store with a few hundred visitors a day. Change the period, add filters, open Live, Funnels or Paths. Nothing here is a screenshot.</p>
+		<p class="lede">This is the real misomoon dashboard, opened on Acme, a made-up outdoor store with a few hundred visitors a day. It runs on a recording of the store's traffic, so every view opens at once. Change the period, add filters, open Live, Funnels or Paths. Nothing here is a screenshot.</p>
 	</div>
 </section>
 

@@ -50,8 +50,8 @@ const HEADLINES: Record<string, string> = {
 	'Reporting window': `Up to ${years(LONGEST_KEPT)} of history`,
 	'Core Web Vitals': 'Web Vitals in the same dashboard',
 	'Official MCP server': 'An MCP server built in',
-	'Open source': 'Open source, MIT',
-	'Open source and self-hosting': 'Open source, MIT',
+	'Open source': 'Open source, AGPL-3.0',
+	'Open source and self-hosting': 'Open source, AGPL-3.0',
 	'Where your data lives': 'You pick where the data lives',
 }
 

@@ -58,6 +58,8 @@ export class Dash {
 	authOpen = $state(signupLink)
 	/** an invitation or reset link being handled */
 	authLink = $state(emailLink)
+	/** why a Google sign-in came back without an account, for the sign-in screen */
+	loginError = $state<string | null>(null)
 	hasSearch = $derived(!!this.site && (this.me?.search ?? []).includes(this.site))
 	hasImports = $derived(!!this.site && (this.me?.imported ?? []).includes(this.site))
 
@@ -127,6 +129,13 @@ export class Dash {
 	async load() {
 		this.me = await get<Me>('/api/v1/me', undefined, 0)
 		const ids = this.sites.map((s) => s.id)
+		// signed out at the app's address: the sign-in screen, not a public site. /demo is the demo,
+		// and a link with ?site= still opens that public site.
+		if (this.me.kind === 'anonymous' && !this.isSample && !this.isEmbed && (!this.site || !ids.includes(this.site))) {
+			this.site = null
+			this.authOpen = true
+			return
+		}
 		if (!this.site || !ids.includes(this.site)) this.site = (this.me.demo && ids.includes(this.me.demo) ? this.me.demo : ids[0]) ?? null
 		if (this.isSample && this.view === 'settings') this.view = 'overview'
 	}

@@ -2,9 +2,11 @@ import { canAssign, isGuestRole, isTeamRole, keepsOwner, PLAN_REQUIRED, PLAN_SIT
 import { Hono, type Context } from 'hono'
 import { authorize, checkPassword, createKey, hashPassword, requireUser, secret, sha256, startSession, teamRole, type Principal } from './auth'
 import { HttpError, getSite, invalidate, type Site } from './control'
+import { clientKey, TooMany } from './limits'
 import { plansEnforced, teamTermsOf } from './plans'
 import { emailConfigured, sendEmail } from './reports'
 import { deleteSite } from './sites'
+import { authorizeUrl, loginProvider, pkce, profileFor, PROVIDERS, type Profile, type Provider } from './social'
 
 type App = { Bindings: Env; Variables: { who: Principal } }
 
@@ -21,6 +23,7 @@ interface User {
 
 const INVITE_TTL = 7 * 86_400_000
 const RESET_TTL = 3_600_000
+const RESET_EVERY = 60_000
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const origin = (c: Context<App>) => c.env.PUBLIC_URL || new URL(c.req.url).origin
 
@@ -30,9 +33,9 @@ function validPassword(p: unknown): string {
 	return p
 }
 
-async function limited(c: Context<App>, what: string) {
-	const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key: `${what}:${ip}` })).success) throw new HttpError(429, 'too many attempts, wait a minute')
+/** Counts an attempt at `what` by the caller's address, or by `id` (an account, a person) when given. */
+async function limited(c: Context<App>, what: string, id = clientKey(c.req.header('cf-connecting-ip'))) {
+	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key: `${what}:${id}` })).success) throw new TooMany('too many attempts, wait a minute')
 }
 
 const getUser = (env: Env, id: string) => env.CONTROL.prepare('SELECT * FROM users WHERE id = ?').bind(id).first<User>()
@@ -43,11 +46,13 @@ const publicUser = (u: User) => ({ id: u.id, email: u.email, name: u.name })
 export const signupsOpen = async (env: Env) =>
 	env.SIGNUPS !== 'closed' && (env.SIGNUPS !== 'invite' || !(await env.CONTROL.prepare('SELECT 1 FROM users LIMIT 1').first()))
 
-async function createUser(env: Env, input: { email?: unknown; name?: unknown; password?: unknown }, onlyFirst = false): Promise<User> {
+/** `passwordless`: an account made through Google, which has no password until it sets one. */
+async function createUser(env: Env, input: { email?: unknown; name?: unknown; password?: unknown }, onlyFirst = false, passwordless = false): Promise<User> {
 	const email = String(input.email ?? '').trim().toLowerCase()
 	if (!EMAIL.test(email)) throw new HttpError(400, 'a valid email is required')
 	if (await userByEmail(env, email)) throw new HttpError(409, 'there is already an account for this email; sign in instead')
-	const user: User = { id: crypto.randomUUID(), email, name: String(input.name ?? '').trim().slice(0, 80) || email.split('@')[0], password_hash: await hashPassword(validPassword(input.password)), created_at: Date.now() }
+	const name = String(input.name ?? '').trim().slice(0, 80) || email.split('@')[0]
+	const user: User = { id: crypto.randomUUID(), email, name, password_hash: passwordless ? '' : await hashPassword(validPassword(input.password)), created_at: Date.now() }
 	// onlyFirst: the check and the insert are one statement, so two first sign-ups can't both land
 	const sql = onlyFirst
 		? 'INSERT INTO users (id, email, name, password_hash, created_at) SELECT ?, ?, ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM users)'
@@ -126,15 +131,29 @@ accounts.post('/auth/forgot', async (c) => {
 	await limited(c, 'forgot')
 	const body = await c.req.json<{ email?: string }>()
 	const user = body.email ? await userByEmail(c.env, body.email) : null
+	// one email a minute to an account, whoever asks and from where; the answer is the same,
+	// and the link already sent keeps working. The new link is claimed in one statement, so
+	// requests that arrive at once send one email.
 	if (user) {
 		const token = secret('mr_')
-		await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?').bind(user.id, Date.now()).run()
-		await c.env.CONTROL.prepare('INSERT INTO password_resets (hash, user_id, expires_at) VALUES (?, ?, ?)').bind(await sha256(token), user.id, Date.now() + RESET_TTL).run()
-		await sendEmail(
-			c.env,
-			user.email,
-			renderNotice({ label: 'password', subject: 'Reset your password', detail: `Someone asked to reset the misomoon password for ${user.email}. The link works for an hour.`, cta: 'Set a new password', link: `${origin(c)}/reset/${token}`, footnote: "If it wasn't you, ignore this email." }),
+		const hash = await sha256(token)
+		const now = Date.now()
+		const claim = await c.env.CONTROL.prepare(
+			'INSERT INTO password_resets (hash, user_id, expires_at) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM password_resets WHERE user_id = ? AND expires_at > ?)',
 		)
+			.bind(hash, user.id, now + RESET_TTL, user.id, now + RESET_TTL - RESET_EVERY)
+			.run()
+		if (claim.meta.changes) {
+			const sent = await sendEmail(
+				c.env,
+				user.email,
+				renderNotice({ label: 'password', subject: 'Reset your password', detail: `Someone asked to reset the misomoon password for ${user.email}. The link works for an hour.`, cta: 'Set a new password', link: `${origin(c)}/reset/${token}`, footnote: "If it wasn't you, ignore this email." }),
+			)
+			// the link sent replaces the earlier ones; one that never went out is taken back, so the
+			// earlier link keeps working and the next request can send at once
+			if (sent) await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE (user_id = ? AND hash != ?) OR expires_at < ?').bind(user.id, hash, now).run()
+			else await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE hash = ?').bind(hash).run()
+		}
 	}
 	return c.json({ ok: true, sending: emailConfigured(c.env) })
 })
@@ -158,7 +177,8 @@ accounts.patch('/me', async (c) => {
 	const user = (await getUser(c.env, userId))!
 	const body = await c.req.json<{ name?: string; password?: string; current_password?: string }>()
 	if (body.password) {
-		if (!(await checkPassword(String(body.current_password ?? ''), user.password_hash))) throw new HttpError(401, 'your current password is wrong')
+		// an account made through Google sets its first password without one
+		if (user.password_hash && !(await checkPassword(String(body.current_password ?? ''), user.password_hash))) throw new HttpError(401, 'your current password is wrong')
 		await c.env.CONTROL.prepare('UPDATE users SET password_hash = ? WHERE id = ?').bind(await hashPassword(validPassword(body.password)), userId).run()
 	}
 	if (body.name?.trim()) await c.env.CONTROL.prepare('UPDATE users SET name = ? WHERE id = ?').bind(body.name.trim().slice(0, 80), userId).run()
@@ -182,8 +202,11 @@ accounts.delete('/me', async (c) => {
 	const userId = requireUser(c.get('who'))
 	await limited(c, 'delete')
 	const user = (await getUser(c.env, userId))!
-	const body = await c.req.json<{ password?: unknown }>().catch(() => ({}) as { password?: unknown })
-	if (!(await checkPassword(String(body.password ?? ''), user.password_hash))) throw new HttpError(401, 'your password is wrong')
+	const body = await c.req.json<{ password?: unknown; email?: unknown }>().catch(() => ({}) as { password?: unknown; email?: unknown })
+	// without a password, typing the account's email confirms it
+	if (!user.password_hash) {
+		if (String(body.email ?? '').trim().toLowerCase() !== user.email.toLowerCase()) throw new HttpError(401, 'type your email to confirm')
+	} else if (!(await checkPassword(String(body.password ?? ''), user.password_hash))) throw new HttpError(401, 'your password is wrong')
 	const { results: teams } = await c.env.CONTROL.prepare(
 		`SELECT t.id, t.name, m.role, (SELECT COUNT(*) FROM team_members WHERE team_id = t.id) AS members,
 			(SELECT COUNT(*) FROM team_members WHERE team_id = t.id AND role = 'owner') AS owners
@@ -205,6 +228,185 @@ accounts.delete('/me', async (c) => {
 		c.env.CONTROL.prepare('DELETE FROM email_reports WHERE email = ? COLLATE NOCASE').bind(user.email),
 		c.env.CONTROL.prepare('DELETE FROM users WHERE id = ?').bind(userId),
 	])
+	return c.body(null, 204)
+})
+
+// ---------------------------------------------------------------- sign-in with Google
+
+const STATE_TTL = 600_000
+const CODE_TTL = 60_000
+/**
+ * The OAuth state also goes in a cookie, so the callback and the code exchange finish only
+ * in the browser that started the sign-in. wrangler dev serves http, where the cookie goes
+ * without Secure.
+ */
+const LOGIN_COOKIE = 'misomoon_login'
+const loginCookie = (url: URL, state: string, maxAge: number) =>
+	`${LOGIN_COOKIE}=${state}; Path=/api/v1/auth; Max-Age=${maxAge}; HttpOnly${url.protocol === 'https:' ? '; Secure' : ''}; SameSite=Lax`
+const loginCookieOf = (c: Context<App>) => (c.req.header('cookie') ?? '').match(new RegExp(`(?:^|;\\s*)${LOGIN_COOKIE}=([^;]*)`))?.[1] ?? ''
+
+/** Why a sign-in went back to the dashboard without an account: the `login_error` it shows. */
+class LoginRefused extends Error {
+	constructor(readonly reason: string) {
+		super(reason)
+	}
+}
+
+/** One login per provider for each person: connecting another replaces it. */
+const connect = (env: Env, p: Provider, subject: string, userId: string) =>
+	env.CONTROL.batch([
+		env.CONTROL.prepare('DELETE FROM user_logins WHERE provider = ? AND user_id = ?').bind(p, userId),
+		env.CONTROL.prepare('INSERT INTO user_logins (provider, subject, user_id, created_at) VALUES (?, ?, ?, ?)').bind(p, subject, userId, Date.now()),
+	])
+
+/**
+ * The account a Google sign-in opens: the one its login belongs to, else a new one where
+ * sign-up is open or an invitation for that email is on its way. An existing account is
+ * never joined by email: sign-up doesn't check that a password account's address is its
+ * owner's, and an account made with Google signs in with that Google account, not with a
+ * newer one that got the same address. Its owner connects Google under Settings > Account.
+ */
+async function socialUser(env: Env, p: Provider, profile: Profile, inviteHash: string | null): Promise<{ userId: string; site: string | null }> {
+	const inv = inviteHash
+		? await invitationByHash(env, inviteHash).catch((e) => {
+				if (e instanceof HttpError && e.status === 404) return null
+				throw e
+			})
+		: null
+	if (inviteHash && !inv) throw new LoginRefused('invite')
+	let userId = (await env.CONTROL.prepare('SELECT user_id FROM user_logins WHERE provider = ? AND subject = ?').bind(p, profile.subject).first<{ user_id: string }>())?.user_id
+	if (!userId) {
+		if (!profile.email || !profile.verified) throw new LoginRefused('unverified')
+		const existing = await userByEmail(env, profile.email)
+		if (existing) throw new LoginRefused(existing.password_hash ? 'password' : 'another_google')
+		if (inv && inv.email.toLowerCase() !== profile.email) throw new LoginRefused('invite_email')
+		if (!inv && !(await signupsOpen(env))) throw new LoginRefused('closed')
+		const user = await createUser(env, { email: profile.email, name: profile.name }, !inv && env.SIGNUPS === 'invite', true).catch((e) => {
+			// two first sign-ups at once on an invite-only server: the other one won
+			throw e instanceof HttpError && e.status === 403 ? new LoginRefused('closed') : e
+		})
+		userId = user.id
+		// an account without its login would refuse every later sign-in (another_google), so it goes
+		await connect(env, p, profile.subject, userId).catch(async (e) => {
+			await env.CONTROL.prepare('DELETE FROM users WHERE id = ?')
+				.bind(userId)
+				.run()
+				.catch((undo) => console.error(JSON.stringify({ msg: 'account not undone after a failed sign-up', user: userId, error: String(undo) })))
+			throw e
+		})
+		// signed in from here on: a team that fails now is made with the first site (POST /api/v1/sites)
+		if (!inv)
+			await createTeam(env, user.id, `${user.name}'s sites`).catch((e) => console.error(JSON.stringify({ msg: 'team not made at sign-up', user: user.id, error: String(e) })))
+	}
+	if (!inv) return { userId, site: null }
+	if ((await getUser(env, userId))!.email.toLowerCase() !== inv.email.toLowerCase()) throw new LoginRefused('invite_email')
+	return { userId, site: await joinInvitation(env, inv, userId) }
+}
+
+/**
+ * Starts a sign-in with Google, and returns the provider's page to open. Signed
+ * in, it connects the provider to your account instead. `invite` accepts an invitation.
+ */
+accounts.post('/auth/oauth/:provider', async (c) => {
+	await limited(c, 'oauth')
+	const provider = loginProvider(c.env, c.req.param('provider'))
+	const body = await c.req.json<{ invite?: unknown }>().catch(() => ({}) as { invite?: unknown })
+	const invite = typeof body.invite === 'string' && /^mi_[a-f0-9]+$/.test(body.invite) ? body.invite : null
+	const who = c.get('who')
+	const url = new URL(c.req.url)
+	const state = crypto.randomUUID()
+	const { verifier, challenge } = await pkce()
+	await c.env.CONTROL.batch([
+		c.env.CONTROL.prepare('DELETE FROM login_states WHERE created_at < ?').bind(Date.now() - STATE_TTL),
+		c.env.CONTROL.prepare('INSERT INTO login_states (id, provider, verifier, invite, user_id, created_at) VALUES (?, ?, ?, ?, ?, ?)').bind(
+			state,
+			provider,
+			verifier,
+			invite && (await sha256(invite)),
+			who.kind === 'user' ? who.userId : null,
+			Date.now(),
+		),
+	])
+	c.header('Set-Cookie', loginCookie(url, state, STATE_TTL / 1000))
+	return c.json({ url: authorizeUrl(c.env, provider, url.origin, state, challenge) })
+})
+
+/**
+ * The provider redirects here. A sign-in goes back to the dashboard with `login=` (a
+ * one-time code for POST /auth/exchange) or `login_error=`; connecting a provider goes
+ * back to Settings > Account with `linked=` or `login_error=`.
+ */
+accounts.get('/auth/oauth/:provider/callback', async (c) => {
+	const provider = loginProvider(c.env, c.req.param('provider'))
+	const url = new URL(c.req.url)
+	const state = url.searchParams.get('state') ?? ''
+	// a callback link opened in another browser would sign that browser in
+	const row =
+		state && loginCookieOf(c) === state
+			? await c.env.CONTROL.prepare('DELETE FROM login_states WHERE id = ? AND provider = ? RETURNING verifier, invite, user_id, created_at')
+					.bind(state, provider)
+					.first<{ verifier: string; invite: string | null; user_id: string | null; created_at: number }>()
+			: null
+	const back = (q: string, cookie = loginCookie(url, '', 0)) =>
+		new Response(null, { status: 302, headers: { Location: `${url.origin}/?${row?.user_id ? 'view=settings&tab=account&' : ''}${q}`, 'Set-Cookie': cookie } })
+	if (!row || Date.now() - row.created_at > STATE_TTL) return back('login_error=expired')
+	const code = url.searchParams.get('code')
+	if (!code) return back('login_error=denied')
+	const profile = await profileFor(c.env, provider, url.origin, code, row.verifier)
+	if (!profile) return back('login_error=provider')
+	if (row.user_id) {
+		const owner = await c.env.CONTROL.prepare('SELECT user_id FROM user_logins WHERE provider = ? AND subject = ?').bind(provider, profile.subject).first<{ user_id: string }>()
+		if (owner && owner.user_id !== row.user_id) return back('login_error=taken')
+		await connect(c.env, provider, profile.subject, row.user_id)
+		return back(`linked=${provider}`)
+	}
+	let found: { userId: string; site: string | null }
+	try {
+		found = await socialUser(c.env, provider, profile, row.invite)
+	} catch (e) {
+		if (e instanceof LoginRefused) return back(`login_error=${e.reason}`)
+		throw e
+	}
+	const token = secret('ml_')
+	await c.env.CONTROL.batch([
+		c.env.CONTROL.prepare('DELETE FROM login_codes WHERE expires_at < ?').bind(Date.now()),
+		c.env.CONTROL.prepare('INSERT INTO login_codes (hash, browser, user_id, site_id, expires_at) VALUES (?, ?, ?, ?, ?)').bind(
+			await sha256(token),
+			state,
+			found.userId,
+			found.site,
+			Date.now() + CODE_TTL,
+		),
+	])
+	// the cookie stays a minute more: the exchange checks it, so a link with the code signs no one else in
+	return back(`login=${token}`, loginCookie(url, state, CODE_TTL / 1000))
+})
+
+/** Trades the one-time code from a Google sign-in for a session. */
+accounts.post('/auth/exchange', async (c) => {
+	await limited(c, 'exchange')
+	const body = await c.req.json<{ code?: unknown }>().catch(() => ({}) as { code?: unknown })
+	const browser = loginCookieOf(c)
+	const row =
+		typeof body.code === 'string' && browser
+			? await c.env.CONTROL.prepare('DELETE FROM login_codes WHERE hash = ? AND browser = ? RETURNING user_id, site_id, expires_at')
+					.bind(await sha256(body.code), browser)
+					.first<{ user_id: string; site_id: string | null; expires_at: number }>()
+			: null
+	if (!row || row.expires_at < Date.now()) throw new HttpError(400, 'this sign-in has expired; sign in again')
+	const user = (await getUser(c.env, row.user_id))!
+	c.header('Set-Cookie', loginCookie(new URL(c.req.url), '', 0))
+	return c.json({ ...(await startSession(c.env, { userId: user.id })), user: publicUser(user), site: row.site_id })
+})
+
+/** Disconnects Google, unless it is the only way left to sign in. */
+accounts.delete('/me/logins/:provider', async (c) => {
+	const userId = requireUser(c.get('who'))
+	if (!PROVIDERS.some((p) => p === c.req.param('provider'))) throw new HttpError(404, 'sign-in is with google')
+	const user = (await getUser(c.env, userId))!
+	const others = await c.env.CONTROL.prepare('SELECT COUNT(*) AS n FROM user_logins WHERE user_id = ? AND provider != ?').bind(userId, c.req.param('provider')).first<{ n: number }>()
+	if (!user.password_hash && !others?.n) throw new HttpError(409, 'set a password first, so you can still sign in')
+	await c.env.CONTROL.prepare('DELETE FROM user_logins WHERE user_id = ? AND provider = ?').bind(userId, c.req.param('provider')).run()
 	return c.body(null, 204)
 })
 
@@ -327,6 +529,8 @@ accounts.post('/teams/:team/invitations', async (c) => {
 		const existing = await userByEmail(c.env, email)
 		if (existing && (await teamRole(c.env, existing.id, teamId))) throw new HttpError(409, `${email} is already on this team`)
 	}
+	// each invitation sends an email, so one person sends at most a minute's worth
+	await limited(c, 'invite', who.userId!)
 	const token = secret('mi_')
 	const id = crypto.randomUUID()
 	await c.env.CONTROL.batch([
@@ -371,11 +575,12 @@ interface Invitation {
 	invited_by: string | null
 }
 
-async function findInvitation(env: Env, token: string): Promise<Invitation> {
-	const row = await env.CONTROL.prepare('SELECT id, team_id, site_id, email, role, invited_by FROM invitations WHERE hash = ? AND expires_at > ?').bind(await sha256(token), Date.now()).first<Invitation>()
+async function invitationByHash(env: Env, hash: string): Promise<Invitation> {
+	const row = await env.CONTROL.prepare('SELECT id, team_id, site_id, email, role, invited_by FROM invitations WHERE hash = ? AND expires_at > ?').bind(hash, Date.now()).first<Invitation>()
 	if (!row) throw new HttpError(404, 'this invitation has expired or was withdrawn')
 	return row
 }
+const findInvitation = async (env: Env, token: string) => invitationByHash(env, await sha256(token))
 
 // Public: what the invitation is for, so the page can greet the person.
 accounts.get('/invitations/:token', async (c) => {
@@ -406,14 +611,19 @@ accounts.post('/invitations/:token/accept', async (c) => {
 		userId = user.id
 		session = await startSession(c.env, { userId })
 	}
-	const now = Date.now()
-	const join = inv.site_id
-		? c.env.CONTROL.prepare('INSERT INTO site_guests (site_id, user_id, role, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (site_id, user_id) DO UPDATE SET role = excluded.role').bind(inv.site_id, userId, inv.role, now)
-		: c.env.CONTROL.prepare('INSERT INTO team_members (team_id, user_id, role, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (team_id, user_id) DO NOTHING').bind(inv.team_id, userId, inv.role, now)
-	await c.env.CONTROL.batch([join, c.env.CONTROL.prepare('DELETE FROM invitations WHERE id = ?').bind(inv.id)])
-	const site = inv.site_id ?? (await c.env.CONTROL.prepare('SELECT id FROM sites WHERE team_id = ? ORDER BY created_at LIMIT 1').bind(inv.team_id).first<{ id: string }>())?.id ?? null
+	const site = await joinInvitation(c.env, inv, userId)
 	return c.json({ ...(session ?? {}), site, team: inv.team_id })
 })
+
+/** Adds the person to the invitation's team or site, uses the invitation up, and returns the site to open. */
+async function joinInvitation(env: Env, inv: Invitation, userId: string): Promise<string | null> {
+	const now = Date.now()
+	const join = inv.site_id
+		? env.CONTROL.prepare('INSERT INTO site_guests (site_id, user_id, role, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (site_id, user_id) DO UPDATE SET role = excluded.role').bind(inv.site_id, userId, inv.role, now)
+		: env.CONTROL.prepare('INSERT INTO team_members (team_id, user_id, role, created_at) VALUES (?, ?, ?, ?) ON CONFLICT (team_id, user_id) DO NOTHING').bind(inv.team_id, userId, inv.role, now)
+	await env.CONTROL.batch([join, env.CONTROL.prepare('DELETE FROM invitations WHERE id = ?').bind(inv.id)])
+	return inv.site_id ?? (await env.CONTROL.prepare('SELECT id FROM sites WHERE team_id = ? ORDER BY created_at LIMIT 1').bind(inv.team_id).first<{ id: string }>())?.id ?? null
+}
 
 // ---------------------------------------------------------------- sites across teams
 
