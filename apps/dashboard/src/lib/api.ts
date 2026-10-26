@@ -104,7 +104,21 @@ async function failure(res: Response): Promise<ApiError> {
 const cache = new Map<string, { at: number; value: unknown }>()
 const TTL = 30_000
 
+/**
+ * The demo answers from recorded data (lib/demo.ts) instead of the API, so it opens at once.
+ * It's a separate chunk that only /demo downloads.
+ */
+async function demo<T>(answer: (d: typeof import('./demo')) => Promise<unknown>): Promise<T> {
+	const d = await import('./demo')
+	try {
+		return (await answer(d)) as T
+	} catch (e) {
+		throw e instanceof d.DemoError ? new ApiError(e.status, e.message) : e
+	}
+}
+
 export async function get<T>(path: string, signal?: AbortSignal, ttl = TTL): Promise<T> {
+	if (demoPath) return demo((d) => d.demoGet(path))
 	const hit = cache.get(path)
 	if (hit && Date.now() - hit.at < ttl) return hit.value as T
 	const res = await fetch(path, { headers: headers(), signal })
@@ -122,10 +136,22 @@ export async function getHtml(path: string): Promise<string> {
 }
 
 export async function send<T>(method: string, path: string, body?: unknown): Promise<T> {
+	if (demoPath) return demo((d) => d.demoSend(method, path, body))
 	const res = await fetch(path, { method, headers: headers(true), body: body === undefined ? undefined : JSON.stringify(body) })
 	if (!res.ok) throw await failure(res)
 	cache.clear()
 	return res.status === 204 ? (null as T) : ((await res.json()) as T)
+}
+
+/**
+ * Trades the one-time code from Google for a session. It sends no saved token: one that
+ * expired during the round trip would get the exchange refused before it runs.
+ */
+export async function exchangeLogin(code: string): Promise<{ token: string; site: string | null }> {
+	const res = await fetch('/api/v1/auth/exchange', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ code }) })
+	if (!res.ok) throw await failure(res)
+	cache.clear()
+	return res.json()
 }
 
 // ---------------------------------------------------------------- types

@@ -140,11 +140,27 @@ events past the retention window.
    see [Serve the tracker from your own domain](PROXY.md)).
 3. With a Queue bound, the event is enqueued and the response is `202` immediately;
    the consumer batches by shard. Without one (local dev), or when the send fails, it
-   is written inline in `ctx.waitUntil`.
+   is written inline in `ctx.waitUntil`. The consumer writes each group (one site on one
+   shard) on its own: when a group fails, its messages are retried after 10 seconds and
+   the rest of the batch is acked, so one busy shard holds back only its own events. A
+   step outside the groups that fails (reading the sites or their caps) retries the whole
+   batch. After 5 retries a message goes to the dead-letter queue `misomoon-events-dlq`.
+   Two consumers can run at once when the queue backs up, and each reads its visitors'
+   open visits before it writes. D1 runs each batch as one transaction, one after the
+   other, and every statement finds the visit again when it runs (steps 4 and 6), so a
+   batch written second joins the visit the first one opened instead of opening another.
 4. Sessions: an event joins the visitor's session when the session's last activity is
    within 30 minutes; otherwise it opens a new one. `sessions` is upserted on every
    pageview and custom event, which makes bounce, duration, entry and exit pages
-   single-table reads. An engagement beacon only keeps its visit open and adds its time.
+   single-table reads. The event's insert picks its visit as it runs
+   (`insertInVisitStmt` in `packages/core/src/ingest.ts`): the visitor's open visit, the
+   one with the latest activity, through the two visitor indexes; else a new one, which
+   the upsert opens. The upsert takes the visit from the row the insert stored. When an
+   event its batch planned as a visit's first finds that another batch already opened
+   the visit at a later time, the event keeps its own source and becomes the visit's
+   start: its entry page, start time and source. A payment
+   key a stored event hands out goes with the visit on its row, read back after the
+   write. An engagement beacon only keeps its visit open and adds its time.
    A visit open at 00:00 UTC stays one visit: in the first 30 minutes of a UTC day the
    Worker also computes the visitor's id under yesterday's salt, and the event joins an
    open session under either id, as long as yesterday wrote to the same shard (when the
@@ -161,7 +177,11 @@ events past the retention window.
    response is deduplicated the same way. `m.js` sends no id: `sendBeacon` never resends.
 6. An engagement beacon is never a row. `pingStmts` adds it to the row of the pageview
    its view key names, with one update that touches no indexed column (one written
-   row), and one update of the visit (`last_at`, `engaged_ms`). The pageview's row adds
+   row), and one update of the visit (`last_at`, `engaged_ms`): the visitor's open visit,
+   which may be another tab's than the pageview's own. That is the visit the batch found,
+   or, when it found none or another batch's visit took its place, the visitor's open
+   visit that had started by the beacon's time. The pageview's update
+   runs only when the visit's did. The pageview's row adds
    the engaged time, keeps the deepest scroll depth and the latest Web Vitals, appends
    the beacon's interaction lists to `detail`, and appends the beacon's mark to `pings`:
    a 7-character hash of its event id and a space. Both updates skip a pageview whose
@@ -224,7 +244,13 @@ count.
   is none, so the payment keeps its visit. Only these beacons, queued before the edge saw
   the day full, take a day past its cap.
 * **Telling people.** The first drop of a site's day sets `capped_at` and emails the team's
-  owners and admins once. A block sends nothing. Rows older than 400 days are deleted.
+  owners and admins once. A block sends nothing. When the provider refuses every copy,
+  `capped_at` is set to minus the tries so far, and the hourly run (`resendCapNotices`)
+  sends it again, at most 24 tries in all, until the UTC day ends: the edge drops the rest
+  of the day's beacons, so no later batch would. It claims a row by setting `capped_at` to
+  a time before it sends, and lets the row go when the site is no longer over its cap.
+  Any `capped_at` but NULL reads as capped. The partial index `usage_daily_unsent` holds
+  only the rows waiting (`capped_at <= 0`). Rows older than 400 days are deleted.
   Maintenance also deletes `usage_refs` rows older than 2 days.
 
 With `PLANS=on`, the edge also checks the team, per UTC calendar month
@@ -248,6 +274,13 @@ With `PLANS=on`, the edge also checks the team, per UTC calendar month
   (`EVENT_WARNINGS`), and 125%. A new level is a row in CONTROL `plan_notices`, keyed by
   team, month, plan, and level, and written with `INSERT OR IGNORE`, so two consumers send
   it once; only the highest new level is emailed, to owners, admins, and billing members.
+  When the provider refuses every copy, the row's `sent_at` is set to minus the tries so
+  far, and the hourly run (`resendPlanNotices`) sends it again within the month, at most 24
+  tries in all: after the stop, no later batch comes. It deletes the row instead when the
+  team has moved on: another plan, a higher level marked, lapsed, or no site. The partial
+  index `plan_notices_unsent` holds only the rows waiting (`sent_at <= 0`). Only a refusal
+  is retried: after an SES 5xx or no answer the email may have gone out
+  ([Notices the provider refused](reports.md#notices-the-provider-refused)).
   The highest level sent is cached for a minute, so a month past a level writes nothing
   per batch. A lapsed team gets no email. The daily cleanup deletes rows older than 3
   months.
@@ -368,7 +401,10 @@ the dashboard number.
 * `.../imports` (CSV upload, Google OAuth import, imports from another tool's API), `.../shared` (shared links),
   `.../reports` (email reports and alerts), `.../annotations` (chart notes; any
   non-shared API key may post, so CI can mark deploys).
-* Stats endpoints are rate limited per API key, or per IP without one (`STATS_LIMIT`).
+* Stats endpoints and MCP are rate limited per API key, or per whole IP address without
+  one (`STATS_LIMIT`). The sign-in routes and shared-link passwords are limited per IP
+  address, an IPv6 address by its /64, and invitations per sender. Every `429` has
+  `Retry-After` ([Rate limits](api.md#rate-limits)).
 
 ### Imported history
 

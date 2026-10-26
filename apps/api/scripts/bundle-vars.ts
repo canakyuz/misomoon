@@ -30,7 +30,8 @@ export function selfHostedVars(cloud: Record<string, string>): Record<string, st
 	// Nor does its address: email links would lead to misomoon Cloud's dashboard.
 	const { PLANS: _cloudOnly, PUBLIC_URL: _cloudUrl, EMAIL_PROVIDER: _cloudEmailProvider, EMAIL_FROM: _cloudEmailFrom, AWS_SES_REGION: _cloudSesRegion, ...rest } = cloud
 	// Nor does the Cloud's billing: every POLAR_* setting is misomoon Cloud's own Polar (docs/billing.md).
-	const vars = Object.fromEntries(Object.entries(rest).filter(([name]) => !name.startsWith('POLAR_')))
+	// Nor does its managed proxy, which is misomoon.com's zone (docs/PROXY.md).
+	const vars = Object.fromEntries(Object.entries(rest).filter(([name]) => !name.startsWith('POLAR_') && name !== 'CF_ZONE_ID' && name !== 'PROXY_CNAME_TARGET'))
 	return {
 		...vars,
 		// After the first account signs up, new people join by invitation only.

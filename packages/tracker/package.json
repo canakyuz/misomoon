@@ -2,6 +2,7 @@
   "name": "@misomoon/tracker",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "type": "module",
   "exports": {
     "./m.min.js": "./dist/m.min.js",

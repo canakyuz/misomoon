@@ -20,7 +20,7 @@ import {
 	type RetentionLimits,
 } from '@misomoon/core'
 import { cached, getSite, invalidate } from './control'
-import { sendEmail } from './reports'
+import { emailConfigured, NOTICE_TRIES, sendEach } from './reports'
 
 /**
  * misomoon Cloud plans, enforced only with PLANS=on. A team's plan is `teams.plan`; NULL is
@@ -117,16 +117,17 @@ function standing(env: Env, teamId: string, month: number): Promise<Standing | n
 }
 
 /**
- * Whether the edge drops a beacon of a site of `teamId` at `ts`: with plans on, the team
- * has no plan and no trial running, or its events this month reached OVERAGE of its plan's.
- * A cache hit reads nothing; a miss is one query per team and isolate a minute. A new month
- * is a new cache entry, so its count starts at once.
+ * Whether the edge drops a beacon of a site of `teamId` at `now`, the server's time (a
+ * beacon's own may be off by minutes): with plans on, the team has no plan and no trial
+ * running, or its events this month reached OVERAGE of its plan's. A cache hit reads
+ * nothing; a miss is one query per team and isolate a minute. A new month is a new cache
+ * entry, so its count starts at once.
  */
-export async function planStops(env: Env, teamId: string, ts: number): Promise<boolean> {
+export async function planStops(env: Env, teamId: string, now: number): Promise<boolean> {
 	if (!plansEnforced(env)) return false
-	const s = await standing(env, teamId, utcMonth(ts))
+	const s = await standing(env, teamId, utcMonth(now))
 	if (!s) return false
-	return teamStopped(planState(s.plan, s.trial_ends_at, ts), teamPlan(s.plan), s.events)
+	return teamStopped(planState(s.plan, s.trial_ends_at, now), teamPlan(s.plan), s.events)
 }
 
 /** The highest level emailed to a team for a month and plan, read through the isolate cache, so a month past a level costs no write per batch. */
@@ -141,8 +142,11 @@ const emailed = (env: Env, teamId: string, month: number, plan: string) =>
  * 80% and 100% of the plan's events the team's owners, admins and billing members get one
  * email each, and one more when the month reaches the stop (OVERAGE) and tracking pauses.
  * `plan_notices` keeps what was sent per team, month and plan, so each goes out once, and
- * a move to another plan starts its own. A team on the trial counts against the trial
- * plan; a lapsed team gets none. Reads each team's month fresh: one query per team per batch.
+ * a move to another plan starts its own. An email the provider refused for everyone keeps
+ * its row with `sent_at` at minus the tries so far, and the hourly run sends it again
+ * (resendPlanNotices): once the month reaches the stop, no later batch comes to do it. A
+ * team on the trial counts against the trial plan; a lapsed team gets none. Reads each
+ * team's month fresh: one query per team per batch.
  */
 export async function checkMonths(env: Env, siteIds: Iterable<string>, now = Date.now()) {
 	if (!plansEnforced(env)) return
@@ -170,18 +174,64 @@ export async function checkMonths(env: Env, siteIds: Iterable<string>, now = Dat
 		if (!fresh.length) continue
 		const level = fresh[fresh.length - 1]
 		console.log(JSON.stringify({ msg: level > 100 ? 'plan events stopped' : 'plan events warning', team: teamId, month, plan: plan.id, level, events: s.events }))
-		try {
-			await emailMonth(env, teamId, siteId, { ...s, trial: state === 'trial' }, plan, level, month)
-		} catch (err) {
-			// the events are written; a lost email must not replay the batch
-			console.error(JSON.stringify({ msg: 'plan email failed', team: teamId, error: String(err) }))
-		}
+		// the events are written; a lost email must not replay the batch
+		await planNotice(env, teamId, siteId, { ...s, trial: state === 'trial' }, plan, level, month)
 	}
+}
+
+/**
+ * Emails a plan notice, this being try `tries`. When the provider refused it, `sent_at`
+ * becomes -tries for the hourly run, or a time once NOTICE_TRIES are used up.
+ */
+async function planNotice(env: Env, teamId: string, siteId: string, s: Standing & { trial: boolean }, plan: Plan, level: number, month: number, tries = 1) {
+	try {
+		if (await emailMonth(env, teamId, siteId, s, plan, level, month)) return
+	} catch (err) {
+		console.error(JSON.stringify({ msg: 'plan email failed', team: teamId, error: String(err) }))
+	}
+	const last = tries >= NOTICE_TRIES
+	console.error(JSON.stringify({ msg: last ? 'plan email retries stopped' : 'plan email queued for retry', team: teamId, month, plan: plan.id, level, tries }))
+	await env.CONTROL.prepare('UPDATE plan_notices SET sent_at = ? WHERE team_id = ? AND month = ? AND plan = ? AND level = ?')
+		.bind(last ? Date.now() : -tries, teamId, month, plan.id, level)
+		.run()
+		.catch((err) => console.error(JSON.stringify({ msg: 'plan email not marked for retry', team: teamId, error: String(err) })))
+}
+
+/**
+ * Hourly: this month's plan emails that no one got. Each is claimed by setting `sent_at` to
+ * a time first, so two runs never both send it. One the team has moved past (another plan,
+ * a higher level marked, lapsed, or no site left to link to) is deleted instead.
+ */
+export async function resendPlanNotices(env: Env, now = Date.now()) {
+	if (!plansEnforced(env) || !emailConfigured(env)) return
+	const month = utcMonth(now)
+	// the plan_notices_unsent partial index holds only these rows
+	const { results } = await env.CONTROL.prepare('SELECT team_id, plan, level, sent_at FROM plan_notices WHERE month = ? AND sent_at <= 0')
+		.bind(month)
+		.all<{ team_id: string; plan: string; level: number; sent_at: number }>()
+	for (const r of results) {
+		const key = [r.team_id, month, r.plan, r.level]
+		invalidate(standingKey(r.team_id))
+		const s = await standing(env, r.team_id, month)
+		const state = s && planState(s.plan, s.trial_ends_at, now)
+		const site = await env.CONTROL.prepare('SELECT id FROM sites WHERE team_id = ? ORDER BY created_at LIMIT 1').bind(r.team_id).first<string>('id')
+		// a higher level, sent or waiting too, says more than this one would
+		const passed = await env.CONTROL.prepare('SELECT 1 FROM plan_notices WHERE team_id = ? AND month = ? AND plan = ? AND level > ?').bind(...key).first()
+		if (!s || state === 'lapsed' || teamPlan(s.plan).id !== r.plan || !site || passed) {
+			await env.CONTROL.prepare('DELETE FROM plan_notices WHERE team_id = ? AND month = ? AND plan = ? AND level = ? AND sent_at = ?').bind(...key, r.sent_at).run()
+			continue
+		}
+		const claim = await env.CONTROL.prepare('UPDATE plan_notices SET sent_at = ? WHERE team_id = ? AND month = ? AND plan = ? AND level = ? AND sent_at = ?').bind(now, ...key, r.sent_at).run()
+		if (!claim.meta.changes) continue
+		await planNotice(env, r.team_id, site, { ...s, trial: state === 'trial' }, teamPlan(s.plan), r.level, month, 1 - r.sent_at)
+	}
+	invalidate('plan-emailed:')
 }
 
 const count = (n: number) => n.toLocaleString('en')
 
-async function emailMonth(env: Env, teamId: string, siteId: string, s: Standing & { trial: boolean }, plan: Plan, level: number, month: number) {
+/** False when the provider refused every copy. */
+async function emailMonth(env: Env, teamId: string, siteId: string, s: Standing & { trial: boolean }, plan: Plan, level: number, month: number): Promise<boolean> {
 	const { results } = await env.CONTROL.prepare("SELECT u.email FROM team_members m JOIN users u ON u.id = m.user_id WHERE m.team_id = ? AND m.role IN ('owner', 'admin', 'billing')")
 		.bind(teamId)
 		.all<{ email: string }>()
@@ -200,5 +250,5 @@ async function emailMonth(env: Env, teamId: string, siteId: string, s: Standing 
 				? { subject: `${s.name} has used this month's events`, detail: `${used}, all of ${of}. Tracking carries on until ${stop}, then pauses until ${until}. ${room}` }
 				: { subject: `${s.name} has used ${level}% of this month's events`, detail: `${used}, ${level}% of ${of}. At ${stop}, tracking pauses until ${until}. ${room}` }
 	const notice = renderNotice({ label: 'plan', ...msg, cta: 'See the plan', link: `${env.PUBLIC_URL || 'https://misomoon.com'}/?site=${encodeURIComponent(siteId)}&view=settings&tab=team` })
-	for (const { email } of results) await sendEmail(env, email, notice)
+	return sendEach(env, results.map((r) => r.email), notice)
 }

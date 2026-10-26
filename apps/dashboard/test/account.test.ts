@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vite-plus/test'
 import type { Me } from '../src/lib/api'
-import { liveDemo, loginMessage, otherAccount } from '../src/lib/account'
+import { liveDemo, loginMessage, onlyLogin, otherAccount } from '../src/lib/account'
 
 const me = (email: string | null, demo: string | null = null): Me => ({ kind: email ? 'user' : 'anonymous', user: email ? { id: 'u1', email, name: 'Ada' } : null, teams: [], sites: [], demo, signups: true, share: null })
 
@@ -33,7 +33,23 @@ describe('loginMessage', () => {
 		expect(loginMessage('another_google')).toBe("This email's misomoon account signs in with another Google account. Use that one, or reset your password by email.")
 	})
 
-	it('names a reason it has no words for', () => {
-		expect(loginMessage('weird')).toBe('The sign-in failed (weird). Try again.')
+	it('never echoes a reason it has no words for, since anyone can put one in the address', () => {
+		expect(loginMessage('weird')).toBe('The sign-in failed. Try again.')
+		expect(loginMessage('Call 555-0100 to restore access')).toBe('The sign-in failed. Try again.')
+	})
+})
+
+describe('onlyLogin', () => {
+	const user = (has_password: boolean | undefined, logins: ('google')[] | undefined) => ({ id: 'u1', email: 'a@example.com', name: 'Ada', has_password, logins })
+
+	it('is true when Google is the only way an account without a password signs in', () => {
+		expect(onlyLogin(user(false, ['google']), 'google')).toBe(true)
+	})
+
+	it('is false with a password, or when the provider is not connected', () => {
+		expect(onlyLogin(user(true, ['google']), 'google')).toBe(false)
+		expect(onlyLogin(user(undefined, ['google']), 'google')).toBe(false)
+		expect(onlyLogin(user(false, []), 'google')).toBe(false)
+		expect(onlyLogin(null, 'google')).toBe(false)
 	})
 })

@@ -35,7 +35,8 @@ The Google account can have any email address. Each misomoon account connects on
 account. Connecting another replaces the first.
 
 To disconnect Google, select **Disconnect** next to it. An account without a password
-can't disconnect its only way to sign in, so set a password first.
+can't disconnect its only way to sign in: instead of **Disconnect**, the dashboard says
+to set a password first.
 
 ## Accept an invitation
 
@@ -90,5 +91,11 @@ you were connecting Google. The reason is also in the address as `login_error`:
 | `invite` | The invitation expired or was withdrawn. | Ask for a new one. |
 | `invite_email` | The invitation is for another email address. | Use the Google account with the invited address. |
 | `taken` | The Google account already belongs to another misomoon account. | Disconnect it there first. |
+
+Any other `login_error` shows "The sign-in failed. Try again." The dashboard never shows
+the value itself, since anyone can put one in a link.
+
+The trip to Google can take up to 10 minutes. If your saved session expires meanwhile,
+the sign-in still finishes and starts a new one.
 
 A server without a Google client answers `501` with the secrets it needs.

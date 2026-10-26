@@ -232,6 +232,34 @@ describe('the Polar webhook: what each event does to the team', () => {
 		expect(team(env)).toMatchObject({ plan: null, plan_status: null, polar_subscription_id: null })
 	})
 
+	it("ends the plan of a team's subscription whose product is no longer one of the plans, and grants nothing for that product", async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		// the Starter product is replaced in the settings; sub-1 stays on the old one
+		env.POLAR_PRODUCT_STARTER = 'prod-starter-2'
+		expect(await deliver(env, 'subscription.updated', subscription({ cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }))).toEqual({ status: 200, body: { ok: true } })
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'canceled', polar_subscription_id: 'sub-1' })
+		expect(await deliver(env, 'subscription.revoked', subscription({ status: 'canceled', ended_at: PERIOD_END, ends_at: PERIOD_END, modified_at: '2026-11-01T00:00:00.000000Z' }))).toEqual({ status: 200, body: { ok: true } })
+		expect(team(env)).toMatchObject({ plan: null, plan_status: null, polar_subscription_id: null })
+		// a new subscription on a product that is no plan still sets nothing
+		expect((await deliver(env, 'subscription.created', subscription({ id: 'sub-2', product_id: PRODUCTS.starter }))).body).toEqual({ ok: true, ignored: true })
+		expect(team(env).plan).toBeNull()
+	})
+
+	it('grants nothing for a running subscription moved to a product that is no plan, and still ends the plan when it ends', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription({ product_id: PRODUCTS.growth }))
+		const before = team(env)
+		expect(before.plan).toBe('growth')
+		// moved to another product of the organization, which is none of the plans, and renewed on it
+		const moved = { product_id: 'prod-other', current_period_end: '2026-12-22T00:00:00.000000Z', modified_at: '2026-11-22T00:00:00.000000Z' }
+		expect((await deliver(env, 'subscription.updated', subscription(moved))).body).toEqual({ ok: true, ignored: true })
+		expect(team(env)).toMatchObject({ plan: 'growth', plan_period_end: before.plan_period_end })
+		expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('polar subscription moved to a product that is no plan')
+		await deliver(env, 'subscription.revoked', subscription({ ...moved, status: 'canceled', ended_at: '2026-11-23T00:00:00.000000Z', modified_at: '2026-11-23T00:00:00.000000Z' }))
+		expect(team(env)).toMatchObject({ plan: null, polar_subscription_id: null })
+	})
+
 	it('logs and ignores an unknown product, a subscription without a team, a deleted team, and other events', async () => {
 		const env = billingEnv()
 		const log = vi.mocked(console.error)
@@ -508,6 +536,104 @@ describe('POST /api/v1/teams/:team/checkout', () => {
 		expect(team(env).plan).toBe('starter')
 	})
 
+	it('cancels a resumed subscription again when Polar cannot charge the card for the switch, so nothing changed', async () => {
+		const env = billingEnv()
+		const canceled = { cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }
+		await deliver(env, 'subscription.canceled', subscription(canceled))
+		const sent = polar((req) =>
+			req.method === 'GET'
+				? [200, subscription(canceled)]
+				: req.body.cancel_at_period_end === false
+					? [200, subscription({ modified_at: '2026-10-06T00:00:00.000000Z' })]
+					: req.body.cancel_at_period_end === true
+						? [200, subscription({ ...canceled, modified_at: '2026-10-06T00:00:02.000000Z' })]
+						: [402, { error: 'PaymentFailed', detail: 'card declined' }],
+		)
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'scale' })
+		expect([res.status, res.body.code]).toEqual([402, 'payment_failed'])
+		expect(sent.map((r) => r.body ?? null)).toEqual([null, { cancel_at_period_end: false }, { product_id: PRODUCTS.scale }, { cancel_at_period_end: true }])
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'canceled' })
+	})
+
+	it('cancels a resumed subscription again when Polar refuses the switch for any other reason', async () => {
+		const env = billingEnv()
+		const canceled = { cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }
+		await deliver(env, 'subscription.canceled', subscription(canceled))
+		const sent = polar((req) =>
+			req.method === 'GET'
+				? [200, subscription(canceled)]
+				: req.body.cancel_at_period_end === false
+					? [200, subscription({ modified_at: '2026-10-06T00:00:00.000000Z' })]
+					: req.body.cancel_at_period_end === true
+						? [200, subscription({ ...canceled, modified_at: '2026-10-06T00:00:02.000000Z' })]
+						: [422, { error: 'RequestValidationError', detail: [{ loc: ['body', 'product_id'], msg: 'product is archived' }] }],
+		)
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'scale' })
+		expect(res.status).toBeGreaterThanOrEqual(400)
+		expect(sent.map((r) => r.body ?? null)).toEqual([null, { cancel_at_period_end: false }, { product_id: PRODUCTS.scale }, { cancel_at_period_end: true }])
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'canceled' })
+	})
+
+	it('says the subscription now renews when Polar refuses the switch and cannot cancel it again either', async () => {
+		const env = billingEnv()
+		const canceled = { cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }
+		await deliver(env, 'subscription.canceled', subscription(canceled))
+		polar((req) =>
+			req.method === 'GET'
+				? [200, subscription(canceled)]
+				: req.body.cancel_at_period_end === false
+					? [200, subscription({ modified_at: '2026-10-06T00:00:00.000000Z' })]
+					: req.body.cancel_at_period_end === true
+						? [500, { error: 'InternalServerError', detail: 'oops' }]
+						: [422, { error: 'RequestValidationError', detail: [{ loc: ['body', 'product_id'], msg: 'product is archived' }] }],
+		)
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'scale' })
+		expect(res.status).toBe(409)
+		expect(res.body.error).toContain('renews')
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active' })
+	})
+
+	it('keeps saying nothing changed when Polar cancels the subscription again but its answer cannot be read', async () => {
+		const env = billingEnv()
+		const canceled = { cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }
+		await deliver(env, 'subscription.canceled', subscription(canceled))
+		polar((req) =>
+			req.method === 'GET'
+				? [200, subscription(canceled)]
+				: req.body.cancel_at_period_end === false
+					? [200, subscription({ modified_at: '2026-10-06T00:00:00.000000Z' })]
+					: req.body.cancel_at_period_end === true
+						? [200, {}]
+						: [402, { error: 'PaymentFailed', detail: 'card declined' }],
+		)
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'scale' })
+		expect([res.status, res.body.code]).toEqual([402, 'payment_failed'])
+		expect(res.body.error).not.toContain('renews')
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'canceled' })
+	})
+
+	it('says the subscription now renews when Polar cannot charge the card for the switch and cannot cancel it again either', async () => {
+		const env = billingEnv()
+		const canceled = { cancel_at_period_end: true, ends_at: PERIOD_END, modified_at: '2026-10-05T00:00:00.000000Z' }
+		await deliver(env, 'subscription.canceled', subscription(canceled))
+		polar((req) =>
+			req.method === 'GET'
+				? [200, subscription(canceled)]
+				: req.body.cancel_at_period_end === false
+					? [200, subscription({ modified_at: '2026-10-06T00:00:00.000000Z' })]
+					: req.body.cancel_at_period_end === true
+						? [500, { error: 'InternalServerError', detail: 'oops' }]
+						: [402, { error: 'PaymentFailed', detail: 'card declined' }],
+		)
+		const res = await call(env, 'POST', '/api/v1/teams/t1/checkout', { plan: 'scale' })
+		expect(res.status).toBe(402)
+		expect(res.body.code).toBe('payment_failed')
+		expect(res.body.error).not.toContain('nothing changed')
+		expect(res.body.error).toContain('renews')
+		// the team shows what Polar has: resumed, on the plan it paid for
+		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active' })
+	})
+
 	it('answers 502 when Polar is down or refuses the request', async () => {
 		const env = billingEnv()
 		vi.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('fetch failed'))
@@ -591,6 +717,45 @@ describe('the daily check of plans whose period ended', () => {
 		expect(polarCalls(sent)).toEqual(['GET https://api.polar.sh/v1/subscriptions/sub-1'])
 		expect(team(env)).toMatchObject({ plan: 'starter', plan_status: 'active', polar_subscription_id: 'sub-1' })
 		expect(vi.mocked(console.error).mock.calls.some(([line]) => String(line).includes('polar subscription missing'))).toBe(true)
+	})
+
+	it('ends a plan whose subscription ended on a product that is no longer one of the plans', async () => {
+		const env = billingEnv()
+		await deliver(env, 'subscription.created', subscription())
+		env.POLAR_PRODUCT_STARTER = 'prod-starter-2'
+		polar(() => [200, subscription({ status: 'canceled', ended_at: PERIOD_END, ends_at: PERIOD_END, modified_at: '2026-11-01T00:00:00.000000Z' })])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(team(env)).toMatchObject({ plan: null, plan_status: null, polar_subscription_id: null })
+	})
+
+	it('reads teams it could not settle after the others, so 50 stuck teams never hold back the rest', async () => {
+		const env = billingEnv()
+		const stmt = env.CONTROL.db.prepare("INSERT INTO teams (id, name, created_at, plan, polar_subscription_id, plan_period_end) VALUES (?, 'Team', 0, 'starter', ?, ?)")
+		for (let i = 0; i < 51; i++) stmt.run(`s${i}`, `sub-s${i}`, Date.parse(PERIOD_END) + i)
+		const sent = polar(() => [404, { error: 'ResourceNotFound', detail: 'Not found' }])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(polarCalls(sent)).toHaveLength(50)
+		expect(polarCalls(sent)).not.toContain('GET https://api.polar.sh/v1/subscriptions/sub-s50')
+		sent.length = 0
+		await daily(env, Date.parse(PERIOD_END) + 3 * DAY_MS)
+		expect(polarCalls(sent)[0]).toBe('GET https://api.polar.sh/v1/subscriptions/sub-s50')
+	})
+
+	it('carries on with the other teams when one cannot be marked as checked', async () => {
+		const env = billingEnv()
+		const stmt = env.CONTROL.db.prepare("INSERT INTO teams (id, name, created_at, plan, polar_subscription_id, plan_period_end) VALUES (?, 'Team', 0, 'starter', ?, ?)")
+		for (let i = 0; i < 2; i++) stmt.run(`s${i}`, `sub-s${i}`, Date.parse(PERIOD_END) + i)
+		const prepare = env.CONTROL.prepare.bind(env.CONTROL)
+		let failing = true
+		env.CONTROL.prepare = ((sql: string) => {
+			const s = prepare(sql)
+			if (!failing || !sql.startsWith('UPDATE teams SET polar_checked_at')) return s
+			failing = false
+			return { bind: () => ({ run: async () => Promise.reject(new Error('D1 is down')) }) } as unknown as ReturnType<typeof prepare>
+		}) as typeof env.CONTROL.prepare
+		const sent = polar(() => [404, { error: 'ResourceNotFound', detail: 'Not found' }])
+		await daily(env, Date.parse(PERIOD_END) + 2 * DAY_MS)
+		expect(polarCalls(sent)).toContain('GET https://api.polar.sh/v1/subscriptions/sub-s1')
 	})
 
 	it('asks Polar nothing on a server without billing', async () => {

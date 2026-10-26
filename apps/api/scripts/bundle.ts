@@ -24,6 +24,8 @@ execFileSync('wrangler', ['deploy', '--dry-run', '--config', 'wrangler.jsonc', '
 for (const f of readdirSync(new URL('worker', out))) if (f.endsWith('.map') || f === 'README.md') rmSync(new URL(`worker/${f}`, out))
 cpSync(new URL(source.assets.directory, api), new URL('public', out), { recursive: true, filter: (f) => !f.endsWith('.map') })
 cpSync(new URL('migrations', api), new URL('migrations', out), { recursive: true })
+// AGPL-3.0 travels with every copy, and the bundle is copied into each deployer's repository
+cpSync(new URL('../../LICENSE', api), new URL('LICENSE', out))
 
 const shards = source.d1_databases.filter((d: { binding: string }) => d.binding.startsWith('SHARD_'))
 const config = bundleConfig(source)
@@ -37,6 +39,7 @@ writeFileSync(
 			name: 'misomoon',
 			version,
 			private: true,
+			license: 'AGPL-3.0-only',
 			description: 'Privacy-first web analytics that runs in your Cloudflare account.',
 			type: 'module',
 			scripts: { deploy: 'node migrate.js && wrangler deploy' },

@@ -374,6 +374,86 @@ describe('reports with the PDF', () => {
 		expect(br.calls).toHaveLength(1)
 		expect((b.sent as { to: string; attachments: unknown[] }[]).map((m) => [m.to, m.attachments.length])).toEqual([['a@shop.com', 1], ['b@shop.com', 1]])
 	})
+
+	it('prints nothing on a scheduled run when no email provider is set up', async () => {
+		const br = browser()
+		const env = fakeEnv({ BROWSER: br.BROWSER })
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		await request(env)('POST', '/api/v1/sites/shop-com/reports', { email: 'a@shop.com', kind: 'weekly' })
+		await runReports(env as unknown as Env, Date.UTC(2026, 9, 19, 9)) // a Monday, 09:00 UTC
+		expect(br.calls).toEqual([])
+	})
+
+	it('prints no test report when no email provider is set up', async () => {
+		const br = browser()
+		const env = fakeEnv({ BROWSER: br.BROWSER })
+		await request(env)('POST', '/api/v1/sites', { domain: 'shop.com' })
+		expect((await request(env)('POST', '/api/v1/sites/shop-com/reports/test', { email: 'me@shop.com', kind: 'weekly' })).status).toBe(503)
+		expect(br.calls).toEqual([])
+	})
+})
+
+describe('password reset email', () => {
+	const NOW = Date.UTC(2026, 9, 22, 12)
+	const forgot = async (env: FakeEnv) => {
+		const req = new Request('https://app.test/api/v1/auth/forgot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ email: 'owner@test' }) })
+		return (await worker.fetch(req, env as unknown as Env, fakeCtx() as unknown as ExecutionContext)).json()
+	}
+	afterEach(() => vi.useRealTimers())
+
+	it('sends one email a minute to an account, answering the same to every request', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(NOW)
+		const b = binding()
+		const env = fakeEnv({ EMAIL: b.EMAIL })
+		const answers = [await forgot(env), await forgot(env)]
+		vi.setSystemTime(NOW + 59_000)
+		answers.push(await forgot(env))
+		expect(answers).toEqual([1, 2, 3].map(() => ({ ok: true, sending: true })))
+		expect(b.sent).toHaveLength(1)
+		vi.setSystemTime(NOW + 60_000)
+		await forgot(env)
+		expect(b.sent).toHaveLength(2)
+	})
+
+	it('sends one email for two requests that arrive at once, and keeps the link it sent', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(NOW)
+		const b = binding()
+		const env = fakeEnv({ EMAIL: b.EMAIL })
+		expect(await Promise.all([forgot(env), forgot(env), forgot(env)])).toEqual([1, 2, 3].map(() => ({ ok: true, sending: true })))
+		expect(b.sent).toHaveLength(1)
+		const link = String((b.sent[0] as { text: string }).text).match(/\/reset\/(mr_[\w-]+)/)![1]
+		const hash = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(link))).toString('hex')
+		expect(env.CONTROL.rows('SELECT hash FROM password_resets')).toEqual([{ hash }])
+	})
+
+	it('lets the next request send at once when the provider refused the email, and keeps the link sent before', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(NOW)
+		const ok = binding()
+		const env = fakeEnv({ EMAIL: ok.EMAIL })
+		await forgot(env)
+		const first = env.CONTROL.rows('SELECT hash FROM password_resets')
+		vi.setSystemTime(NOW + 60_000)
+		env.EMAIL = binding(new Error('refused')).EMAIL as unknown as FakeEnv['EMAIL']
+		expect(await forgot(env)).toEqual({ ok: true, sending: true })
+		// nothing went out, so the link sent before is the one that works
+		expect(env.CONTROL.rows('SELECT hash FROM password_resets')).toEqual(first)
+		env.EMAIL = ok.EMAIL as unknown as FakeEnv['EMAIL']
+		await forgot(env)
+		expect(ok.sent).toHaveLength(2)
+	})
+
+	it('keeps the link already sent working while it holds the next email back', async () => {
+		vi.useFakeTimers({ toFake: ['Date'] })
+		vi.setSystemTime(NOW)
+		const env = fakeEnv({ EMAIL: binding().EMAIL })
+		await forgot(env)
+		const first = env.CONTROL.rows('SELECT hash FROM password_resets')
+		await forgot(env)
+		expect(env.CONTROL.rows('SELECT hash FROM password_resets')).toEqual(first)
+	})
 })
 
 describe('the no-traffic alert', () => {

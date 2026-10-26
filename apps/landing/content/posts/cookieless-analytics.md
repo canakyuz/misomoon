@@ -179,4 +179,4 @@ A monthly count is the sum of daily unique visitors, so a person who visits on f
 
 Some blockers drop requests to analytics hosts, with or without cookies. Serving the tracker from your own domain loses fewer events to them. [Serve the tracker from your own domain](https://docs.misomoon.com/proxy) shows how.
 
-[Start a free trial of misomoon Cloud](https://app.misomoon.com/?signup) to count your visitors without cookies. Plans start at $5 a month for 100,000 events, and every plan has every feature, so [see the plans](/pricing) to pick the one that fits. If you would rather run it in your own Cloudflare account, misomoon is MIT-licensed and you can [host it yourself](https://docs.misomoon.com/self-hosting).
+[Start a free trial of misomoon Cloud](https://app.misomoon.com/?signup) to count your visitors without cookies. Plans start at $5 a month for 100,000 events, and every plan has every feature, so [see the plans](/pricing) to pick the one that fits. If you would rather run it in your own Cloudflare account, misomoon is open source under AGPL-3.0 and you can [host it yourself](https://docs.misomoon.com/self-hosting).

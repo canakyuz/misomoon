@@ -308,3 +308,90 @@ describe('hardening', () => {
 		expect(r.res.status).toBe(404)
 	})
 })
+
+describe('when something fails', () => {
+	afterEach(() => {
+		if (vi.isMockFunction(console.error)) vi.mocked(console.error).mockRestore()
+	})
+
+	it('sends the browser back with login_error=provider when Google cannot be reached', async () => {
+		const env = fakeEnv(KEYS)
+		vi.stubGlobal('fetch', async () => Promise.reject(new TypeError('network connection lost')))
+		const s = await signIn(env, 'google')
+		expect([s.back.res.status, s.location.searchParams.get('login_error')]).toEqual([302, 'provider'])
+	})
+
+	/** Fails the first batch that writes `table`, as a D1 hiccup would. */
+	function failOnce(env: FakeEnv, table: string) {
+		const batch = env.CONTROL.batch.bind(env.CONTROL)
+		let failed = false
+		env.CONTROL.batch = async (stmts) => {
+			if (!failed && stmts.some((s) => s.sql.includes(`INTO ${table}`))) {
+				failed = true
+				throw new Error('D1_ERROR: Network connection lost.')
+			}
+			return batch(stmts)
+		}
+	}
+
+	/** A sign-in whose callback fails: its status, without following a redirect it doesn't send. */
+	async function failedSignIn(env: FakeEnv) {
+		const start = await call(env, 'POST', '/api/v1/auth/oauth/google', {})
+		const state = new URL((await start.json()).url).searchParams.get('state')!
+		const cookie = start.res.headers.get('set-cookie')!.split(';')[0]
+		return (await call(env, 'GET', `/api/v1/auth/oauth/google/callback?code=c0de&state=${state}`, undefined, { cookie })).res.status
+	}
+
+	it('leaves no half-made account when the sign-up fails to link Google, so the next try signs up', async () => {
+		const env = fakeEnv(KEYS)
+		providers({ sub: 'g-new', email: 'new@example.com', name: 'New' })
+		failOnce(env, 'user_logins')
+		expect(await failedSignIn(env)).toBe(500)
+		expect(users(env).map((u) => u.email)).toEqual(['owner@test'])
+		const again = await signIn(env, 'google')
+		expect(again.location.searchParams.get('login')).toMatch(/^ml_/)
+		expect(users(env).map((u) => u.email)).toEqual(['owner@test', 'new@example.com'])
+	})
+
+	it('signs in a new account whose team could not be made', async () => {
+		// adding the first site makes the team then (POST /api/v1/sites)
+		vi.spyOn(console, 'error').mockImplementation(() => {})
+		const env = fakeEnv(KEYS)
+		providers({ sub: 'g-new', email: 'new@example.com', name: 'New' })
+		failOnce(env, 'team_members')
+		const s = await signIn(env, 'google')
+		expect(s.location.searchParams.get('login')).toMatch(/^ml_/)
+		expect(users(env).map((u) => u.email)).toEqual(['owner@test', 'new@example.com'])
+		expect(vi.mocked(console.error).mock.calls.flat().join('\n')).toContain('team not made at sign-up')
+		const again = await signIn(env, 'google')
+		expect(again.location.searchParams.get('login')).toMatch(/^ml_/)
+		expect(users(env).map((u) => u.email)).toEqual(['owner@test', 'new@example.com'])
+	})
+
+	it('reports the failure to link Google, not the failure to undo the account after it', async () => {
+		vi.spyOn(console, 'error').mockImplementation(() => {})
+		const env = fakeEnv(KEYS)
+		providers({ sub: 'g-new', email: 'new@example.com', name: 'New' })
+		failOnce(env, 'user_logins')
+		const prepare = env.CONTROL.prepare.bind(env.CONTROL)
+		env.CONTROL.prepare = ((sql: string) => {
+			if (sql.startsWith('DELETE FROM users WHERE id')) return { bind: () => ({ run: async () => Promise.reject(new Error('undo failed')) }) } as unknown as ReturnType<typeof prepare>
+			return prepare(sql)
+		}) as typeof env.CONTROL.prepare
+		expect(await failedSignIn(env)).toBe(500)
+		const log = vi.mocked(console.error).mock.calls.flat().join('\n')
+		expect(log).toContain('Network connection lost')
+		expect(log).toContain('account not undone')
+	})
+
+	it('deletes sign-ins nobody finished in the hourly maintenance', async () => {
+		const env = fakeEnv(KEYS)
+		const now = Date.now()
+		env.CONTROL.db.exec(`INSERT INTO login_states (id, provider, verifier, created_at) VALUES ('stale', 'google', 'v', ${now - 3_600_000}), ('fresh', 'google', 'v', ${now});
+			INSERT INTO login_codes (hash, browser, user_id, expires_at) VALUES ('stale', 'b', 'u1', ${now - 1000}), ('fresh', 'b', 'u1', ${now + 60_000});`)
+		const ctx = fakeCtx()
+		await worker.scheduled({} as ScheduledController, env as unknown as Env, ctx as unknown as ExecutionContext)
+		await ctx.settle()
+		expect([env.CONTROL.rows('SELECT id FROM login_states'), env.CONTROL.rows('SELECT hash FROM login_codes')]).toEqual([[{ id: 'fresh' }], [{ hash: 'fresh' }]])
+	})
+})

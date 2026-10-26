@@ -52,8 +52,17 @@ async function json<T>(res: Response): Promise<T | null> {
 	return res.ok ? ((await res.json().catch(() => null)) as T | null) : null
 }
 
-/** Trades the callback's code for who signed in, or null when the provider refuses. */
+/** Trades the callback's code for who signed in, or null when the provider refuses or can't be reached. */
 export async function profileFor(env: Env, p: Provider, origin: string, code: string, verifier: string): Promise<Profile | null> {
+	try {
+		return await askProvider(env, p, origin, code, verifier)
+	} catch (e) {
+		console.error(JSON.stringify({ msg: 'sign-in provider unreachable', provider: p, error: String(e) }))
+		return null
+	}
+}
+
+async function askProvider(env: Env, p: Provider, origin: string, code: string, verifier: string): Promise<Profile | null> {
 	const body = new URLSearchParams({
 		client_id: env.GOOGLE_CLIENT_ID!,
 		client_secret: env.GOOGLE_CLIENT_SECRET!,

@@ -1,7 +1,7 @@
 import { assignSessions, renderNotice, utcDay, type EventRow, type OpenSession } from '@misomoon/core'
 import { cached, getSite, invalidate, type Site } from './control'
 import { takesPayments } from './revenue'
-import { sendEmail } from './reports'
+import { emailConfigured, NOTICE_TRIES, sendEach } from './reports'
 
 /**
  * The daily ingest cap. Usage is counted per site and UTC day in CONTROL `usage_daily`
@@ -230,6 +230,9 @@ export class Tally {
 /**
  * Records what the cap dropped, once the batch is written. The first drop of a site's
  * day under a cap (not a block) marks `capped_at` and emails the team's owners and admins.
+ * When the provider refuses every copy, `capped_at` holds minus the tries so far and the
+ * hourly run sends it again (resendCapNotices): the edge drops the rest of the day, so no
+ * later batch would. Any value but NULL still reads as capped.
  */
 export async function recordDrops(env: Env, drops: Drops) {
 	if (!drops.counts.size) return
@@ -245,18 +248,58 @@ export async function recordDrops(env: Env, drops: Drops) {
 	const first = capped.filter((_, i) => (res[entries.length + i].meta.changes ?? 0) > 0)
 	for (const e of first) {
 		console.log(JSON.stringify({ msg: 'ingest capped', site: e.siteId, day: e.day, cap: drops.caps.get(e.siteId) }))
-		try {
-			await notifyCapped(env, e.siteId, drops.caps.get(e.siteId)!)
-		} catch (err) {
-			// the events are written; a lost email must not replay the batch
-			console.error(JSON.stringify({ msg: 'cap email failed', site: e.siteId, error: String(err) }))
-		}
+		// the events are written; a lost email must not replay the batch
+		await capNotice(env, e.siteId, e.day, drops.caps.get(e.siteId)!)
 	}
 }
 
-async function notifyCapped(env: Env, siteId: string, cap: number) {
+/**
+ * Emails a site's cap notice, this being try `tries`. When the provider refused it,
+ * `capped_at` becomes -tries for the hourly run, or a time once NOTICE_TRIES are used up.
+ */
+async function capNotice(env: Env, siteId: string, day: number, cap: number, tries = 1) {
+	try {
+		if (await notifyCapped(env, siteId, cap)) return
+	} catch (err) {
+		console.error(JSON.stringify({ msg: 'cap email failed', site: siteId, error: String(err) }))
+	}
+	const last = tries >= NOTICE_TRIES
+	console.error(JSON.stringify({ msg: last ? 'cap email retries stopped' : 'cap email queued for retry', site: siteId, day, tries }))
+	await env.CONTROL.prepare('UPDATE usage_daily SET capped_at = ? WHERE site_id = ? AND day = ?')
+		.bind(last ? Date.now() : -tries, siteId, day)
+		.run()
+		.catch((err) => console.error(JSON.stringify({ msg: 'cap email not marked for retry', site: siteId, error: String(err) })))
+}
+
+/**
+ * Hourly: the cap emails of today that no one got. Each is claimed by setting `capped_at`
+ * back to a time first, so two runs never both send it. One whose site is no longer over
+ * its cap (support raised it) is let go, and so is yesterday's: the pause is over.
+ */
+export async function resendCapNotices(env: Env, now = Date.now()) {
+	if (!emailConfigured(env)) return
+	const day = utcDay(now)
+	// the usage_daily_unsent partial index holds only these rows
+	const { results } = await env.CONTROL.prepare('SELECT site_id, capped_at FROM usage_daily WHERE day = ? AND capped_at <= 0').bind(day).all<{ site_id: string; capped_at: number }>()
+	for (const r of results) {
+		const claim = await env.CONTROL.prepare('UPDATE usage_daily SET capped_at = ? WHERE site_id = ? AND day = ? AND capped_at = ?').bind(now, r.site_id, day, r.capped_at).run()
+		if (!claim.meta.changes) continue
+		const site = await getSite(env, r.site_id)
+		const cap = site && dailyCap(env, site)
+		const stored = (await env.CONTROL.prepare('SELECT stored FROM usage_daily WHERE site_id = ? AND day = ?').bind(r.site_id, day).first<number>('stored')) ?? 0
+		// a cap of 0 blocks the site, which sends no cap email
+		if (!cap || stored < cap) {
+			console.log(JSON.stringify({ msg: 'cap email let go', site: r.site_id, day }))
+			continue
+		}
+		await capNotice(env, r.site_id, day, cap, 1 - r.capped_at)
+	}
+}
+
+/** False when the provider refused every copy. */
+async function notifyCapped(env: Env, siteId: string, cap: number): Promise<boolean> {
 	const site = await getSite(env, siteId)
-	if (!site) return
+	if (!site) return true
 	const { results } = await env.CONTROL.prepare("SELECT u.email FROM team_members m JOIN users u ON u.id = m.user_id WHERE m.team_id = ? AND m.role IN ('owner', 'admin')")
 		.bind(site.team_id)
 		.all<{ email: string }>()
@@ -267,5 +310,5 @@ async function notifyCapped(env: Env, siteId: string, cap: number) {
 		cta: 'Open the dashboard',
 		link: `${env.PUBLIC_URL || 'https://misomoon.com'}/?site=${encodeURIComponent(site.id)}`,
 	})
-	for (const { email } of results) await sendEmail(env, email, msg)
+	return sendEach(env, results.map((r) => r.email), msg)
 }

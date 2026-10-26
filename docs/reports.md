@@ -111,7 +111,8 @@ change when the next scheduled report goes out. If no provider is set up, or the
 refuses the email, the request fails with `503`.
 
 A site can send 10 tests an hour. The 11th fails with `429` and the message
-`a site sends at most 10 test reports an hour; try again later`. A test counts once it
+`a site sends at most 10 test reports an hour; try again later`, and its `Retry-After`
+header gives the seconds until the oldest test of the hour stops counting. A test counts once it
 starts, even when the provider then refuses it. Each test stops counting an hour after it
 was sent.
 
@@ -205,8 +206,19 @@ Alerts and account emails never carry a PDF.
 | Email | Subject | Who gets it | When | Link |
 | --- | --- | --- | --- | --- |
 | Invitation | `Join <team or site name>` | The invited address | An owner or admin invites someone to the team, or to one site as a guest. | `/invite/<token>`, which works for 7 days. A new invitation to the same address replaces the earlier one. |
-| Password reset | `Reset your password` | The address of the account | Someone clicks **Forgot your password?** on the sign-in screen and enters an address that has an account. | `/reset/<token>`, which works for 1 hour. A new request replaces earlier links. |
-| Daily-cap notice | `Tracking for <domain> is paused until 00:00 UTC` | The team's owners and admins | The daily ingest cap drops an event for the site for the first time on a UTC day. A blocked site, with a cap of `0`, gets no notice. | The dashboard |
+| Password reset | `Reset your password` | The address of the account | Someone clicks **Forgot your password?** on the sign-in screen and enters an address that has an account. | `/reset/<token>`, which works for 1 hour. A new request replaces earlier links. An account gets at most one reset email a minute; a request within that minute sends nothing, and the earlier link keeps working. |
+| Daily-cap notice | `Tracking for <domain> is paused until 00:00 UTC` | The team's owners and admins | The daily ingest cap drops an event for the site for the first time on a UTC day. A blocked site, with a cap of `0`, gets no notice. When the provider refuses it for every recipient, the hourly run sends it again, as [Notices the provider refused](#notices-the-provider-refused) says, until the UTC day ends. | The dashboard |
+
+### Notices the provider refused
+
+The daily-cap notice and the plan emails ([plans](configuration.md#plans))
+are sent again by the hourly run, at minute 15, when the provider refused the email for
+every recipient. A refusal is an SES answer in the 4xx range or an error from the `EMAIL`
+binding. After an SES 5xx, or a request that got no answer, the email may have gone out,
+so it isn't sent again. A notice gets 24 tries in all, the first and 23 hourly ones, and
+then it is let go. The hourly run also lets go of a daily-cap notice once the site is no
+longer over its cap, for example after its cap was raised, and of a plan email once a
+higher level is due or the team moved to another plan.
 
 Links in invitations and password resets use `PUBLIC_URL`, or the address of the request
 when `PUBLIC_URL` is unset. Links in reports, alerts, and the daily-cap notice use
@@ -222,12 +234,19 @@ a send failed, run `wrangler tail` in `apps/api` and look for these lines:
 
 | Log line | What it means |
 | --- | --- |
-| `email skipped: no email provider set up` | No provider is set up, or `EMAIL_PROVIDER` names one that isn't. Nothing went out. |
+| `email skipped: no email provider set up` | No provider is set up, or `EMAIL_PROVIDER` names one that isn't. Nothing went out. Without a provider, the hourly run doesn't build or print weekly and monthly reports or check no-traffic alerts, and a test report answers `503` before it prints. |
 | `email failed` | The provider refused the email. The line names the provider, the subject, and the provider's error code. |
 | `report failed` | Building or sending a weekly or monthly report, or checking a no-traffic alert, threw an error. The line carries the subscription `id`. |
 | `alert failed` | Checking or sending a spike alert threw an error. The line carries the subscription `id`. |
 | `report pdf failed` | Browser Run couldn't print the PDF. The report went out without it. |
-| `cap email failed` | Sending the daily-cap notice threw an error. |
+| `cap email failed` | Building the daily-cap notice threw an error, such as a database error. A `cap email queued for retry` line follows. |
+| `cap email queued for retry` | No one got the daily-cap notice. The line carries the site, the day, and `tries` so far. The hourly run tries it again that UTC day. |
+| `cap email retries stopped` | The daily-cap notice failed its 24th try and is let go. |
+| `cap email let go` | The hourly run found the site no longer over its cap, so it didn't send the notice. |
+| `plan email failed` | Building a plan's 80%, 100%, or paused email threw an error. A `plan email queued for retry` line follows. |
+| `plan email queued for retry` | No one got the plan email. The line carries the team, month, plan, level, and `tries` so far. The hourly run tries it again that month. |
+| `plan email retries stopped` | The plan email failed its 24th try and is let go. |
+| `AWS_SES_REGION is not an AWS region; SES is off` | `AWS_SES_REGION` isn't a region such as `ap-southeast-2`, so nothing goes through SES. Logged once per isolate. |
 
 If report links point to `misomoon.com`, see
 [Links in email reports point to misomoon.com](troubleshooting.md#links-in-email-reports-point-to-misomooncom).

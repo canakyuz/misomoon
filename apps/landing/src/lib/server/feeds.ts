@@ -106,7 +106,7 @@ export interface LlmsPost {
 }
 
 const SUMMARY =
-	'Cookieless web analytics with revenue by source, click maps, form drop-off, JavaScript errors, Core Web Vitals, funnels, email reports and a built-in MCP server. misomoon Cloud has every feature on every plan and starts with a 7-day free trial, no card needed. The code is open source (MIT) and also runs in your own Cloudflare account.'
+	'Cookieless web analytics with revenue by source, click maps, form drop-off, JavaScript errors, Core Web Vitals, funnels, email reports and a built-in MCP server. misomoon Cloud has every feature on every plan and starts with a 7-day free trial, no card needed. The code is open source (AGPL-3.0) and also runs in your own Cloudflare account.'
 
 /**
  * A plain-Markdown map of misomoon.com and the docs for AI tools (https://llmstxt.org).

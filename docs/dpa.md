@@ -10,14 +10,11 @@ data, and this agreement doesn't apply to you. Cloudflare processes it for you u
 your Cloudflare account. If you host misomoon for clients, you are their processor, and
 you can use this agreement as a starting point for your own.
 
-**Draft.** Items in square brackets need filling in, and a lawyer should review the whole
-agreement before it is published.
-
 ## 1. Parties
 
 - **Customer**: the person or organization that adds a site to app.misomoon.com. The
   Customer is the controller.
-- **Provider**: [legal name], [registered address], [registration number]. The Provider
+- **Provider**: PT Jackzard Inovasi Digital, a single-founder limited liability company (perseroan perorangan) registered in Indonesia, at Jl. Pulau Bawean No. 20, Banjar Anyar, Kediri, Tabanan, Bali 82121, Indonesia. Business registration number (NIB) 2110260020255; incorporated by decree AHU-A132977.AH.01.30.Tahun 2026 of the Indonesian Minister of Law. The Provider
   is the processor.
 
 If the Customer itself processes the data for someone else, such as an agency for its
@@ -82,7 +79,7 @@ them over time, but never so that they protect Customer data less.
 
 1. The Customer authorizes the Provider to use the sub-processors in Annex 3.
 2. The Provider tells the Customer about a new or replaced sub-processor at least
-   [30] days before it starts processing Customer data, by email to the account owner
+   30 days before it starts processing Customer data, by email to the account owner
    and in the change log under Annex 3. Anyone else can ask for these emails at
    [privacy@misomoon.com](mailto:privacy@misomoon.com). The Customer can object in that time on reasonable data protection
    grounds. If the parties can't resolve the objection, the Customer can close its
@@ -102,19 +99,19 @@ them over time, but never so that they protect Customer data less.
    after it is added. Tracker requests are answered, and briefly queued, by the
    Cloudflare data center nearest the visitor, which may be outside the site's region.
 2. Where Customer data leaves the European Economic Area, the UK, or Switzerland,
-   including access by the Provider's staff from [country of the Provider], the transfer
+   including access by the Provider's staff from Indonesia, the transfer
    relies on the European Commission's standard contractual clauses (Decision
    (EU) 2021/914), Module 2 (controller to processor) between the Customer and the
    Provider, and Module 3 (processor to processor) or the EU-US Data Privacy Framework
    between the Provider and its sub-processors. The clauses are part of this agreement by
    reference; for the UK, the UK Addendum applies, and for Switzerland, the clauses with
-   the changes the Swiss FDPIC requires. [Choose the governing law and courts for the
-   clauses (Clauses 17 and 18).]
+   the changes the Swiss FDPIC requires. The clauses are governed by the law of Ireland,
+   and the courts of Ireland decide disputes under them (Clauses 17 and 18).
 
 ## 9. Personal data breaches
 
 The Provider tells the Customer about a personal data breach that affects Customer data
-without undue delay, and within [48] hours of becoming aware of it. The notice says what
+without undue delay, and within 48 hours of becoming aware of it. The notice says what
 happened, which data and roughly how many data subjects it affects, the likely effects,
 and what the Provider has done and will do about it. The Provider adds what it learns
 later as it learns it.
@@ -126,7 +123,7 @@ later as it learns it.
    exception is a buyer, when the Customer connects a payment provider: the provider's
    customer, subscription, and payment ids find that buyer's payments and the visits they
    came from. When the Customer passes on such an id, the Provider finds and deletes those
-   records within [one month]. Where a request can be met, the Provider helps the Customer
+   records within one month. Where a request can be met, the Provider helps the Customer
    meet it, and passes on any request it receives directly.
 2. **Impact assessments and regulators.** The Provider gives the Customer the
    information it reasonably needs for a data protection impact assessment, or to consult
@@ -135,9 +132,9 @@ later as it learns it.
 ## 11. Audits
 
 The Provider makes available the information needed to show that it meets this agreement,
-including this page, the [security page], and Cloudflare's current SOC 2 report and
+including this page, the [security page](security.md), and Cloudflare's current SOC 2 report and
 ISO 27001 certificate. If that isn't enough, or a regulator asks for it, the Customer may
-audit the Provider once a year, with [30] days' notice, during business hours, through an
+audit the Provider once a year, with 30 days' notice, during business hours, through an
 auditor bound by confidentiality who doesn't work for a competitor, at the Customer's
 cost.
 
@@ -148,10 +145,10 @@ cost.
    the teams only that account is in, with their sites, the same way.
 2. Before closing its account, the Customer can export its data from the dashboard or the
    Stats API.
-3. Within [30] days after the account closes, the Provider deletes all remaining Customer
+3. Within 30 days after the account closes, the Provider deletes all remaining Customer
    data, unless a law requires it to keep some, and confirms the deletion in writing if the
    Customer asks. Backups that Cloudflare keeps to restore D1 databases expire within
-   [30] days.
+   30 days.
 
 ## 13. Liability, term, and order
 
@@ -160,8 +157,8 @@ cost.
 2. This agreement lasts as long as the Provider processes Customer data for the Customer.
 3. If this agreement and the terms of service conflict, this agreement wins on data
    protection. If the standard contractual clauses conflict with either, the clauses win.
-4. This agreement is governed by [governing law], and the courts of [place] decide
-   disputes, except where the standard contractual clauses say otherwise.
+4. This agreement is governed by the law of the Republic of Indonesia, and the District
+   Court of Tabanan decides disputes, except where the standard contractual clauses say otherwise.
 
 ## Annex 1: Details of the processing
 
@@ -222,10 +219,11 @@ tokens, links' query strings, and long numbers are removed.
   the sites its user or key may read.
 - **Integrity.** Payment webhooks are accepted only with a valid signature from the
   provider.
-- **Staff.** [Who at the Provider can reach production data, how access is granted and
-  removed, and how it is logged.]
-- **Incidents.** [How the Provider detects and handles incidents, and who is on call.]
-- **Resilience.** D1 keeps point-in-time recovery for [30] days; the ingest queue retries
+- **Staff.** Only the Provider's director can reach production data, through the
+  Provider's Cloudflare account. Cloudflare's audit log records changes to it.
+- **Incidents.** The service logs errors and failed writes to Cloudflare's Workers logs.
+  The Provider's director handles incidents and tells Customers as section 9 says.
+- **Resilience.** D1 keeps point-in-time recovery for 30 days; the ingest queue retries
   failed writes.
 
 ## Annex 3: Sub-processors
@@ -233,7 +231,7 @@ tokens, links' query strings, and long numbers are removed.
 | Sub-processor | What it does | Where |
 | --- | --- | --- |
 | Cloudflare, Inc. | Runs the service: Workers, D1 databases, Queues, email, and the browser that prints report PDFs | Account data in the EU; each site's statistics in the region the Customer picks (EU, US, or Asia-Pacific); requests served at the data center nearest the visitor |
-| [Amazon Web Services EMEA SARL, if email goes through Amazon SES] | Sends report, alert, invitation, and password-reset emails to the Customer's users. Visitor data is never in them beyond the totals in a report | [EU region] |
+| Amazon Web Services (Amazon SES) | Sends sign-in, invitation, password-reset, report, and alert emails to the Customer's users. Visitor data is never in them beyond the totals in a report | Asia Pacific (Sydney) |
 
 Google receives nothing from the service unless the Customer connects Search Console or
 imports a Google Analytics property, and then only the requests for the Customer's own
@@ -246,6 +244,6 @@ a sub-processor.
 
 ### Changes to the sub-processors
 
-- [date]: first list.
+- 2026-10-26: first list.
 
-Last updated [date].
+Last updated 2026-10-26.

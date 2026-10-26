@@ -61,10 +61,13 @@ they add a subdomain to it:
 
 | | Button | Then add the domain under |
 |---|---|---|
-| Cloudflare Worker (`templates/proxy-cloudflare`) | [Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-cloudflare) | Worker → Settings → Domains & Routes |
-| Vercel (`templates/proxy-vercel`) | [Deploy with Vercel](https://vercel.com/new/clone?repository-url=https://github.com/jackzard/misomoon/tree/main/templates/proxy-vercel&project-name=misomoon-proxy&repository-name=misomoon-proxy) | Project → Settings → Domains |
+| Cloudflare Worker (`templates/proxy-cloudflare`) | [Deploy to Cloudflare](https://deploy.workers.cloudflare.com/?url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-cloudflare) | Worker → Settings → Domains & Routes |
+| Vercel (`templates/proxy-vercel`) | [Deploy with Vercel](https://vercel.com/new/clone?repository-url=https://github.com/jackzard/misomoon-proxy/tree/main/proxy-vercel&project-name=misomoon-proxy&repository-name=misomoon-proxy) | Project → Settings → Domains |
 
-Both buttons clone from GitHub, so the repository has to be public. The Worker reads
+Both buttons clone from GitHub, so they read the templates from a public mirror,
+[jackzard/misomoon-proxy](https://github.com/jackzard/misomoon-proxy), which holds
+`templates/` as it is in this repository. The templates are MIT-licensed. After changing
+one, copy it there in the same release. The Worker reads
 `MISOMOON_URL` (default `https://app.misomoon.com`); the Vercel template has it in
 `vercel.json`. The links come from `deployLinks()` in `packages/core/src/snippets.ts`.
 

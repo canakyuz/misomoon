@@ -43,7 +43,7 @@ export const software = (origin: string): Thing => ({
 	applicationCategory: 'BusinessApplication',
 	applicationSubCategory: 'Web analytics',
 	operatingSystem: 'Web',
-	license: 'https://opensource.org/licenses/MIT',
+	license: 'https://www.gnu.org/licenses/agpl-3.0.html',
 	codeRepository: REPO,
 	featureList: FEATURES.flatMap((g) => g.items.map((f) => f.name)),
 	isAccessibleForFree: true,

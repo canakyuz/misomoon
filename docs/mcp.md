@@ -119,6 +119,9 @@ changes or deletes one. A client that asks before a tool writes asks for that on
 - A request body can be 64 KB at most, and a batch can hold 20 requests at most.
 - Each `POST` counts against the Stats API [rate limit](api.md#rate-limits): 100 requests
   per minute per API key, or per IP address without a key, shared with `/api/v1/stats/*`
-  and `/api/v2/query`. A batch counts once. Over the limit, the server answers `429` with
-  `{"error": "rate limit exceeded, try again in a minute"}`. Signed-in dashboards are not
-  limited.
+  and `/api/v2/query`. Each request in a batch counts. Over the limit, the server answers
+  `429` with a `Retry-After: 60` header and the JSON-RPC error
+  `{"jsonrpc": "2.0", "id": 1, "error": {"code": -32000, "message": "rate limit exceeded, try again in a minute"}}`,
+  with the request's own `id`, or `null` for a batch. When a batch runs
+  over part way, the requests past the limit get a JSON-RPC error with code `-32000` and
+  the same message, and the others are answered. Signed-in dashboards are not limited.

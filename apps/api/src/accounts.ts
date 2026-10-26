@@ -2,6 +2,7 @@ import { canAssign, isGuestRole, isTeamRole, keepsOwner, PLAN_REQUIRED, PLAN_SIT
 import { Hono, type Context } from 'hono'
 import { authorize, checkPassword, createKey, hashPassword, requireUser, secret, sha256, startSession, teamRole, type Principal } from './auth'
 import { HttpError, getSite, invalidate, type Site } from './control'
+import { clientKey, TooMany } from './limits'
 import { plansEnforced, teamTermsOf } from './plans'
 import { emailConfigured, sendEmail } from './reports'
 import { deleteSite } from './sites'
@@ -22,6 +23,7 @@ interface User {
 
 const INVITE_TTL = 7 * 86_400_000
 const RESET_TTL = 3_600_000
+const RESET_EVERY = 60_000
 const EMAIL = /^[^@\s]+@[^@\s]+\.[^@\s]+$/
 const origin = (c: Context<App>) => c.env.PUBLIC_URL || new URL(c.req.url).origin
 
@@ -31,9 +33,9 @@ function validPassword(p: unknown): string {
 	return p
 }
 
-async function limited(c: Context<App>, what: string) {
-	const ip = c.req.header('cf-connecting-ip') ?? 'unknown'
-	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key: `${what}:${ip}` })).success) throw new HttpError(429, 'too many attempts, wait a minute')
+/** Counts an attempt at `what` by the caller's address, or by `id` (an account, a person) when given. */
+async function limited(c: Context<App>, what: string, id = clientKey(c.req.header('cf-connecting-ip'))) {
+	if (c.env.STATS_LIMIT && !(await c.env.STATS_LIMIT.limit({ key: `${what}:${id}` })).success) throw new TooMany('too many attempts, wait a minute')
 }
 
 const getUser = (env: Env, id: string) => env.CONTROL.prepare('SELECT * FROM users WHERE id = ?').bind(id).first<User>()
@@ -129,15 +131,29 @@ accounts.post('/auth/forgot', async (c) => {
 	await limited(c, 'forgot')
 	const body = await c.req.json<{ email?: string }>()
 	const user = body.email ? await userByEmail(c.env, body.email) : null
+	// one email a minute to an account, whoever asks and from where; the answer is the same,
+	// and the link already sent keeps working. The new link is claimed in one statement, so
+	// requests that arrive at once send one email.
 	if (user) {
 		const token = secret('mr_')
-		await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE user_id = ? OR expires_at < ?').bind(user.id, Date.now()).run()
-		await c.env.CONTROL.prepare('INSERT INTO password_resets (hash, user_id, expires_at) VALUES (?, ?, ?)').bind(await sha256(token), user.id, Date.now() + RESET_TTL).run()
-		await sendEmail(
-			c.env,
-			user.email,
-			renderNotice({ label: 'password', subject: 'Reset your password', detail: `Someone asked to reset the misomoon password for ${user.email}. The link works for an hour.`, cta: 'Set a new password', link: `${origin(c)}/reset/${token}`, footnote: "If it wasn't you, ignore this email." }),
+		const hash = await sha256(token)
+		const now = Date.now()
+		const claim = await c.env.CONTROL.prepare(
+			'INSERT INTO password_resets (hash, user_id, expires_at) SELECT ?, ?, ? WHERE NOT EXISTS (SELECT 1 FROM password_resets WHERE user_id = ? AND expires_at > ?)',
 		)
+			.bind(hash, user.id, now + RESET_TTL, user.id, now + RESET_TTL - RESET_EVERY)
+			.run()
+		if (claim.meta.changes) {
+			const sent = await sendEmail(
+				c.env,
+				user.email,
+				renderNotice({ label: 'password', subject: 'Reset your password', detail: `Someone asked to reset the misomoon password for ${user.email}. The link works for an hour.`, cta: 'Set a new password', link: `${origin(c)}/reset/${token}`, footnote: "If it wasn't you, ignore this email." }),
+			)
+			// the link sent replaces the earlier ones; one that never went out is taken back, so the
+			// earlier link keeps working and the next request can send at once
+			if (sent) await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE (user_id = ? AND hash != ?) OR expires_at < ?').bind(user.id, hash, now).run()
+			else await c.env.CONTROL.prepare('DELETE FROM password_resets WHERE hash = ?').bind(hash).run()
+		}
 	}
 	return c.json({ ok: true, sending: emailConfigured(c.env) })
 })
@@ -269,9 +285,18 @@ async function socialUser(env: Env, p: Provider, profile: Profile, inviteHash: s
 			// two first sign-ups at once on an invite-only server: the other one won
 			throw e instanceof HttpError && e.status === 403 ? new LoginRefused('closed') : e
 		})
-		if (!inv) await createTeam(env, user.id, `${user.name}'s sites`)
 		userId = user.id
-		await connect(env, p, profile.subject, userId)
+		// an account without its login would refuse every later sign-in (another_google), so it goes
+		await connect(env, p, profile.subject, userId).catch(async (e) => {
+			await env.CONTROL.prepare('DELETE FROM users WHERE id = ?')
+				.bind(userId)
+				.run()
+				.catch((undo) => console.error(JSON.stringify({ msg: 'account not undone after a failed sign-up', user: userId, error: String(undo) })))
+			throw e
+		})
+		// signed in from here on: a team that fails now is made with the first site (POST /api/v1/sites)
+		if (!inv)
+			await createTeam(env, user.id, `${user.name}'s sites`).catch((e) => console.error(JSON.stringify({ msg: 'team not made at sign-up', user: user.id, error: String(e) })))
 	}
 	if (!inv) return { userId, site: null }
 	if ((await getUser(env, userId))!.email.toLowerCase() !== inv.email.toLowerCase()) throw new LoginRefused('invite_email')
@@ -504,6 +529,8 @@ accounts.post('/teams/:team/invitations', async (c) => {
 		const existing = await userByEmail(c.env, email)
 		if (existing && (await teamRole(c.env, existing.id, teamId))) throw new HttpError(409, `${email} is already on this team`)
 	}
+	// each invitation sends an email, so one person sends at most a minute's worth
+	await limited(c, 'invite', who.userId!)
 	const token = secret('mi_')
 	const id = crypto.randomUUID()
 	await c.env.CONTROL.batch([

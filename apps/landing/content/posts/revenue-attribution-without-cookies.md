@@ -173,4 +173,4 @@ Yes. A payment carries its visit's campaign. Filter the dashboard by the campaig
 
 ## Start counting revenue by source
 
-misomoon Cloud runs the tracker, the webhooks, and the attribution for you, and every feature, revenue included, is on every plan. [Start a free trial of misomoon Cloud](https://app.misomoon.com/?signup) or [see the plans](/pricing). If you'd rather run it in your own Cloudflare account, you can [self-host misomoon](https://docs.misomoon.com/self-hosting) under the MIT license.
+misomoon Cloud runs the tracker, the webhooks, and the attribution for you, and every feature, revenue included, is on every plan. [Start a free trial of misomoon Cloud](https://app.misomoon.com/?signup) or [see the plans](/pricing). If you'd rather run it in your own Cloudflare account, you can [self-host misomoon](https://docs.misomoon.com/self-hosting) under AGPL-3.0.

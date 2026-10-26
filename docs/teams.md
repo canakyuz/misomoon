@@ -57,7 +57,8 @@ Otherwise, send the link yourself. The link works for 7 days.
 
 The invitation shows as **pending** in the member list until the person accepts it. To
 withdraw it, select the trash icon next to it. Inviting the same email again replaces the
-old link. You can't invite someone who is already on the team.
+old link. You can't invite someone who is already on the team. You can send 100
+invitations a minute; past that, the page shows "too many attempts, wait a minute".
 
 ## Give someone one site
 
@@ -184,7 +185,8 @@ password from the dashboard or the API.
 4. Enter a new password, and select **Save and sign in**.
 
 A link older than an hour shows an error. Select **Send me a new link** to ask for
-another.
+another. An account gets at most one reset email a minute, so a second request within a
+minute sends nothing new: use the link from the first email.
 
 The new password signs you out of every other browser and device.
 
@@ -253,7 +255,11 @@ The [`SIGNUPS` variable](configuration.md#variables) decides who can create an a
 With `open`, the default, anyone can. With `invite`, only the first account can, and it
 owns the instance ([Claim your instance](self-hosting.md#claim-your-instance)). With
 `closed`, nobody can. Invitations create accounts under every value. When the `STATS_LIMIT` binding exists,
-sign-up, sign-in, password reset, and invitation accept allow 100 attempts per minute per
-IP address, then answer `429`.
+sign-up, sign-in, sign-in with Google, password reset, account deletion, and invitation
+accept allow 100 attempts per minute per IP address (per /64 block for IPv6), then
+answer `429`. One person can send 100 invitations a minute
+([Rate limits](api.md#rate-limits)).
+A password reset email goes to an account at most once a minute, whoever asks. If the
+email provider refuses it, the next request can send one at once.
 
 [API](api.md#accounts-and-teams) lists every account, team, and key route.

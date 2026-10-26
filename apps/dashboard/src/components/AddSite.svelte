@@ -16,10 +16,14 @@
 	// Only the domain needs the user: timezone and currency are guessed, and stay one tap away.
 	let site = $state({ domain: '', timezone: browserZone, currency: guessCurrency() })
 	let team = $state('')
-	// Where the data is stored, on a server with regions: guessed from the timezone until picked.
+	// Where the data is stored: only the regions this server has shards in (SHARD_EU_0 and
+	// so on), none on a server without them. Guessed from the timezone until picked.
 	const regions = $derived(dash.me?.regions ?? [])
+	const nearest = $derived(regions.find((r) => r === regionFromTimezone(site.timezone)))
 	let picked = $state<Region | ''>('')
-	const region = $derived(picked || (regions.find((r) => r === regionFromTimezone(site.timezone)) ?? regions[0]))
+	const region = $derived(picked && regions.includes(picked) ? picked : (nearest ?? regions[0]))
+	// EU and US shards are in D1's jurisdictions; Asia-Pacific is a location hint D1 doesn't promise
+	const WHERE: Record<Region, string> = { eu: 'Stored inside the EU', us: 'Stored inside the US', apac: 'Stored near Asia-Pacific, as a preference' }
 	let more = $state(false)
 	let busy = $state(false)
 	let error = $state<string | null>(null)
@@ -58,16 +62,25 @@
 		<button class="btn primary" type="submit" disabled={!site.domain.trim() || busy}>{busy ? 'Adding…' : 'Add site'}</button>
 	</div>
 
+	{#if regions.length > 1}
+		<fieldset class="regions">
+			<legend>Where to store its stats <small>You can't move a site to another region later.</small></legend>
+			<div class="choices" role="radiogroup" aria-label="Data region">
+				{#each regions as r (r)}
+					<button type="button" role="radio" aria-checked={r === region} class:on={r === region} onclick={() => (picked = r)}>
+						<b>{regionName[r]}{#if r === nearest}<i>Nearest</i>{/if}</b>
+						<span>{WHERE[r]}</span>
+					</button>
+				{/each}
+			</div>
+		</fieldset>
+	{:else if region}
+		<p class="one">Its stats are stored in the {regionName[region]}, the only region this server has.</p>
+	{/if}
+
 	{#if more}
 		<div class="more">
 			<SiteFields bind:timezone={site.timezone} bind:currency={site.currency} />
-			{#if regions.length > 1}
-				<label>
-					<span>Data region</span>
-					<small>Where its stats are stored. It can't be changed later</small>
-					<Select label="Data region" bind:value={() => region ?? '', (v) => (picked = v as Region)} options={regions.map((r) => ({ value: r, label: regionName[r] }))} />
-				</label>
-			{/if}
 			{#if teams.length > 1}
 				<label>
 					<span>Team</span>
@@ -78,7 +91,7 @@
 		</div>
 	{:else}
 		<p class="defaults">
-			{zoneCity(site.timezone)} time · revenue in {currencyName(site.currency)}{#if regions.length > 1}&nbsp;· stored in {regionName[region]}{/if}{#if teams.length > 1}&nbsp;· {teams[0].name}{/if}
+			{zoneCity(site.timezone)} time · revenue in {currencyName(site.currency)}{#if teams.length > 1}&nbsp;· {teams[0].name}{/if}
 			<button type="button" class="change" onclick={() => ((more = true), (team ||= teams[0]?.id ?? ''))}>Change</button>
 		</p>
 	{/if}
@@ -110,6 +123,84 @@
 		font-weight: 500;
 		text-decoration: underline;
 		text-underline-offset: 3px;
+	}
+	.regions {
+		margin: 16px 0 0;
+		padding: 0;
+		border: 0;
+		min-width: 0;
+	}
+	legend {
+		padding: 0;
+		margin-bottom: 8px;
+		font-size: 12.5px;
+		font-weight: 600;
+	}
+	legend small {
+		display: block;
+		margin-top: 2px;
+		font-size: 11.5px;
+		font-weight: 400;
+		color: var(--text-3);
+	}
+	.choices {
+		display: grid;
+		grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+		gap: 8px;
+	}
+	.choices button {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+		padding: 10px 12px;
+		border: 1.5px solid var(--line-strong);
+		border-radius: var(--radius-sm);
+		background: var(--surface);
+		color: var(--text-2);
+		text-align: left;
+		transition:
+			border-color var(--dur-fast),
+			background var(--dur-fast);
+	}
+	.choices button:hover {
+		background: var(--surface-hover);
+	}
+	.choices button.on {
+		border-color: var(--vermilion);
+		box-shadow: inset 0 0 0 1px var(--vermilion);
+		color: var(--text);
+	}
+	.choices button:focus-visible {
+		outline: 2px solid var(--cobalt);
+		outline-offset: 2px;
+	}
+	.choices b {
+		display: flex;
+		align-items: center;
+		gap: 6px;
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text);
+	}
+	.choices i {
+		font-style: normal;
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		letter-spacing: 0.06em;
+		padding: 1px 5px;
+		border-radius: var(--radius-xs);
+		background: var(--surface-3);
+		color: var(--text-2);
+	}
+	.choices span {
+		font-size: 11.5px;
+		color: var(--text-3);
+	}
+	.one {
+		margin: 10px 0 0;
+		font-size: 12.5px;
+		color: var(--text-3);
 	}
 	.more {
 		display: grid;

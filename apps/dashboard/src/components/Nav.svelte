@@ -10,13 +10,26 @@
 	import Sun from '@lucide/svelte/icons/sun'
 	import { send, setToken, type RealtimeResponse } from '../lib/api'
 	import { getDash, Resource } from '../lib/dash.svelte'
-	import { DOCS } from '../lib/guides'
+	import { DOCS, HOME } from '../lib/guides'
 	import { VIEW_INFO } from '../lib/nav'
 	import Logo from './Logo.svelte'
 
 	const dash = getDash()
 	let menu = $state<'site' | 'account' | null>(null)
-	const toggle = (m: 'site' | 'account') => (menu = menu === m ? null : m)
+	const toggle = (m: 'site' | 'account') => {
+		menu = menu === m ? null : m
+		query = ''
+	}
+	// the site menu: a search over name and domain, and a list that scrolls past five sites
+	let query = $state('')
+	const found = $derived.by(() => {
+		const q = query.trim().toLowerCase()
+		return q ? dash.sites.filter((s) => s.name.toLowerCase().includes(q) || s.domain.toLowerCase().includes(q)) : dash.sites
+	})
+	function pick(id: string) {
+		dash.switchSite(id)
+		menu = null
+	}
 
 	// "Here now" refreshes on its own every 30 s while the tab is visible, not only on a manual refresh.
 	let beat = $state(0)
@@ -47,7 +60,8 @@
 <header class="nav">
 	<div class="bar">
 		<div class="start">
-			<span class="brand"><Logo /></span>
+			<!-- the demo is opened from the home page, so its logo leads back there -->
+			{#if dash.isSample}<a class="brand" href={HOME} title="Back to misomoon.com"><Logo /></a>{:else}<span class="brand"><Logo /></span>{/if}
 			<div class="anchor">
 				{#if !dash.sites.length && dash.signedIn}
 					<!-- nothing to switch between yet, so the button goes straight to adding one -->
@@ -66,20 +80,32 @@
 				{#if menu === 'site'}
 					<div class="scrim" role="presentation" onclick={() => (menu = null)}></div>
 					<div class="pop card" role="menu">
-						{#each dash.sites as s (s.id)}
-							<button
-								role="menuitemradio"
-								aria-checked={s.id === dash.site}
-								onclick={() => {
-									dash.switchSite(s.id)
-									menu = null
-								}}
-							>
-								<span class="dot sm">{s.name.slice(0, 1)}</span>
-								<span class="grow">{s.name}<small class="muted">{s.domain}</small></span>
-								{#if s.id === dash.site}<Check size={14} />{/if}
-							</button>
-						{/each}
+						{#if !dash.isSample}
+							<label class="find">
+								<Search size={13} />
+								<!-- Enter opens the first site that matches -->
+								<input
+									bind:value={query}
+									placeholder="Search sites"
+									aria-label="Search sites"
+									autocomplete="off"
+									spellcheck="false"
+									{@attach (el) => el.focus()}
+									onkeydown={(e) => e.key === 'Enter' && found[0] && pick(found[0].id)}
+								/>
+							</label>
+						{/if}
+						<div class="list scroll-thin">
+							{#each found as s (s.id)}
+								<button role="menuitemradio" aria-checked={s.id === dash.site} onclick={() => pick(s.id)}>
+									<span class="dot sm">{s.name.slice(0, 1)}</span>
+									<span class="grow">{s.name}<small class="muted">{s.domain}</small></span>
+									{#if s.id === dash.site}<Check size={14} />{/if}
+								</button>
+							{:else}
+								<p class="none muted">No site matches “{query.trim()}”.</p>
+							{/each}
+						</div>
 						{#if dash.isSample}
 							<p class="note muted">A sample store with made-up visitors. Your own sites show up here once you add them.</p>
 						{:else if dash.signedIn}
@@ -108,7 +134,8 @@
 				{#if dash.theme === 'dark'}<Sun size={15} />{:else}<Moon size={15} />{/if}
 			</button>
 			{#if dash.isSample}
-				<span class="tag">Sample data</span>
+				<!-- the way out of the demo, next to the logo that leads home -->
+				<a class="btn primary trial" href="/?signup">Start free trial</a>
 			{:else if dash.isShared}
 				<span class="tag">Read-only</span>
 			{:else if dash.me?.user}
@@ -334,8 +361,12 @@
 		font-size: 12px;
 		text-transform: uppercase;
 	}
-	.signin {
+	.signin,
+	.trial {
 		margin-left: 6px;
+	}
+	.trial {
+		white-space: nowrap;
 	}
 
 	.scrim {
@@ -356,6 +387,40 @@
 	.pop.right {
 		left: auto;
 		right: 0;
+	}
+	.find {
+		display: flex;
+		align-items: center;
+		gap: 7px;
+		height: 34px;
+		margin-bottom: 4px;
+		padding: 0 8px;
+		border-bottom: 1px dashed var(--line-strong);
+		color: var(--text-3);
+	}
+	.find input {
+		flex: 1;
+		min-width: 0;
+		border: 0;
+		background: none;
+		color: var(--text);
+		font: inherit;
+		font-size: 13px;
+		outline: none;
+	}
+	/* five sites tall; the rest scroll */
+	.list {
+		max-height: calc(5 * 46px);
+		overflow-y: auto;
+		overscroll-behavior: contain;
+	}
+	.list button {
+		min-height: 46px;
+	}
+	.none {
+		margin: 0;
+		padding: 10px 8px;
+		font-size: 12.5px;
 	}
 	.pop button {
 		display: flex;

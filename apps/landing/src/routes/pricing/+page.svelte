@@ -24,7 +24,7 @@
 		['Features', 'Every feature on every plan', 'Every feature'],
 		['Where the data lives', 'The EU, the US or Asia-Pacific, per site', 'Your Cloudflare account'],
 		['Agreement', 'Our data processing agreement', 'Cloudflare’s agreement with you'],
-		['Code', 'MIT, the same code as on GitHub', 'MIT, yours to change'],
+		['Code', 'AGPL-3.0, the same code as on GitHub', 'AGPL-3.0, yours to change'],
 	]
 
 	const faqs: [string, string][] = [
@@ -47,7 +47,7 @@
 		['Can I take my data with me?', 'Yes. Export any period as a ZIP of CSV files from the dashboard, on any plan.'],
 		[
 			'Can I run it myself instead?',
-			'Yes. misomoon is open source under the MIT license. Deploy it to your own Cloudflare account for free, and pay Cloudflare for what it uses. The Workers Free plan handles about 3,000 events a day, and Workers Paid starts at $5 a month.',
+			'Yes. misomoon is open source under AGPL-3.0. Deploy it to your own Cloudflare account for free, and pay Cloudflare for what it uses. The Workers Free plan handles about 3,000 events a day, and Workers Paid starts at $5 a month.',
 		],
 		[`I need more than ${words(LARGEST)} events a month.`, `Email ${SUPPORT} with your traffic, and we will set up a plan that fits.`],
 	]
@@ -83,7 +83,7 @@
 	<header class="sub" {@attach reveal()}>
 		<span class="eyebrow"><b>OR</b> Run it yourself</span>
 		<h2 class="display">Cloud, or <em>open source.</em></h2>
-		<p>Both run the same MIT-licensed code. Cloud is the quick way in. Self-hosting gives you the servers to look after, and every line to change.</p>
+		<p>Both run the same open-source code. Cloud is the quick way in. Self-hosting gives you the servers to look after, and every line to change.</p>
 	</header>
 	<div class="table" {@attach reveal(80)}>
 		<table>

@@ -82,8 +82,8 @@ password to the viewer separately from the URL.
 When a viewer opens a password link, the dashboard shows the link's name and the text
 "This dashboard is shared with a password." The viewer types the password and selects
 **Open**. A wrong password shows "wrong password". With the `STATS_LIMIT` rate limit
-bound, each IP address gets 100 attempts per minute. After that, the dashboard shows "too
-many attempts, wait a minute".
+bound, each IP address (each /64 block for IPv6) gets 100 attempts per minute. After
+that, the dashboard shows "too many attempts, wait a minute".
 
 The link's name appears on the password page before the viewer unlocks it, so don't put
 anything in the name that the viewer shouldn't see.
@@ -183,7 +183,8 @@ A public site is open to everyone who reaches your misomoon URL signed out:
   the `id`.
 - `GET /api/v1/sites` without a token lists every public site.
 - The Stats API answers requests without a token for the site. Those requests share a
-  limit of 100 per minute per IP address.
+  limit of 100 per minute per IP address, with MCP
+  ([Rate limits](api.md#rate-limits)).
 - The MCP server answers clients without a key. Its `list_sites` tool lists the public
   sites, and its read tools return their stats.
 

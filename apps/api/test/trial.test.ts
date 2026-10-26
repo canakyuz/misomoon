@@ -173,6 +173,16 @@ describe('a lapsed team', () => {
 		expect([sent.length, reads()]).toEqual([4, 2])
 	})
 
+	it("judges the trial by the server's clock, not the time a beacon says it was sent", async () => {
+		const { env } = await cloud()
+		setTrial(env, 't1', NOW - 60_000)
+		invalidate('')
+		// m.js may send a time up to 5 minutes off; one from before the trial ended still counts as now
+		const sent = await call(env, 'POST', '/api/event', { s: 'shop-com', n: 'pageview', u: 'https://shop.com/', ts: NOW - 4 * 60_000 }, { 'user-agent': UA, 'cf-connecting-ip': '198.51.100.7' })
+		expect(sent.status).toBe(202)
+		expect(events(env, 'shop-com')).toBe(0)
+	})
+
 	it('records again within a minute once the team has a plan', async () => {
 		const { env } = await cloud()
 		setTrial(env, 't1', NOW - 1)

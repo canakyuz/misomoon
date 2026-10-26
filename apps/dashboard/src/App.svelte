@@ -5,7 +5,7 @@
 	import AddSite from './components/AddSite.svelte'
 	import AuthScreen from './components/AuthScreen.svelte'
 	import PlanBanner from './components/PlanBanner.svelte'
-	import { ApiError, get, getShareToken, getToken, loginReturn, send, setShareToken, setToken, shareSlug } from './lib/api'
+	import { ApiError, exchangeLogin, get, getShareToken, getToken, loginReturn, send, setShareToken, setToken, shareSlug } from './lib/api'
 	import { loginMessage } from './lib/account'
 	import { Dash, setDash } from './lib/dash.svelte'
 	import Funnels from './views/Funnels.svelte'
@@ -33,8 +33,9 @@
 		loginReturn.code = null
 		if (code) {
 			try {
-				const r = await send<{ token: string; site: string | null }>('POST', '/api/v1/auth/exchange', { code })
+				const r = await exchangeLogin(code)
 				setToken(r.token)
+				dash.loginError = null
 				if (r.site) dash.site = r.site
 			} catch (e) {
 				dash.loginError = (e as Error).message
@@ -153,11 +154,6 @@
 				{/if}
 				{#if !dash.me}
 					<div class="boot"><span class="skeleton" style="width: 220px; height: 40px"></span><span class="skeleton" style="height: 380px; border-radius: 18px"></span></div>
-				{:else if !dash.site && dash.isSample}
-					<div class="center">
-						<h1 class="serif">No demo here.</h1>
-						<p class="muted">This server has no sample site. Set SAMPLE_SITE to show one.</p>
-					</div>
 				{:else if !dash.site && dash.view !== 'settings'}
 					<div class="center">
 						<h1 class="serif">Which site should we watch?</h1>

@@ -41,9 +41,13 @@ the period: it charges the card for a bigger plan and credits a smaller one. If 
 schedules the switch for the next renewal, the dashboard says on which day the new plan
 starts, and the team stays on its current plan until then.
 
-If Polar can't charge the card for the switch, nothing changes. Update the card in
-**Manage billing**, then switch again. A move to a smaller plan keeps every site and
-setting ([Move to a smaller plan](cloud.md#move-to-a-smaller-plan)).
+If Polar can't charge the card for the switch, or refuses it for another reason, nothing
+changes. Update the card in **Manage billing**, then switch again. A canceled plan is
+resumed before the switch, and canceled again when Polar refuses it. If Polar refuses that
+too, the message says the subscription now renews; cancel it in **Manage billing** if you
+still want it to end. When Polar doesn't answer the switch at all, the plan stays resumed,
+since the switch may have gone through; the webhook then brings the plan up to date. A move
+to a smaller plan keeps every site and setting ([Move to a smaller plan](cloud.md#move-to-a-smaller-plan)).
 
 ## Change the card, get invoices, or cancel
 
@@ -110,7 +114,8 @@ Polar.
 
 A lost webhook can't keep a plan going. Once a day, at the cleanup at 03:15 UTC,
 misomoon reads again from Polar each team whose paid period ended more than a day ago,
-up to 50 teams a day. A renewal moves the team to the new period, and a subscription that
+up to 50 teams a day, those it asked about longest ago first, so teams it can't settle
+wait behind the rest. A renewal moves the team to the new period, and a subscription that
 ended ends the plan, as `subscription.revoked` would.
 
 If Polar answers that the team's subscription doesn't exist, choosing a plan opens a new
@@ -227,7 +232,13 @@ The CLI logs each event with misomoon's answer: `200` when it set the team's pla
   delivery up to 10 times, and after 10 failures in a row it turns the endpoint off and
   emails the organization. Turn it back on in **Settings** > **Webhooks** once it works.
 - A subscription to a product that is not one of the three answers `202`, changes nothing,
-  and logs `unknown Polar product`. A subscription without a `team_id`, or of a deleted
+  and logs `unknown Polar product`. A subscription misomoon recorded before you changed a
+  `POLAR_PRODUCT_*` id keeps the plan it had while it stays on the product it was
+  recorded with: its changes still apply, so its end ends that plan, and each one logs
+  `polar subscription on a product that is no plan`. If a running subscription moves to
+  another product that is none of the three, the team keeps its plan as it was, and each
+  change logs `polar subscription moved to a product that is no plan` for support to
+  settle; its end still ends the plan. A subscription without a `team_id`, or of a deleted
   team, logs `polar subscription without a team` or `polar subscription of a deleted team`.
 - When Polar refuses a request, the route answers `502` with Polar's message, and the log
   has `polar error` with Polar's status. A wrong token or a token for the other
@@ -238,7 +249,8 @@ The CLI logs each event with misomoon's answer: `200` when it set the team's pla
   `409` with the code `payment_pending`. It clears once the subscription that checkout
   made reaches misomoon, or an hour after that checkout started.
 - `polar subscription missing` in the log: the daily check found a team whose paid period
-  ended, and Polar answered `404` for its subscription, or it is for another product.
+  ended, and Polar answered `404` for its subscription, or a subscription misomoon never
+  recorded is for another product.
   Check the token and `POLAR_SERVER`, then the subscription in Polar. The team keeps its
   plan until support sets it. `polar subscription gone` means a checkout replaced a
   subscription Polar no longer had.
@@ -248,8 +260,9 @@ The CLI logs each event with misomoon's answer: `200` when it set the team's pla
 ## What misomoon stores
 
 For each team that pays, misomoon stores Polar's customer id and subscription id, the
-subscription's status and product, the end of the paid period, and the id of the last
-checkout opened for the team, in the control database (`teams` and
+subscription's status and product, the end of the paid period, the id of the last
+checkout opened for the team, and when the daily check last asked Polar about it, in the
+control database (`teams` and
 `polar_subscriptions`). It also keeps the `webhook-id` of each
 webhook for 30 days. Polar keeps the card, the billing address, the tax details, and the
 invoices.

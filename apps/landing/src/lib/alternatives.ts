@@ -82,7 +82,7 @@ const plausible: Alternative = {
 		{ text: 'You can’t use Cloudflare, or you want the data on your own hardware.', src: 'https://plausible.io/self-hosted-web-analytics', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'AGPL-3.0', src: 'https://github.com/plausible/analytics', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'AGPL-3.0', src: 'https://github.com/plausible/analytics', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'Docker, Postgres, ClickHouse, 2 GB RAM', edge: 'us', src: 'https://github.com/plausible/community-edition', checked: C },
 		{ label: 'Self-hosted edition limits', us: 'None', them: 'No funnels, journeys or revenue goals', edge: 'us', src: 'https://plausible.io/self-hosted-web-analytics', checked: C },
 		{ label: 'Cookieless by default', us: 'Yes', them: 'Yes (their claim)', src: 'https://plausible.io/data-policy', checked: C },
@@ -112,7 +112,7 @@ const umami: Alternative = {
 	short: 'Umami',
 	kind: 'self-hosted',
 	answer:
-		'Both are MIT-licensed and cookieless. Umami runs on your server with Node.js and Postgres. misomoon runs in your Cloudflare account, adds email reports and Google import, and needs no server to patch.',
+		'Both are open source and cookieless: Umami under MIT, misomoon under AGPL-3.0. Umami runs on your server with Node.js and Postgres. misomoon runs in your Cloudflare account, adds email reports and Google import, and needs no server to patch.',
 	description: 'misomoon and Umami compared: what self-hosting needs, email reports, Google import, MCP, and tracker size, with sources checked in October 2026.',
 	trackerKb: 2.3,
 	pickUs: [
@@ -126,7 +126,7 @@ const umami: Alternative = {
 		{ text: 'You can’t use Cloudflare.', src: 'https://docs.umami.is/docs/install', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'MIT', src: 'https://github.com/umami-software/umami', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'MIT', src: 'https://github.com/umami-software/umami', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'Node.js and Postgres', edge: 'us', src: 'https://docs.umami.is/docs/install', checked: C },
 		{ label: 'Self-hosted edition limits', us: 'None', them: 'No email reports', edge: 'us', src: 'https://umami.is/pricing', checked: C },
 		{ label: 'Funnels', us: 'Yes, 3 modes', them: 'Yes', src: 'https://docs.umami.is/docs', checked: C },
@@ -143,7 +143,7 @@ const umami: Alternative = {
 		'Turn on email reports under Settings so the weekly numbers come to you.',
 	],
 	faq: [
-		['Is misomoon open source like Umami?', 'Yes. Both are MIT-licensed, so you can read, change and run the code.'],
+		['Is misomoon open source like Umami?', 'Yes. Umami is MIT-licensed and misomoon is AGPL-3.0, so with both you can read, change and run the code. If you run a changed misomoon as a service for others, AGPL-3.0 asks you to share your changes.'],
 		['Do I lose anything by moving off my own server?', 'You trade your server for your Cloudflare account. If you need the data on hardware you own, Umami fits better.'],
 		['Does misomoon have an MCP server like Umami?', 'Yes, built in at `/mcp`, read-only, with site-scoped keys.'],
 	],
@@ -169,7 +169,7 @@ const matomo: Alternative = {
 		{ text: 'You want to host on your own PHP server.', src: 'https://matomo.org/faq/on-premise/matomo-requirements/', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'GPL-3.0', src: 'https://github.com/matomo-org/matomo', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'GPL-3.0', src: 'https://github.com/matomo-org/matomo', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'PHP 8.1+, MySQL or MariaDB, a web server', edge: 'us', src: 'https://matomo.org/faq/on-premise/matomo-requirements/', checked: C },
 		{ label: 'Cookieless by default', us: 'Yes', them: 'No, cookies are on until you turn them off', edge: 'us', src: 'https://matomo.org/faq/general/faq_157/', checked: C },
 		{ label: 'Funnels', us: 'Yes, 3 modes', them: 'Paid plugin', edge: 'us', src: 'https://plugins.matomo.org/Funnels', checked: C },
@@ -211,7 +211,7 @@ const posthog: Alternative = {
 		{ text: 'You need a SOC 2 Type 2 vendor, an audit log and two-factor sign-in.', src: 'https://trust.posthog.com', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'MIT, except the proprietary `ee/` folder', src: 'https://github.com/PostHog/posthog', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'MIT, except the proprietary `ee/` folder', src: 'https://github.com/PostHog/posthog', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'Docker with ClickHouse, Postgres, Kafka, Redis, MinIO; 4 vCPU and 16 GB RAM', edge: 'us', src: 'https://posthog.com/docs/self-host', checked: C },
 		{ label: 'Self-hosting support', us: 'Supported', them: '“Officially unsupported”', edge: 'us', src: 'https://posthog.com/docs/self-host', checked: C },
 		{ label: 'Cookieless by default', us: 'Yes', them: 'No, cookieless mode is opt-in', edge: 'us', src: 'https://posthog.com/tutorials/cookieless-tracking', checked: C },
@@ -252,7 +252,7 @@ const rybbit: Alternative = {
 		{ text: 'You can’t use Cloudflare.', src: 'https://rybbit.com/docs/self-hosting', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'AGPL-3.0', src: 'https://github.com/rybbit-io/rybbit', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'AGPL-3.0', src: 'https://github.com/rybbit-io/rybbit', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'Docker with ClickHouse, Postgres and Redis', edge: 'us', src: 'https://github.com/rybbit-io/rybbit/blob/master/docker-compose.yml', checked: C },
 		{ label: 'Self-hosted edition limits', us: 'None', them: 'No email reports or Pages view', edge: 'us', src: 'https://rybbit.com/docs/self-host-vs-cloud', checked: C },
 		{ label: 'Cookieless by default', us: 'Yes', them: 'Yes (their claim)', src: 'https://rybbit.com/docs/self-hosting', checked: C },
@@ -291,7 +291,7 @@ const ga: Alternative = {
 	],
 	facts: [
 		{ label: 'Where your data lives', us: OUR_WHERE, them: 'Google', edge: 'us', src: 'https://marketingplatform.google.com/about/analytics/', checked: C },
-		{ label: 'Open source', us: 'Yes (MIT)', them: 'No', edge: 'us', src: 'https://support.google.com/analytics/answer/11397207', checked: C },
+		{ label: 'Open source', us: 'Yes (AGPL-3.0)', them: 'No', edge: 'us', src: 'https://support.google.com/analytics/answer/11397207', checked: C },
 		{ label: 'Price', us: OUR_PRICE, them: 'Free', edge: 'them', src: 'https://marketingplatform.google.com/about/analytics/', checked: C },
 		{ label: 'Cookies', us: 'None', them: '`_ga` cookies for 2 years', edge: 'us', src: 'https://support.google.com/analytics/answer/11397207', checked: C },
 		{ label: 'Funnels', us: 'Yes', them: 'Yes', src: 'https://support.google.com/analytics/answer/9327974', checked: C },
@@ -332,7 +332,7 @@ const fathom: Alternative = {
 	],
 	facts: [
 		{ label: 'Where your data lives', us: OUR_WHERE, them: 'Fathom (EU collection, then US)', src: 'https://usefathom.com/data', checked: C },
-		{ label: 'Open source', us: 'Yes (MIT)', them: 'No. Fathom Lite, an older version, is MIT and gets no new features', edge: 'us', src: 'https://github.com/usefathom/fathom', checked: C },
+		{ label: 'Open source', us: 'Yes (AGPL-3.0)', them: 'No. Fathom Lite, an older version, is MIT and gets no new features', edge: 'us', src: 'https://github.com/usefathom/fathom', checked: C },
 		{ label: 'Price', us: OUR_PRICE, them: 'From $15 a month for 100k pageviews', src: 'https://usefathom.com/pricing', checked: C },
 		{ label: 'Cookies', us: 'None', them: 'None (their claim)', src: 'https://usefathom.com/compliance', checked: C },
 		{ label: 'Funnels', us: 'Yes', them: 'Not found', edge: 'us', src: 'https://usefathom.com/pricing', checked: C },
@@ -377,7 +377,7 @@ const simple: Alternative = {
 	],
 	facts: [
 		{ label: 'Where your data lives', us: OUR_WHERE, them: 'The Netherlands', src: 'https://docs.simpleanalytics.com/compliance', checked: C },
-		{ label: 'Open source', us: 'Yes (MIT)', them: 'No, only the tracker scripts', edge: 'us', src: 'https://github.com/simpleanalytics/scripts', checked: C },
+		{ label: 'Open source', us: 'Yes (AGPL-3.0)', them: 'No, only the tracker scripts', edge: 'us', src: 'https://github.com/simpleanalytics/scripts', checked: C },
 		{ label: 'Price', us: OUR_PRICE, them: 'Free for 5 sites with a 1-month history; from $20 a month', src: 'https://www.simpleanalytics.com/pricing', checked: C },
 		{ label: 'Cookies', us: 'None', them: 'None (their claim)', src: 'https://docs.simpleanalytics.com/compliance', checked: C },
 		{ label: 'Funnels', us: 'Yes', them: 'No; goals on some plans', edge: 'us', src: 'https://docs.simpleanalytics.com/goals', checked: C },
@@ -469,7 +469,7 @@ const datafast: Alternative = {
 		{ label: 'Import from Google', us: 'Yes', them: 'No. Plausible only, Google “next”', edge: 'us', src: 'https://datafa.st/', checked: C },
 		{ label: 'Official MCP server', us: 'Built in', them: 'Yes', src: 'https://datafa.st/docs/mcp-introduction', checked: C },
 		{ label: 'Where your data lives', us: OUR_WHERE, them: 'Mostly outside the EU, including the US', edge: 'us', src: 'https://datafa.st/dpa', checked: C },
-		{ label: 'Open source and self-hosting', us: 'MIT, free to self-host on Cloudflare', them: 'Not found: hosted only', edge: 'us', src: 'https://datafa.st/llms.txt', checked: C },
+		{ label: 'Open source and self-hosting', us: 'AGPL-3.0, free to self-host on Cloudflare', them: 'Not found: hosted only', edge: 'us', src: 'https://datafa.st/llms.txt', checked: C },
 		{ label: 'Tracker, gzipped', us: OUR_TRACKER, them: '5.3 KB', edge: 'us', src: MEASURED, checked: C },
 	],
 	switching: [
@@ -516,7 +516,7 @@ const pirsch: Alternative = {
 		{ label: 'Core Web Vitals', us: 'Yes', them: 'Not on its feature list', edge: 'us', src: 'https://pirsch.io/pricing', checked: C },
 		{ label: 'Import from Google', us: 'GA4', them: 'Universal Analytics (GA3) only', edge: 'us', src: 'https://docs.pirsch.io/get-started/ga-import', checked: C },
 		{ label: 'Official MCP server', us: 'Built in', them: 'No, an unsupported community project', edge: 'us', src: 'https://docs.pirsch.io/integrations/mcp', checked: C },
-		{ label: 'Open source and self-hosting', us: 'MIT, free to self-host on Cloudflare', them: 'AGPL-3.0 core library; on-premise on Enterprise', edge: 'us', src: 'https://github.com/pirsch-analytics/pirsch', checked: C },
+		{ label: 'Open source and self-hosting', us: 'AGPL-3.0, free to self-host on Cloudflare', them: 'AGPL-3.0 core library; on-premise on Enterprise', edge: 'us', src: 'https://github.com/pirsch-analytics/pirsch', checked: C },
 		{ label: 'Data retention', us: OUR_RETENTION, them: 'Unlimited', edge: 'them', src: 'https://pirsch.io/pricing', checked: C },
 		{ label: 'Tracker, gzipped', us: OUR_TRACKER, them: '3.5 KB', edge: 'us', src: MEASURED, checked: C },
 	],
@@ -556,7 +556,7 @@ const goatcounter: Alternative = {
 		{ text: 'You want a tracking pixel that works without JavaScript.', src: 'https://www.goatcounter.com/', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'A modified EUPL 1.2', src: 'https://github.com/arp242/goatcounter/blob/master/LICENSE', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'A modified EUPL 1.2', src: 'https://github.com/arp242/goatcounter/blob/master/LICENSE', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'A server for its Go binary, with SQLite or PostgreSQL', edge: 'us', src: 'https://github.com/arp242/goatcounter', checked: C },
 		{ label: 'Hosted price', us: OUR_PRICE, them: 'Free, supported by donations', edge: 'them', src: 'https://www.goatcounter.com/', checked: C },
 		{ label: 'Cookies', us: 'None', them: 'None (their claim)', src: 'https://www.goatcounter.com/privacy', checked: C },
@@ -574,7 +574,7 @@ const goatcounter: Alternative = {
 	faq: [
 		['Is misomoon as simple as GoatCounter?', 'The install is the same: one script tag. The dashboard has more in it, such as funnels and revenue. The Light preset keeps the tracker at 1.9 KB.'],
 		['Can I keep my GoatCounter history?', 'Yes. Upload GoatCounter’s CSV or JSON export under Settings > Integrations as you downloaded it. The CSV export of single pageviews fills almost every report.'],
-		['Is misomoon open source too?', 'Yes, under the MIT license.'],
+		['Is misomoon open source too?', 'Yes, under AGPL-3.0.'],
 	],
 }
 
@@ -584,7 +584,7 @@ const swetrix: Alternative = {
 	short: 'Swetrix',
 	kind: 'self-hosted',
 	answer:
-		`Swetrix is open source under AGPL-3.0, with a cloud from $19 a month and a self-hosted edition on Docker, MySQL, ClickHouse and Redis that leaves revenue and alerts to the cloud. misomoon has funnels, revenue, errors and Web Vitals in one MIT version, from $${START.price} a month or free on Cloudflare.`,
+		`Swetrix is open source under AGPL-3.0, with a cloud from $19 a month and a self-hosted edition on Docker, MySQL, ClickHouse and Redis that leaves revenue and alerts to the cloud. misomoon has funnels, revenue, errors and Web Vitals in one AGPL-3.0 version, from $${START.price} a month or free on Cloudflare.`,
 	description: 'misomoon and Swetrix compared: price, self-hosting needs, revenue, Web Vitals, session replay, MCP, 2FA, and tracker size, checked October 2026.',
 	trackerKb: 6.7,
 	pickUs: [
@@ -597,7 +597,7 @@ const swetrix: Alternative = {
 		{ text: 'You want two-factor sign-in today. misomoon has none yet.', src: 'https://swetrix.com/security', checked: C },
 	],
 	facts: [
-		{ label: 'License', us: 'MIT', them: 'AGPL-3.0', src: 'https://github.com/Swetrix/swetrix', checked: C },
+		{ label: 'License', us: 'AGPL-3.0', them: 'AGPL-3.0', src: 'https://github.com/Swetrix/swetrix', checked: C },
 		{ label: 'What self-hosting needs', us: 'A Cloudflare account', them: 'Docker, MySQL, ClickHouse and Redis', edge: 'us', src: 'https://github.com/Swetrix/swetrix', checked: C },
 		{ label: 'Self-hosted edition limits', us: 'None', them: 'No revenue, alerts or experiments', edge: 'us', src: 'https://github.com/Swetrix/swetrix', checked: C },
 		{ label: 'Price', us: OUR_PRICE, them: 'From $19 a month; 14-day trial with a card', edge: 'us', src: 'https://swetrix.com/pricing', checked: C },
@@ -614,7 +614,7 @@ const swetrix: Alternative = {
 		'Connect your payment provider under Settings > Revenue.',
 	],
 	faq: [
-		['Is misomoon open source like Swetrix?', 'Yes. misomoon is MIT-licensed, and the self-hosted version has every feature.'],
+		['Is misomoon open source like Swetrix?', 'Yes. Both are AGPL-3.0, and misomoon’s self-hosted version has every feature.'],
 		['Does misomoon track JavaScript errors?', 'Yes, as a feature you can turn on per site.'],
 		['Does misomoon have session replay?', 'No. misomoon has click maps, scroll depth and form drop-off, and no recordings of visits.'],
 	],
@@ -732,7 +732,7 @@ const mixpanel: Alternative = {
 		{ label: 'Funnels', us: 'Yes', them: 'Yes', src: 'https://docs.mixpanel.com/docs/reports/funnels', checked: C },
 		{ label: 'Where your data lives', us: OUR_WHERE, them: 'US, or EU residency per project', src: 'https://docs.mixpanel.com/docs/privacy/eu-residency', checked: C },
 		{ label: 'Official MCP server', us: 'Built in', them: 'Yes', src: 'https://docs.mixpanel.com/docs/mcp', checked: C },
-		{ label: 'Open source and self-hosting', us: 'MIT, free to self-host on Cloudflare', them: 'Only the SDKs (Apache 2.0); the platform is hosted only', edge: 'us', src: 'https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript', checked: C },
+		{ label: 'Open source and self-hosting', us: 'AGPL-3.0, free to self-host on Cloudflare', them: 'Only the SDKs (Apache 2.0); the platform is hosted only', edge: 'us', src: 'https://docs.mixpanel.com/docs/tracking-methods/sdks/javascript', checked: C },
 		{ label: 'SOC 2 or ISO 27001', us: 'No (Cloudflare has both)', them: 'SOC 2 Type II, ISO 27001 and 27701', edge: 'them', src: 'https://mixpanel.com/legal/security-overview/', checked: C },
 		{ label: 'Tracker, gzipped', us: OUR_TRACKER, them: '34 KB (mixpanel-2-latest.min.js)', edge: 'us', src: MEASURED, checked: C },
 	],

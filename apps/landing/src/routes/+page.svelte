@@ -18,8 +18,6 @@
 	const signup = $derived(signupUrl(data.appUrl))
 	// null on a cold edge cache: the page prints its evergreen edition
 	const live = $derived(data.live)
-	/** the real demo dashboard has loaded in fig. 1 */
-	let demoReady = $state(false)
 	const DAY = 86_400_000
 	// time until the next edition goes to press, at midnight UTC; unknown (placeholders) until the browser runs
 	let now = $state<number | null>(null)
@@ -121,7 +119,7 @@
 		],
 		[
 			'Is misomoon Cloud the same as the open-source version?',
-			'Yes. Cloud runs the same MIT-licensed code that is on GitHub. The difference is who runs it: on Cloud we deploy, update and watch it, and self-hosted you do that in your own Cloudflare account.',
+			'Yes. Cloud runs the same open-source code that is on GitHub. The difference is who runs it: on Cloud we deploy, update and watch it, and self-hosted you do that in your own Cloudflare account.',
 		],
 		[
 			'Do I still need a cookie banner?',
@@ -222,13 +220,9 @@
 	<div class="wrap">
 		<div class="stage-label mono">
 			<span>fig. 1</span>
-			{demoReady
-				? 'The real dashboard on Acme, a sample store that gets new visits every few minutes. Click around.'
-				: live
-					? 'The live demo dashboard, drawn from this site’s real numbers'
-					: 'The demo dashboard, with sample numbers: the live ones could not be fetched for this view'}
+			The real dashboard on Acme, a sample store. Click around.
 		</div>
-		<HeroProduct {live} demo="{data.appUrl}/demo" bind:ready={demoReady} />
+		<HeroProduct demo="{data.appUrl}/demo" />
 	</div>
 </section>
 
@@ -609,7 +603,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 			</div>
 			<div class="aside">
 				<p>
-					misomoon is MIT-licensed, and every line is on GitHub, so you can check how each number is made. misomoon Cloud runs that same code for you:
+					misomoon is open source under AGPL-3.0, and every line is on GitHub, so you can check how each number is made. misomoon Cloud runs that same code for you:
 					sign up, add the script tag, and you are counting, with no server to run.
 				</p>
 			</div>
@@ -632,7 +626,7 @@ misomoon(<span class="s">'Purchase'</span>, &#123;
 				</div>
 			</article>
 			<article class="run own" {@attach reveal(120)}>
-				<span class="badge mono">Open source · MIT</span>
+				<span class="badge mono">Open source · AGPL-3.0</span>
 				<h3 class="display">Self-host</h3>
 				<p class="run-lede">The same code, in your own Cloudflare account.</p>
 				<ul>

@@ -1,4 +1,4 @@
-import type { Me } from './api'
+import type { Me, Provider, User } from './api'
 
 /** The email you are signed in with when an invitation is for another one; the server refuses to accept it then. */
 export function otherAccount(inviteEmail: string, me: Me | null): string | null {
@@ -37,6 +37,12 @@ export function loginMessage(reason: string): string {
 		case 'taken':
 			return 'That account is already connected to another misomoon account.'
 		default:
-			return `The sign-in failed (${reason}). Try again.`
+			// the reason comes from the address, so never repeat one we don't know
+			return 'The sign-in failed. Try again.'
 	}
+}
+
+/** Whether a provider is the only way left to sign in: the server refuses to disconnect it then. */
+export function onlyLogin(user: User | null, p: Provider): boolean {
+	return !!user && user.has_password === false && (user.logins ?? []).length === 1 && user.logins![0] === p
 }

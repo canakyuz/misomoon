@@ -29,11 +29,23 @@ type Email = { subject: string; html: string; text: string; attachments?: Attach
  * EMAIL_PROVIDER but not set up sends nothing, rather than mail going out through another.
  */
 function emailProvider(env: Env): EmailProvider | null {
-	const ses = !!(env.AWS_SES_REGION && env.AWS_SES_ACCESS_KEY_ID && env.AWS_SES_SECRET_ACCESS_KEY)
+	const ses = !!(env.AWS_SES_REGION && env.AWS_SES_ACCESS_KEY_ID && env.AWS_SES_SECRET_ACCESS_KEY) && sesRegion(env.AWS_SES_REGION)
 	const ready: Record<EmailProvider, boolean> = { cloudflare: !!env.EMAIL, ses }
 	const choice = env.EMAIL_PROVIDER?.trim().toLowerCase()
 	if (choice) return Object.hasOwn(ready, choice) && ready[choice as EmailProvider] ? (choice as EmailProvider) : null
 	return (['cloudflare', 'ses'] as const).find((p) => ready[p]) ?? null
+}
+
+const AWS_REGION = /^[a-z]{2}(-[a-z]+)+-\d$/
+let badRegion: string | null = null
+
+/** Whether AWS_SES_REGION reads as an AWS region, which goes into the SES hostname. A bad one is logged once per isolate. */
+function sesRegion(value: string): boolean {
+	const region = value.trim()
+	if (AWS_REGION.test(region)) return true
+	if (badRegion !== region) console.error(JSON.stringify({ msg: 'AWS_SES_REGION is not an AWS region; SES is off', region: region.slice(0, 40) }))
+	badRegion = region
+	return false
 }
 
 export function emailConfigured(env: Env): boolean {
@@ -50,10 +62,21 @@ function senderAddress(from: string): string | { name: string; email: string } {
 
 /** Sends one email; false when no provider is set up or the provider refused it. */
 export async function sendEmail(env: Env, to: string, msg: Email): Promise<boolean> {
+	return (await deliver(env, to, msg)) === 'sent'
+}
+
+/**
+ * What became of one email: sent, refused by the provider (nothing went out), or unsure (an
+ * SES 5xx or a request that got no answer, after which it may have gone out). `off` is no
+ * provider set up.
+ */
+type Outcome = 'sent' | 'refused' | 'unsure' | 'off'
+
+async function deliver(env: Env, to: string, msg: Email): Promise<Outcome> {
 	const provider = emailProvider(env)
 	if (!provider) {
 		console.log(JSON.stringify({ msg: 'email skipped: no email provider set up', subject: msg.subject }))
-		return false
+		return 'off'
 	}
 	try {
 		if (provider === 'cloudflare') {
@@ -61,20 +84,39 @@ export async function sendEmail(env: Env, to: string, msg: Email): Promise<boole
 			await env.EMAIL!.send({ from: senderAddress(sender(env)), to, subject: msg.subject, html: msg.html, text: msg.text, ...(attachments ? { attachments } : {}) })
 		}
 		else await sendWithSes(env, to, msg)
-		return true
+		return 'sent'
 	} catch (e) {
 		// a provider's error can quote the recipient, so only its code is kept
 		const code = (e as { code?: unknown })?.code
 		console.error(JSON.stringify({ msg: 'email failed', provider, subject: msg.subject, error: typeof code === 'string' ? code : String((e as Error)?.message ?? e).slice(0, 200) }))
-		return false
+		return (e as { unsure?: unknown })?.unsure ? 'unsure' : 'refused'
 	}
+}
+
+/** How many times a plan or daily-cap notice is tried before it is let go. */
+export const NOTICE_TRIES = 24
+
+/**
+ * Sends one email to each address. False only when the provider set up refused every one
+ * of them, so the caller can try again later. No provider, no one to send to, or a send
+ * that may have gone out (an unsure one) leaves nothing to retry: a second try could send
+ * it twice.
+ */
+export async function sendEach(env: Env, to: string[], msg: Email): Promise<boolean> {
+	if (!to.length || !emailConfigured(env)) {
+		for (const t of to) await sendEmail(env, t, msg)
+		return true
+	}
+	let refused = 0
+	for (const t of to) if ((await deliver(env, t, msg)) === 'refused') refused++
+	return refused < to.length
 }
 
 /** SES v2 SendEmail, signed with SigV4 by aws4fetch (fetch and Web Crypto only). */
 async function sendWithSes(env: Env, to: string, msg: Email) {
 	const region = env.AWS_SES_REGION!.trim()
 	// the region goes into the hostname, so nothing else may
-	if (!/^[a-z]{2}(-[a-z]+)+-\d$/.test(region)) throw new Error(`not an AWS region: ${region.slice(0, 40)}`)
+	if (!AWS_REGION.test(region)) throw new Error(`not an AWS region: ${region.slice(0, 40)}`)
 	const aws = new AwsClient({ accessKeyId: env.AWS_SES_ACCESS_KEY_ID!, secretAccessKey: env.AWS_SES_SECRET_ACCESS_KEY!, service: 'ses', region, retries: 0 })
 	const post = () => aws.fetch(`https://email.${region}.amazonaws.com/v2/email/outbound-emails`, {
 		method: 'POST',
@@ -93,15 +135,17 @@ async function sendWithSes(env: Env, to: string, msg: Email) {
 			},
 		}),
 	})
-	let res = await post()
+	// a request that got no answer may have reached SES and sent the email
+	const answer = () => post().catch((e) => Promise.reject(Object.assign(e instanceof Error ? e : new Error(String(e)), { unsure: true })))
+	let res = await answer()
 	// SES answers 429 before it sends anything, so that one is safe to try again. After a
 	// 5xx the email may have gone out, and a second try could send it twice.
 	if (res.status === 429) {
 		await new Promise((r) => setTimeout(r, 250))
-		res = await post()
+		res = await answer()
 	}
 	// SES's message can quote the recipient, so the error keeps only its type (x-amzn-ErrorType)
-	if (!res.ok) throw Object.assign(new Error(`ses ${res.status}`), { code: `ses ${res.status} ${(res.headers.get('x-amzn-errortype') ?? '').split(':')[0]}`.trim() })
+	if (!res.ok) throw Object.assign(new Error(`ses ${res.status}`), { code: `ses ${res.status} ${(res.headers.get('x-amzn-errortype') ?? '').split(':')[0]}`.trim(), unsure: res.status >= 500 })
 }
 
 /** Base64 in chunks: one spread of a whole PDF would overflow the call stack. */
@@ -241,6 +285,8 @@ const sent = (env: Env, id: string, at = Date.now()) => env.CONTROL.prepare('UPD
 
 /** Hourly: weekly and monthly reports, and the quiet alert. */
 export async function runReports(env: Env, now = Date.now()) {
+	// nothing could send them, and each due run would print the PDF again
+	if (!emailConfigured(env)) return
 	// one edition per site and kind, however many people subscribe to it: the PDF costs browser time
 	const editions = new Map<string, Promise<Email>>()
 	for (const sub of await due(env, ['weekly', 'monthly', 'drop'])) {

@@ -1,6 +1,6 @@
 <script lang="ts">
 	import X from '@lucide/svelte/icons/x'
-	import { get, send, setToken, signupLink, type Provider } from '../lib/api'
+	import { demoPath, get, send, setToken, signupLink, type Provider } from '../lib/api'
 	import { getDash } from '../lib/dash.svelte'
 	import { otherAccount, PROVIDER_NAME } from '../lib/account'
 	import BrandIcon from './BrandIcon.svelte'
@@ -87,7 +87,12 @@
 
 	async function enter(token: string | undefined, site?: string | null) {
 		if (token) setToken(token)
-		history.replaceState(null, '', site ? `/?site=${encodeURIComponent(site)}` : '/')
+		const to = site ? `/?site=${encodeURIComponent(site)}` : '/'
+		// the demo never reads the saved session, so leave it for the dashboard
+		if (demoPath) return location.assign(to)
+		history.replaceState(null, '', to)
+		// a failed Google sign-in before this one must not greet the next sign-in screen
+		dash.loginError = null
 		dash.authOpen = false
 		dash.authLink = null
 		if (site) dash.site = site
@@ -147,7 +152,8 @@
 <svelte:window onpageshow={(e) => e.persisted && (busy = false)} />
 
 <main class="auth">
-	<button class="btn ghost icon close" onclick={leave} aria-label="Close"><X size={16} /></button>
+	<!-- signed out with no site behind it, the sign-in screen is the page: nothing to close to -->
+	{#if dash.signedIn || dash.site || dash.isSample}<button class="btn ghost icon close" onclick={leave} aria-label="Close"><X size={16} /></button>{/if}
 	<section class="card sheet">
 		<Logo size={30} />
 		<span class="kicker">{mode === 'invite' ? 'invitation' : mode === 'signup' ? 'new account' : 'sign in'}</span>
@@ -224,6 +230,7 @@
 			{/if}
 		</footer>
 	</section>
+	{#if dash.me?.sample && !dash.signedIn && !dash.isSample}<a class="demo" href="/demo">Open the live demo <span aria-hidden="true">→</span></a>{/if}
 </main>
 
 <style>
@@ -233,11 +240,25 @@
 		z-index: 50;
 		display: grid;
 		place-items: center;
+		/* safe: a sheet taller than the screen scrolls from its top instead of losing it;
+		   browsers without `safe` keep the plain center before it */
+		align-content: center;
+		align-content: safe center;
+		gap: 16px;
 		padding: 24px 16px;
 		overflow-y: auto;
 		background: var(--bg);
 		background-image: radial-gradient(var(--line) 1px, transparent 1px);
 		background-size: 14px 14px;
+	}
+	.demo {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--text-2);
+		text-decoration: none;
+	}
+	.demo:hover {
+		color: var(--text);
 	}
 	.close {
 		position: absolute;

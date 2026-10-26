@@ -69,7 +69,7 @@ An error that a client can act on also has a stable `code`.
 | `405` | `GET /mcp`. The MCP server takes `POST` only. |
 | `409` | A conflict: a domain, site id, goal name, account, or team member that already exists, a team that still has sites, a change that leaves a team without an owner, an import while the site's history moves between shards, or search terms for a site without Search Console. For billing, a team that has not paid for a plan yet, or a change Polar refuses. |
 | `413` | A body over 256 KB for a payment webhook or the Polar billing webhook, or 64 KB for `/mcp`. `POST /api/event` drops a body over 16 KB and still answers `202`. |
-| `429` | Over a rate limit. Try again after a minute. |
+| `429` | Over a rate limit. The `Retry-After` header gives the seconds to wait ([Rate limits](#rate-limits)). |
 | `500` | An unexpected error: `{"error": "internal error"}`. |
 | `501` | The server lacks what the feature needs: `CF_API_TOKEN`, `CF_ZONE_ID`, and `PROXY_CNAME_TARGET` for the managed proxy, `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` for Google import and Search Console, the `BROWSER` binding for a PDF report preview, or a Polar setting for billing ([Billing](configuration.md#billing)). The message names what is missing. |
 | `502` | Google, the Cloudflare API, or Polar returned an error, or Polar did not answer. The message carries theirs. |
@@ -109,14 +109,38 @@ shows the state as `stopped` on the team's `plan`.
 ## Rate limits
 
 `/api/v1/stats/*`, `/api/v2/query`, and `POST /mcp` share a limit of 100 requests per
-minute per API key, or per IP address without a key (`STATS_LIMIT`). Signed-in dashboards
-and shared links have no limit.
+minute per API key, or per IP address without a key (`STATS_LIMIT`). Each request in an
+MCP batch counts. Signed-in dashboards and shared links have no limit. Over it,
+`/api/v1/stats/*` and `/api/v2/query` return `429` with
+`{"error": "rate limit exceeded, try again in a minute"}`, and `/mcp` returns `429` with
+the JSON-RPC error `{"jsonrpc": "2.0", "id": 1, "error": {"code": -32000, "message": "rate limit exceeded, try again in a minute"}}`.
+Its `id` is the request's own, or `null` for a batch or a body that isn't one request.
 
 These routes have the same limit per IP address, counted for each route on its own:
 `POST /api/v1/share/:slug`, `POST /api/v1/auth/signup`, `POST /api/v1/auth/login`,
-`POST /api/v1/auth/forgot`, `POST /api/v1/auth/reset`, and
+`POST /api/v1/auth/forgot`, `POST /api/v1/auth/reset`, `POST /api/v1/auth/oauth/:provider`,
+`POST /api/v1/auth/exchange`, `DELETE /api/v1/me`, and
 `POST /api/v1/invitations/:token/accept`. Over it, they return `429` with
-`too many attempts, wait a minute`.
+`too many attempts, wait a minute`. `POST /api/v1/teams/:team/invitations` has the same
+limit per person sending the invitations instead of per address.
+
+On these routes an IPv6 address counts by its /64 block, since one subscriber usually
+holds a whole /64. The Stats API and MCP count a signed-out caller by the whole address,
+so people who share a /64, like an office, each get their own 100. An IPv4 address
+counts on its own everywhere.
+
+The limits are approximate, and each Cloudflare location counts on its own, as
+[Cloudflare's rate limiting](https://developers.cloudflare.com/workers/runtime-apis/bindings/rate-limit/)
+does.
+
+Every `429` carries a `Retry-After` header with the seconds to wait: `60` for these
+limits, and the time until the oldest send of the hour expires for
+[test reports](reports.md#limits). Pages on another origin can read it: the API's CORS
+headers expose `Retry-After`.
+
+`POST /api/v1/auth/forgot` also sends at most one reset email a minute to an account,
+whoever asks. It answers the same either way, and the link already sent keeps working.
+If the email provider refuses the email, the next request can send one at once.
 
 ## Query parameters
 
@@ -577,7 +601,7 @@ work in every mode. Sign-in with Google follows the same rules
 | `plans` | Whether the server enforces plans (`PLANS=on`) |
 | `billing` | Whether teams can pay for a plan here: `PLANS=on` and every Polar setting ([Billing](configuration.md#billing)). Each team in `teams` also has `plan_status`, `plan_period_end`, and `billing_portal`. `plan_status` is `active`, `past_due` while Polar tries a failed payment again, `canceled` while a canceled plan runs to its end, or `null` without a subscription. `plan_period_end` is the end of the paid period, or the day a canceled plan ends, in ms. `billing_portal` is `true` once the team has a Polar customer. Without billing, they are `null`, `null`, and `false`. |
 | `demo` | The public demo site's id (`DEMO_SITE`), or `null` |
-| `sample` | The sample site's id (`SAMPLE_SITE`), shown at `/demo`, or `null` |
+| `sample` | The sample site's id (`SAMPLE_SITE`), which `/demo` is recorded from, or `null` |
 | `signups` | Whether `POST /api/v1/auth/signup` is open |
 | `providers` | The sign-in providers this server has a client for: `["google"]`, or `[]` |
 | `imported` | The ids of your sites with a finished import |

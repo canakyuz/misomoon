@@ -307,8 +307,9 @@ function keepAlive(site: string, host: string, day: number, hits: DemoHit[], see
 /** The sample site's hits with `from <= ts < to`, oldest first. */
 export function sampleTraffic(site: string, host: string, from: number, to: number, opts: { seed?: number; perDay?: number } = {}): DemoHit[] {
 	const out: DemoHit[] = []
-	// a visit late in a day carries on past midnight, so the day before can hold hits in the window
-	for (let day = Math.floor(from / DAY) - 1; day * DAY < to; day++) for (const h of sampleDay(site, host, day, opts)) if (h.ts >= from && h.ts < to) out.push(h)
+	// a visit late in a day carries on past midnight, so the day before can hold hits in the window,
+	// and the visits that keep a day's first minute alive start in the minute before it
+	for (let day = Math.floor(from / DAY) - 1; day * DAY - MINUTE < to; day++) for (const h of sampleDay(site, host, day, opts)) if (h.ts >= from && h.ts < to) out.push(h)
 	return out.sort((a, b) => a.ts - b.ts)
 }
 

@@ -129,6 +129,13 @@ export class Dash {
 	async load() {
 		this.me = await get<Me>('/api/v1/me', undefined, 0)
 		const ids = this.sites.map((s) => s.id)
+		// signed out at the app's address: the sign-in screen, not a public site. /demo is the demo,
+		// and a link with ?site= still opens that public site.
+		if (this.me.kind === 'anonymous' && !this.isSample && !this.isEmbed && (!this.site || !ids.includes(this.site))) {
+			this.site = null
+			this.authOpen = true
+			return
+		}
 		if (!this.site || !ids.includes(this.site)) this.site = (this.me.demo && ids.includes(this.me.demo) ? this.me.demo : ids[0]) ?? null
 		if (this.isSample && this.view === 'settings') this.view = 'overview'
 	}

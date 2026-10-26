@@ -32,6 +32,14 @@ describe('the sample site', () => {
 		expect([...sampleTraffic('acme', SAMPLE.domain, from, mid), ...sampleTraffic('acme', SAMPLE.domain, mid, to)]).toEqual(hits)
 	})
 
+	it('includes the visits that keep the first minutes of a day alive in a window that ends before its midnight', () => {
+		let day = TODAY
+		while (!sampleDay('acme', SAMPLE.domain, day).some((h) => h.ts < day * DAY)) day--
+		const early = sampleDay('acme', SAMPLE.domain, day).filter((h) => h.ts < day * DAY)
+		const hits = sampleTraffic('acme', SAMPLE.domain, day * DAY - 5 * 60_000, day * DAY)
+		for (const h of early) expect(hits.map((x) => x.payload.id)).toContain(h.payload.id)
+	})
+
 	it('always has people online: every minute, at least SAMPLE.online visitors were active in the last five', () => {
 		expect(SAMPLE.online).toBe(3)
 		for (const day of [TODAY - 30, TODAY - 7, TODAY - 1, TODAY, TODAY + 1]) {

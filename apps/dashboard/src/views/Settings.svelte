@@ -33,7 +33,7 @@
 	import { OPT_OUT_SNIPPET, privacyPolicy, retentionDays } from '@misomoon/core/privacy'
 	import { getDash, Resource } from '../lib/dash.svelte'
 	import { googleError } from '../lib/google'
-	import { loginMessage, PROVIDER_NAME } from '../lib/account'
+	import { loginMessage, onlyLogin, PROVIDER_NAME } from '../lib/account'
 	import { IMPORTER_INFO, importerInfo } from '@misomoon/core/importers'
 
 	const dash = getDash()
@@ -1195,6 +1195,8 @@
 					<SiteFields bind:timezone={details.timezone} bind:currency={details.currency} />
 					{#if dash.current.region}
 						<p class="region">Data region: {regionName[dash.current.region]}. A site keeps the region it was added with.</p>
+					{:else if dash.me?.regions?.length}
+						<p class="region">Data region: none. This site was added before the server had regions, so its stats may be stored on any of its databases.</p>
 					{/if}
 					<div class="details-save">
 						<button class="btn primary" disabled={!detailsChanged || busy === 'details'}>{busy === 'details' ? 'Saving…' : 'Save'}</button>
@@ -1267,7 +1269,9 @@
 						{@const on = (dash.me.user.logins ?? []).includes(p)}
 						<div class="inline">
 							<span class="grow login"><BrandIcon brand={p} size={15} /> {PROVIDER_NAME[p]}{#if on}<span class="muted"> · connected{loginReturn.linked === p ? ' just now' : ''}</span>{/if}</span>
-							{#if on}
+							{#if on && onlyLogin(dash.me.user, p)}
+								<span class="muted small">Set a password to disconnect</span>
+							{:else if on}
 								<button class="btn ghost" onclick={() => disconnectLogin(p)} disabled={busy === 'disconnectLogin'}>Disconnect</button>
 							{:else}
 								<button class="btn" onclick={() => connectLogin(p)} disabled={busy === 'connectLogin'}>Connect</button>
@@ -1291,7 +1295,7 @@
 						<button class="btn ghost" onclick={() => (closing = { open: false, password: '' })}>Cancel</button>
 					</div>
 				{:else}
-					<div class="inline"><button class="btn ghost" onclick={() => (closing = { open: true, password: '' })}>Delete account…</button></div>
+					<div class="inline"><button class="btn ghost bad" onclick={() => (closing = { open: true, password: '' })}>Delete account…</button></div>
 				{/if}
 				{#if keys.data?.length}
 					<h4 class="gap">API keys</h4>
@@ -1856,6 +1860,15 @@
 	.btn.bad {
 		background: var(--miso);
 		color: var(--on-vermilion);
+	}
+	/* opens a delete: red text, so it reads as one before the filled button confirms it */
+	.btn.ghost.bad {
+		background: transparent;
+		color: var(--miso);
+	}
+	.btn.ghost.bad:hover {
+		background: var(--surface-hover);
+		color: var(--miso);
 	}
 	.goals li strong {
 		font-weight: 500;
