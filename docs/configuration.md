@@ -35,12 +35,13 @@ pnpm --filter @misomoon/api run deploy:cloud -- --plan
 | `EMAIL` | Send email | No | Cloudflare Email Service. Sends invitations, password resets, reports, alerts, and the daily-cap notice from `EMAIL_FROM`, which must be on a domain onboarded to Email Service. Sending to any address needs the Workers Paid plan. The deploy bundle leaves it out. |
 | `BROWSER` | Browser Run | No | Prints the PDF attached to weekly and monthly reports, and the PDF preview (`/reports/preview?format=pdf`). Each edition is printed once per site, whoever subscribes; a print takes a few seconds of browser time. Workers Free includes 10 minutes of browser time a day, Workers Paid 10 hours a month, then $0.09 an hour ([pricing](https://developers.cloudflare.com/browser-run/pricing/), checked 2026-10-24). Without it, or when a print fails, reports go out without the PDF. `wrangler dev` cannot print: quick actions run on Cloudflare only. The deploy bundle keeps it. |
 
-The consumer retries a batch 5 times, then moves it to the dead-letter queue
-`misomoon-events-dlq`. The cron trigger (`*/5 * * * *`) checks traffic-spike alerts and
-moves data off retiring shards every 5 minutes. At minute 15 of every hour, it also
-sends email reports, checks traffic-drop alerts, and deletes old salts, expired sign-ins,
-and expired password reset links. Once a day, at 03:15 UTC, it applies retention and
-deletes usage rows older than 400 days.
+The consumer retries a failed event 10 times, waiting 10 seconds and doubling the wait
+each time up to an hour, so about 2.5 hours in all. Then it moves the event to the
+dead-letter queue `misomoon-events-dlq`. The cron trigger (`*/5 * * * *`) checks
+traffic-spike alerts and moves data off retiring shards every 5 minutes. At minute 15 of
+every hour, it also sends email reports, checks traffic-drop alerts, and deletes old
+salts, expired sign-ins, and expired password reset links. Once a day, at 03:15 UTC, it
+applies retention and deletes usage rows older than 400 days.
 
 ## Variables
 
@@ -57,7 +58,7 @@ unset variable means. Where `wrangler.jsonc` sets another value, the row says so
 | `RETENTION_DAYS` | `1825` | The longest any site keeps its events, visits, and payments, in days. The daily cleanup at 03:15 UTC deletes older ones, even on a site whose **Keep stats for** is longer, and the API refuses a longer `retention_days`. `0` sets no limit. `wrangler.jsonc` and the deploy bundle set `0`, so your own server keeps everything until you set it ([privacy settings](compliance.md#privacy-settings)). |
 | `RETENTION_DEFAULT_DAYS` | `761` | How long a site keeps its data when its **Keep stats for** is **Default**, in days. 761 days is 25 months. Unset, or longer than `RETENTION_DAYS`, means `RETENTION_DAYS`. With both `0`, a site without a setting keeps everything. With `PLANS=on`, a site without a setting keeps this or its plan's longest, whichever is shorter ([Plans](#plans)). `wrangler.jsonc` and the deploy bundle leave it unset. |
 | `PLANS` | `on` | `on` enforces the misomoon Cloud plans: the free trial, how many sites a team can have, how long its sites can keep their stats, and how many events they record a month. See [Plans](#plans). Unset, or any other value, enforces no plan. `wrangler.jsonc` and the deploy bundle leave it out, so a self-hosted server has no plan limits. |
-| `SHARD_SOFT_LIMIT_MB` | `8000` | The size at which a shard stops taking new sites and starts draining. D1's hard limit is 10 GB per database. |
+| `SHARD_SOFT_LIMIT_MB` | `8000` | The size at which a shard stops taking new sites and starts draining. D1's hard limit is 10 GB per database. A value that is not a positive number counts as `8000`. Only an `active` shard drains: a `retiring` one stays retiring. |
 | `INGEST_DAILY_CAP` | unset | The most events a site can store per UTC day, unless the site has its own cap. Unset means no cap. A value that is not a positive whole number also means no cap. See [Daily ingest cap](#daily-ingest-cap). |
 | `EMAIL_PROVIDER` | `ses` | `cloudflare` or `ses`. misomoon Cloud sets `ses`. Unset picks the `EMAIL` binding when it is bound, then SES. A provider named here that is not set up sends nothing; email does not go out through another provider. |
 | `EMAIL_FROM` | `misomoon <reports@misomoon.com>` | The sender of every email. Use an address on a domain that your provider verified. |

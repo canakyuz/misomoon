@@ -24,6 +24,14 @@ export function shardOf(binding: string): { group: Group; index: number } | unde
 const bindingOf = (group: Group, i: number) => (group ? `SHARD_${group.toUpperCase()}_${i}` : `SHARD_${i}`)
 const nameOf = (group: Group, i: number) => (group ? `misomoon-shard-${group}-${i}` : `misomoon-shard-${i}`)
 
+/** SHARD_COUNT as a number of shards; undefined when unset or blank, which keeps what is bound. */
+export function parseCount(value: string | undefined): number | undefined {
+	if (value === undefined || value.trim() === '') return undefined
+	const count = Number(value)
+	if (!Number.isInteger(count) || count < 0) throw new Error('SHARD_COUNT must be a whole number')
+	return count
+}
+
 /** SHARD_REGIONS, like `eu:2,us:1,apac:1`, as a count per region; null when unset. */
 export function parseRegions(value: string | undefined): Partial<Record<Region, number>> | null {
 	if (value === undefined || value.trim() === '') return null

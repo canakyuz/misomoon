@@ -105,15 +105,32 @@ export async function writeEvents(env: Env, all: EventRow[], failed?: (rows: Eve
 	const budget = await Budget.load(env, rows)
 	const tally = new Tally()
 	const groups = new Map<string, EventRow[]>()
+	let error: unknown = null
+	// a site that has no shard to go to (its region's are all full) fails alone
+	const unrouted = new Map<string, { rows: EventRow[]; error: unknown }>()
 	for (const row of rows) {
-		const shard = await writeShard(env, row.site_id, row.ts)
+		const stuck = unrouted.get(row.site_id)
+		if (stuck) {
+			stuck.rows.push(row)
+			continue
+		}
+		let shard: string
+		try {
+			shard = await writeShard(env, row.site_id, row.ts)
+		} catch (e) {
+			unrouted.set(row.site_id, { rows: [row], error: e })
+			continue
+		}
 		const key = `${shard}\u0000${row.site_id}`
 		const list = groups.get(key)
 		if (list) list.push(row)
 		else groups.set(key, [row])
 	}
+	for (const { rows: stuck, error: e } of unrouted.values()) {
+		if (!failed) error ??= e
+		else failed(stuck, e)
+	}
 	let written = 0
-	let error: unknown = null
 	for (const [key, events] of groups) {
 		const [shard, siteId] = key.split('\u0000')
 		// what the cap drops in this group counts once the group is written, so a retry counts it once

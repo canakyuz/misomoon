@@ -32,7 +32,7 @@
 	],
 	"queues": {
 		"producers": [{ "binding": "EVENTS", "queue": "misomoon-events" }],
-		"consumers": [{ "queue": "misomoon-events", "max_batch_size": 100, "max_batch_timeout": 5, "max_retries": 5, "dead_letter_queue": "misomoon-events-dlq" }]
+		"consumers": [{ "queue": "misomoon-events", "max_batch_size": 100, "max_batch_timeout": 5, "max_retries": 10, "dead_letter_queue": "misomoon-events-dlq" }]
 	},
 	// Stats API calls, and sign-in attempts: 100 per key or IP per minute across all isolates.
 	"ratelimits": [

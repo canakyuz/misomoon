@@ -102,8 +102,10 @@ the `workers.dev` URL and a custom domain.
 
 ## Events reach the dead-letter queue
 
-The queue retries a batch 5 times, and then moves it to `misomoon-events-dlq`. This
-happens when the shard databases fail for a long time. Look for errors in
+The queue retries a failed event 10 times over about 2.5 hours, waiting longer each
+time, and then moves it to `misomoon-events-dlq`. This happens when the shard databases
+fail for that long, or when no shard can take a site's data (see
+[Scale the shards](upgrading.md#scale-the-shards)). Look for errors in
 `wrangler tail`. If the queue itself can't take an event, for example because the Free
 plan's daily limit is used up, the Worker writes the event straight to the database, so
 it isn't lost.

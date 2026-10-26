@@ -20,7 +20,7 @@ import { execFileSync } from 'node:child_process'
 import { readFileSync, writeFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { configPath } from './config.ts'
-import { createArgs, parseRegions, planShards, shardOf, type Db, type Region } from './shards.ts'
+import { createArgs, parseCount, parseRegions, planShards, shardOf, type Db, type Region } from './shards.ts'
 
 const CONFIG = configPath(process.argv.slice(2), process.env)
 const plan = process.argv.includes('--plan')
@@ -53,8 +53,7 @@ const dbs: Db[] = lines.flatMap((l) => {
 	return m ? [{ binding: m[1], name: m[2], id: m[3], dir: m[4] }] : []
 })
 const shards = dbs.filter((d) => shardOf(d.binding))
-const count = process.env.SHARD_COUNT === undefined ? undefined : Number(process.env.SHARD_COUNT)
-if (count !== undefined && (!Number.isInteger(count) || count < 0)) throw new Error('SHARD_COUNT must be a whole number')
+const count = parseCount(process.env.SHARD_COUNT)
 const regions = parseRegions(process.env.SHARD_REGIONS)
 const wanted = planShards(shards, { '': count, ...regions })
 
@@ -65,7 +64,11 @@ for (const d of dbs) if (PLACEHOLDER.test(d.id)) d.id = create(d.name, shardOf(d
 const kept = [...wanted.keep]
 for (const c of wanted.create) kept.find((d) => d.binding === c.binding)!.id = create(c.name, c.region)
 const pending: string[] = []
+const unbound: string[] = []
 const extra = wanted.extra
+// A run after a first deploy that failed part way can find CONTROL unmigrated: migrate it
+// before reading the registry (the run migrates every database again below; it's a no-op).
+if (deployed && !plan) wrangler('d1', 'migrations', 'apply', 'CONTROL', '--remote')
 const registry = deployed
 	? control<{ name: string; status: string; ranges: number }>('SELECT name, status, (SELECT COUNT(*) FROM shard_map m WHERE m.shard = s.name) + (SELECT COUNT(*) FROM shard_moves v WHERE v.from_shard = s.name) AS ranges FROM shards s')
 	: []
@@ -77,7 +80,12 @@ for (const d of extra) {
 		if (row.status !== 'retiring' && !plan) control(`UPDATE shards SET status = 'retiring' WHERE name = '${row.name}'`)
 	} else {
 		console.log(`unbinding ${d.binding}; the database ${d.name} is kept, delete it with \`wrangler d1 delete ${d.name}\` when sure`)
-		if (row && !plan) control(`DELETE FROM shards WHERE name = '${row.name}'`)
+		// Until the deploy below drops the binding, the running Worker would register a bound
+		// shard without a row as active and could place a site on it. readonly takes no new
+		// sites; the row goes once the binding has.
+		const name = d.binding.toLowerCase()
+		unbound.push(name)
+		if (!plan) control(`INSERT INTO shards (name, binding, weight, status, created_at) VALUES ('${name}', '${d.binding}', 1, 'readonly', ${Date.now()}) ON CONFLICT (name) DO UPDATE SET status = 'readonly'`)
 	}
 }
 // A shard brought back inside the count stops retiring.
@@ -126,3 +134,8 @@ for (const name of new Set([...text.matchAll(/"(?:queue|dead_letter_queue)": "([
 }
 execFileSync('node', ['--experimental-strip-types', new URL('./migrate.ts', import.meta.url).pathname, '--remote', '--config', CONFIG], { stdio: 'inherit' })
 execFileSync('wrangler', ['deploy', '--config', CONFIG], { stdio: 'inherit' })
+for (const name of unbound) {
+	control(`DELETE FROM shards WHERE name = '${name}' AND NOT EXISTS (SELECT 1 FROM shard_map WHERE shard = '${name}') AND NOT EXISTS (SELECT 1 FROM shard_moves WHERE from_shard = '${name}' OR to_shard = '${name}')`)
+	const kept = control<{ n: number }>(`SELECT COUNT(*) AS n FROM shards WHERE name = '${name}'`)[0]?.n
+	if (kept) console.log(`${name} took data during this deploy and its binding is gone: deploy again with a count that keeps it, so its data moves off`)
+}

@@ -1,5 +1,5 @@
 import { DAY, insertEventStmt, isProvider, siteFeatures, storeFeatures, parsePayments, PaymentError, paymentRow, SESSION_ATTRS, utcDay, verifyWebhook, visitOf, writeRange, type EventRow, type Payment, type Provider, type Visit } from '@misomoon/core'
-import { cached, getRanges, getSite, HttpError, invalidate, shardDb, writeShard } from './control'
+import { cached, checkNotMoving, getRanges, getSite, HttpError, invalidate, shardDb, writeShard } from './control'
 
 /**
  * Revenue from payment providers, credited to the visit that brought the buyer
@@ -103,8 +103,9 @@ export async function recordRefs(env: Env, rows: EventRow[]): Promise<void> {
 	}
 }
 
-/** The shard that holds a site's events for the day of `ts`. */
+/** The shard that holds a site's events for the day of `ts`, to change them; never one being moved. */
 async function readShard(env: Env, siteId: string, ts: number): Promise<D1Database | null> {
+	await checkNotMoving(env, siteId, Math.max(0, utcDay(ts)))
 	const range = writeRange(await getRanges(env, siteId), utcDay(ts))
 	return range ? shardDb(env, range.shard) : null
 }
