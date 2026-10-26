@@ -5,7 +5,7 @@ import { cors } from 'hono/cors'
 import { accounts, createTeam, signupsOpen } from './accounts'
 import { authenticate, authorize, getSharedLink, hashPassword, requireUser, siteRole, teamRole, unlockShare, visibleSites, type Principal } from './auth'
 import { moveTargets, retireShards } from './moves'
-import { checkCurrency, checkTimezone, conflict, createSite, getRanges, getShards, getSite, HttpError, invalidate, listSites, purge, shardDb, shardLimit, SITE_ID } from './control'
+import { checkCurrency, checkTimezone, conflict, createSite, getRanges, getShards, getSite, HttpError, invalidate, listSites, shardDb, shardLimit, SITE_ID } from './control'
 import { acceptBeacon, writeEvents } from './ingest'
 import { fillSample, topUpSample } from './sample'
 import { deleteSite } from './sites'
@@ -705,6 +705,11 @@ app.onError((err, c) => {
 
 // rows deleted per site and table in one daily cleanup; a backlog past it goes the next day
 const RETENTION_MAX = 1_000_000
+// rows one retention statement deletes, sites per batch (two statements each), and the
+// batches one daily cleanup shares out among the shards for a backlog
+const RETENTION_CHUNK = 1000
+const RETENTION_SITES = 50
+const RETENTION_BATCHES = 300
 // usage_daily rows kept, in days
 const USAGE_DAYS = 400
 // the UTC hour of the daily cleanup, at minute 15 like the hourly run
@@ -749,27 +754,85 @@ async function maintenance(env: Env, cleanup: boolean) {
 	// payments hold provider customer ids and the visit, so they follow the same retention;
 	// the keys a payment waits for go with it (ON DELETE CASCADE)
 	if (sites.length) await env.CONTROL.batch(sites.map((s) => env.CONTROL.prepare('DELETE FROM payments WHERE site_id = ? AND ts < ?').bind(s.id, Date.now() - s.days * 86400000)))
-	for (const shard of await getShards(env)) {
-		// one failing shard must not stop the others
+	const shards = await getShards(env)
+	// every site once on every shard, and the rest of the budget for backlogs
+	const batches = Math.max(Math.ceil(sites.length / RETENTION_SITES), Math.floor(RETENTION_BATCHES / shards.length))
+	for (const shard of shards) {
+		// one failing shard must not stop the others, and a failing cleanup must not stop its drain
 		try {
 			const db = await shardDb(env, shard.name)
-			// Per site, so the (site_id, ts) and (site_id, started_at) indexes find the rows;
-			// what is left over goes the next day. A visit ends on the UTC day it started.
-			for (const site of sites) {
-				const cutoff = Date.now() - site.days * 86400000
-				const events = await purge(db, 'events', 'rowid', 'site_id = ? AND ts < ?', [site.id, cutoff], RETENTION_MAX)
-				const visits = await purge(db, 'sessions', 'site_id, session_id', 'site_id = ? AND started_at < ?', [site.id, cutoff], RETENTION_MAX)
-				if (!events.done || !visits.done) console.log(JSON.stringify({ msg: 'retention behind', shard: shard.name, site: site.id }))
-			}
 			const size = (await db.prepare('SELECT 1').run()).meta.size_after ?? 0
-			const drain = shard.status === 'active' && size > limit
-			await env.CONTROL.prepare(`UPDATE shards SET size_bytes = ?${drain ? ", status = 'draining'" : ''} WHERE name = ?`).bind(size, shard.name).run()
-			if (drain) console.log(JSON.stringify({ msg: 'shard draining', shard: shard.name, size }))
+			const drain = size > limit
+			// only an active shard drains, read from the row: the cached status can be a minute old
+			const res = await env.CONTROL.prepare(`UPDATE shards SET size_bytes = ?1${drain ? ", status = CASE WHEN status = 'active' THEN 'draining' ELSE status END" : ''} WHERE name = ?2 RETURNING status`)
+				.bind(size, shard.name)
+				.first<{ status: string }>()
+			if (drain && shard.status === 'active' && res?.status === 'draining') console.log(JSON.stringify({ msg: 'shard draining', shard: shard.name, size }))
+			if (sites.length) await retention(db, shard.name, sites, batches)
 		} catch (e) {
 			console.error(JSON.stringify({ msg: 'shard maintenance failed', shard: shard.name, error: String(e) }))
 		}
 	}
 	invalidate('shards')
+	// A region (or a server without regions) where no shard takes new data: its sites keep
+	// writing to full shards until one is added (docs/upgrading.md, Scale the shards).
+	const fresh = await getShards(env)
+	for (const region of new Set(fresh.map((s) => s.region ?? null))) {
+		const own = fresh.filter((s) => (s.region ?? null) === region)
+		// a site without a region may use any shard
+		const usable = region ? own : fresh
+		if (!usable.some((s) => s.status === 'active')) console.error(JSON.stringify({ msg: 'no shard can take new data', region, shards: own.map((s) => s.name) }))
+	}
+}
+
+/**
+ * Deletes events and visits past each site's retention on one shard. Per site, so the
+ * (site_id, ts) and (site_id, started_at) indexes find the rows, and many sites to a
+ * batch: a scheduled run may send D1 1,000 queries in all, and every shard shares them.
+ * A site with more to delete than one statement takes goes again in the next round; what
+ * is left after `budget` batches goes the next day. A visit ends on the UTC day it started.
+ */
+async function retention(db: D1Database, shard: string, sites: { id: string; days: number }[], budget: number) {
+	const now = Date.now()
+	const deleted = new Map<string, number>()
+	const behind: typeof sites = []
+	let left = sites
+	let batches = 0
+	while (left.length && batches < budget) {
+		const next: typeof sites = []
+		for (let i = 0; i < left.length; i += RETENTION_SITES) {
+			const group = left.slice(i, i + RETENTION_SITES)
+			if (batches++ >= budget) {
+				next.push(...group)
+				continue
+			}
+			const stmts = group.flatMap((s) => {
+				const cutoff = now - s.days * 86400000
+				return [
+					db.prepare(`DELETE FROM events WHERE rowid IN (SELECT rowid FROM events WHERE site_id = ? AND ts < ? LIMIT ${RETENTION_CHUNK})`).bind(s.id, cutoff),
+					db.prepare(`DELETE FROM sessions WHERE (site_id, session_id) IN (SELECT site_id, session_id FROM sessions WHERE site_id = ? AND started_at < ? LIMIT ${RETENTION_CHUNK})`).bind(s.id, cutoff),
+				]
+			})
+			const res = await db.batch(stmts)
+			group.forEach((s, j) => {
+				const changes = Math.max(res[2 * j].meta.changes, res[2 * j + 1].meta.changes)
+				const total = (deleted.get(s.id) ?? 0) + changes
+				deleted.set(s.id, total)
+				if (changes >= RETENTION_CHUNK) (total < RETENTION_MAX ? next : behind).push(s)
+			})
+		}
+		left = next
+	}
+	for (const s of [...behind, ...left]) console.log(JSON.stringify({ msg: 'retention behind', shard, site: s.id }))
+}
+
+/**
+ * Seconds before a failed event is tried again: 10, doubling with each attempt, at most
+ * an hour. With the queue's 10 retries (wrangler.jsonc) that rides out about 2.5 hours of
+ * shard trouble before a message goes to the dead-letter queue.
+ */
+function retryDelay(attempts: number): number {
+	return Math.min(10 * 2 ** (Math.max(attempts, 1) - 1), 3600)
 }
 
 export default {
@@ -789,7 +852,7 @@ export default {
 			)
 		} catch (e) {
 			console.error(JSON.stringify({ msg: 'event batch failed', size: batch.messages.length, error: String(e) }))
-			return batch.retryAll({ delaySeconds: 10 })
+			return batch.retryAll({ delaySeconds: retryDelay(Math.max(...batch.messages.map((m) => m.attempts))) })
 		}
 		if (!failed.length) return batch.ackAll()
 		// the failed rows are the messages' own bodies; one that matches none (a copy) retries
@@ -797,14 +860,14 @@ export default {
 		const at = new Map(batch.messages.map((m, i) => [m.body, i]))
 		const retry = new Set(failed.map((r) => at.get(r)))
 		console.error(JSON.stringify({ msg: 'event batch failed', size: batch.messages.length, failed: failed.length, error: String(error) }))
-		if (retry.has(undefined) || retry.size === batch.messages.length) return batch.retryAll({ delaySeconds: 10 })
-		batch.messages.forEach((m, i) => (retry.has(i) ? m.retry({ delaySeconds: 10 }) : m.ack()))
+		if (retry.has(undefined) || retry.size === batch.messages.length) return batch.retryAll({ delaySeconds: retryDelay(Math.max(...batch.messages.map((m) => m.attempts))) })
+		batch.messages.forEach((m, i) => (retry.has(i) ? m.retry({ delaySeconds: retryDelay(m.attempts) }) : m.ack()))
 	},
 	async scheduled(controller: ScheduledController, env: Env, ctx: ExecutionContext) {
 		// every 5 minutes: spike alerts, moving data off retiring shards, API imports, the
 		// sample site's traffic; hourly: maintenance, email reports, quiet alerts; daily: retention cleanup
 		ctx.waitUntil(runAlerts(env))
-		ctx.waitUntil(retireShards(env))
+		ctx.waitUntil(retireShards(env).catch((e) => console.error(JSON.stringify({ msg: 'shard retire failed', error: String(e) }))))
 		ctx.waitUntil(runImportJobs(env).catch((e) => console.error(JSON.stringify({ msg: 'import jobs failed', error: String(e) }))))
 		ctx.waitUntil(fillSample(env).catch((e) => console.error(JSON.stringify({ msg: 'sample traffic failed', error: String(e) }))))
 		// a cron other than the five-minute one (a test, or a manual trigger) runs everything

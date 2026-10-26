@@ -1,4 +1,4 @@
-import { closingDay, isTimeZone, pickShard, PLAN_REQUIRED, PLAN_SITE_LIMIT, planRequiredMessage, serverRegions, shardRegion, shardsIn, siteLimitMessage, storeRegion, utcDay, writeRange, type PlanTerms, type Region, type Runner, type ShardInfo, type ShardRange } from '@misomoon/core'
+import { closingDay, isTimeZone, pickShard, RetryLater, PLAN_REQUIRED, PLAN_SITE_LIMIT, planRequiredMessage, serverRegions, shardRegion, shardsIn, siteLimitMessage, storeRegion, utcDay, writeRange, type PlanTerms, type Region, type Runner, type ShardInfo, type ShardRange } from '@misomoon/core'
 
 export interface Site {
 	id: string
@@ -155,9 +155,10 @@ export async function createSite(
 	return site
 }
 
-/** Bytes a shard may hold before it drains (D1's hard cap is 10 GB). */
+/** Bytes a shard may hold before it drains (D1's hard cap is 10 GB); 8,000 MB unless set to a positive number. */
 export function shardLimit(env: Env): number {
-	return Number(env.SHARD_SOFT_LIMIT_MB || 8000) * 1024 * 1024
+	const mb = Number(env.SHARD_SOFT_LIMIT_MB)
+	return (env.SHARD_SOFT_LIMIT_MB?.trim() && mb > 0 ? mb : 8000) * 1024 * 1024
 }
 
 /**
@@ -238,6 +239,24 @@ export async function siteShards(env: Env, siteId: string): Promise<(ShardRow & 
 	return shards.map((s) => ({ ...s, placeable: ok.has(s.name) }))
 }
 
+/** The site's ranges being moved off a shard (moves.ts), cached like the ranges. */
+export function getMoves(env: Env, siteId: string): Promise<{ from_day: number; to_day: number }[]> {
+	return cached(`moves:${siteId}`, async () => {
+		const { results } = await env.CONTROL.prepare('SELECT from_day, to_day FROM shard_moves WHERE site_id = ?').bind(siteId).all<{ from_day: number; to_day: number }>()
+		return results
+	})
+}
+
+/**
+ * Refuses a write into a range while it is being moved: the copy could miss it and the
+ * purge would delete it. The writer retries later (a queue retry, a provider's webhook
+ * retry, an import job's next run). A move starts copying a run after it is created, by
+ * which time every isolate's cached list of moves has expired.
+ */
+export async function checkNotMoving(env: Env, siteId: string, day: number) {
+	if ((await getMoves(env, siteId)).some((m) => m.from_day <= day && day <= m.to_day)) throw new RetryLater(10 * 60_000, `${siteId}'s data for this day is being moved between shards`)
+}
+
 export function getRanges(env: Env, siteId: string): Promise<ShardRange[]> {
 	return cached(`ranges:${siteId}`, async () => {
 		const { results } = await env.CONTROL.prepare('SELECT shard, from_day, to_day FROM shard_map WHERE site_id = ? ORDER BY from_day').bind(siteId).all<ShardRange>()
@@ -250,7 +269,9 @@ export function getRanges(env: Env, siteId: string): Promise<ShardRange[]> {
  * moves sites off a shard that stopped taking new data, starting a later UTC day.
  */
 export async function writeShard(env: Env, siteId: string, ts: number): Promise<string> {
-	const day = utcDay(ts)
+	// a site's first range starts at day 0, so a day before 1970 (an import, a payment) goes there
+	const day = Math.max(0, utcDay(ts))
+	await checkNotMoving(env, siteId, day)
 	const ranges = await getRanges(env, siteId)
 	const shards = await siteShards(env, siteId)
 	const current = writeRange(ranges, day)
@@ -280,8 +301,12 @@ export async function leaveShard(env: Env, siteId: string, shard: string, fromDa
 	try {
 		next = pickShard(siteId, (await siteShards(env, siteId)).filter((s) => s.placeable), shardLimit(env))
 	} catch {
-		// Every shard is full: keep writing here and shout, rather than drop events.
-		console.error(JSON.stringify({ msg: 'no active shard to move to', site: siteId, shard }))
+		// Every shard is full: keep writing here and shout, rather than drop events. Once a
+		// minute per site and isolate, not once per event; the hourly run names the region.
+		await cached(`full:${siteId}`, async () => {
+			console.error(JSON.stringify({ msg: 'no active shard to move to', site: siteId, shard }))
+			return true
+		})
 		return false
 	}
 	// Close at today (or tomorrow near midnight, see closingDay), never at the event's

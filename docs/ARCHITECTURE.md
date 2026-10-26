@@ -37,18 +37,26 @@ data never lives in one database.
 * **Control database** (`CONTROL`) holds small, hot, relational data: sites, keys,
   goals, funnels, daily salts, the shard registry and the routing table.
 * **Shard databases** (`SHARD_0` … `SHARD_n`) hold `events`, `sessions` and
-  `imported`. Their count is one number: `SHARD_COUNT=<n> pnpm run deploy`
-  (`apps/api/scripts/deploy.ts`). Growing creates the missing D1 databases, binds them
-  in the config (`apps/api/wrangler.jsonc`, the self-hosted template, or misomoon Cloud's
-  `wrangler.cloud.jsonc` through `pnpm run deploy:cloud`), migrates every database and
-  deploys; a bound shard registers
-  itself in `shards` once its schema is there, and never before. Shrinking marks the
+  `imported`. Their count is one number:
+  `SHARD_COUNT=<n> pnpm --filter @misomoon/api run deploy` (`apps/api/scripts/deploy.ts`).
+  Growing creates the missing D1 databases, binds them in the config
+  (`apps/api/wrangler.jsonc`, the self-hosted template, or misomoon Cloud's
+  `wrangler.cloud.jsonc` through the `deploy:cloud` script), migrates every database and
+  deploys; a bound shard registers itself in `shards` once its schema is there, and
+  never before. Shrinking marks the
   extra shards `retiring`. Every five minutes the Worker closes their sites' open
   ranges onto other shards, then copies each closed range (settled for two days) to
   another shard, switches `shard_map`, and deletes the old copy two cache lifetimes
-  later (`src/moves.ts`, progress in `shard_moves`, resumable). Running the same deploy
-  again unbinds each retiring shard once it holds nothing. Databases are never deleted
-  by the script. Without `SHARD_COUNT` the deploy keeps the current count.
+  later (`src/moves.ts`, progress in `shard_moves`, resumable). A move copies nothing on
+  the run that creates it, and every write into its days (an event, a payment, an import)
+  is refused and retried until the old copy is gone (`checkNotMoving` in `control.ts`),
+  so nothing written mid-copy is lost to the purge. Each run spends at most 400 D1
+  queries on moves. A shard brought back to `active` still finishes the moves it started.
+  Running the same deploy again unbinds each retiring shard once it holds nothing; until
+  that deploy is out, the shard is `readonly`, so the running Worker places nothing on
+  it. Databases are never deleted by the script. Without `SHARD_COUNT`, or with it
+  blank, the deploy keeps the current count. A retiring shard that fails (no shard left in its region, say) is logged and
+  skipped, and so is a range that can't move, so the rest keep moving.
 * **Data regions.** A shard's binding names its region: `SHARD_EU_n`, `SHARD_US_n`,
   `SHARD_APAC_n`, or `SHARD_n` for none (`shardRegion` in `packages/core/src/shard.ts`).
   `SHARD_REGIONS=eu:2,us:1` sizes each region at deploy (`scripts/shards.ts` plans it),
@@ -80,11 +88,20 @@ data never lives in one database.
   split on UTC day boundaries, and visitor ids rotate daily (see below), so unique
   visitor counts from disjoint ranges add up exactly. Ratios (bounce rate, duration,
   views per visit) are merged from their numerators and denominators, never averaged.
-  Reads go through a D1 session (`withSession`), so once read replication is enabled
+  Realtime keeps every key from each shard across a range change before taking the top 8,
+  and a label or media type merged from two shards is the larger value, as MAX() is on
+  one. Reads go through a D1 session (`withSession`), so once read replication is enabled
   on a shard, dashboard scans run on replicas instead of queueing behind ingest on the
   single-threaded primary.
-* **Deletes are chunked** (`purge` in `control.ts`, 5,000 rows a statement): a single
-  huge DELETE would pass D1's 30 s limit and stall every write to the shard.
+* **Deletes are chunked**: a single huge DELETE would pass D1's 30 s limit and stall
+  every write to the shard. Deleting a site and moving a range use `purge` in
+  `control.ts`, 5,000 rows a statement. The daily retention cleanup (`retention` in
+  `src/index.ts`) deletes 1,000 rows a statement, two statements per site and 50 sites
+  to a batch, because a scheduled run may send D1 1,000 queries in all and every shard
+  and every other cron job shares them. Each shard gets one pass over every site and a
+  share of 300 batches for sites with more to delete, and the cleanup logs
+  `retention behind` for what it leaves to the next day. Each shard's size and drain
+  check runs before its cleanup, so a failing cleanup can't stop a drain.
 * **Every index costs a write.** D1 bills each index entry that a write changes as one
   more row written, and a row written costs as much as 1,000 rows read. So the shard
   tables (`apps/api/migrations/shard/`) keep only the indexes a query needs. `events` has
@@ -104,7 +121,9 @@ data never lives in one database.
   grows. Without statistics, SQLite plans `visitor_id IN` with two or more ids as a search
   of the primary key on `site_id`, which reads every visit of the site. So
   `openSessionsStmt` names both visitor indexes with `INDEXED BY`, and the statement fails
-  instead of scanning if an index is missing. Each other statement has one index that
+  instead of scanning if an index is missing. The deletes of an import's rows name
+  `imported_import` the same way: planned on their own, they read every imported row of
+  the site once for each day an import writes. Each other statement has one index that
   fits its `WHERE` clause.
 * **A deleted site keeps nothing.** `deleteSite` (`sites.ts`) purges the site's shards,
   removes its `CONTROL` rows, then purges every shard once more. Other isolates can hold
@@ -112,8 +131,12 @@ data never lives in one database.
   consumer reads `sites` before it writes and drops a deleted site's events. It checks
   again after each write and purges what landed after the delete. A site added again for
   the same domain starts empty.
-* **Large tenants** can be pinned to a dedicated shard by writing their `shard_map`
-  row by hand; nothing else changes. One D1 database is single-threaded, so a site
+* **Large tenants** can be given a shard of their own by hand: add the shard, set its
+  `weight` to 0 in `shards` so placement skips it, then in one batch close the site's
+  open range at today (`UPDATE shard_map SET to_day = <today>`) and insert an open range
+  on the new shard from tomorrow, not in the last minutes of a UTC day, when cached
+  routing may already write tomorrow. The site's older days stay where they are. One D1
+  database is single-threaded, so a site
   that outgrows a whole shard's write rate would need its days split further by
   `visitor_id` hash. That stays additive (a visitor and their sessions live on one
   shard) but is not built yet.
@@ -141,10 +164,13 @@ events past the retention window.
 3. With a Queue bound, the event is enqueued and the response is `202` immediately;
    the consumer batches by shard. Without one (local dev), or when the send fails, it
    is written inline in `ctx.waitUntil`. The consumer writes each group (one site on one
-   shard) on its own: when a group fails, its messages are retried after 10 seconds and
-   the rest of the batch is acked, so one busy shard holds back only its own events. A
-   step outside the groups that fails (reading the sites or their caps) retries the whole
-   batch. After 5 retries a message goes to the dead-letter queue `misomoon-events-dlq`.
+   shard) on its own: when a group fails, its messages are retried and the rest of the
+   batch is acked, so one busy shard holds back only its own events. So are the events of
+   a site with no shard to go to, or of a day being moved between shards. A step outside
+   the groups that fails (reading the sites or their caps) retries the whole batch. A
+   retry waits 10 seconds, doubling with each attempt up to an hour (`retryDelay`), and
+   after 10 retries, about 2.5 hours, a message goes to the dead-letter queue
+   `misomoon-events-dlq`.
    Two consumers can run at once when the queue backs up, and each reads its visitors'
    open visits before it writes. D1 runs each batch as one transaction, one after the
    other, and every statement finds the visit again when it runs (steps 4 and 6), so a

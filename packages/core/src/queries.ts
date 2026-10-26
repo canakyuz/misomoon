@@ -671,8 +671,10 @@ export async function realtime(targets: Target[], scope: Scope, now = Date.now()
 			add((p) => `SELECT e.ts, e.name, e.pathname, e.country, e.city, e.browser, e.device, e.source FROM events e WHERE ${eventWhere(scope, rw, p)} ORDER BY e.ts DESC LIMIT 40`)
 			if (lw) {
 				add((p) => `SELECT COUNT(DISTINCT NULLIF(e.visitor_id, '')) AS visitors, SUM(e.name = 'pageview') AS pageviews FROM events e WHERE ${eventWhere(scope, lw, p)}`)
+				// one shard can cut to the top 8; across a range change, a key's visitors add up only once every key is in
+				const limit = targets.length > 1 ? '' : ' LIMIT 8'
 				for (const col of ['pathname', 'source', 'country']) {
-					add((p) => `SELECT ${KEY('e.' + col)} AS key, COUNT(DISTINCT NULLIF(e.visitor_id, '')) AS visitors FROM events e WHERE ${eventWhere(scope, lw, p)} GROUP BY key ORDER BY visitors DESC LIMIT 8`)
+					add((p) => `SELECT ${KEY('e.' + col)} AS key, COUNT(DISTINCT NULLIF(e.visitor_id, '')) AS visitors FROM events e WHERE ${eventWhere(scope, lw, p)} GROUP BY key ORDER BY visitors DESC${limit}`)
 				}
 			}
 			const [mins, feed, totals, pages, sources, countries] = await run(stmts)
@@ -794,7 +796,8 @@ async function perShard(targets: Target[], build: (w: Window) => Stmt[]): Promis
 }
 
 /** Sums numeric fields of `r` into the row kept under `key`; other fields keep their first value. */
-function mergeRow(into: Map<string, Row>, key: string, r: Row, sum: string[]) {
+/** Adds `sum` across shards; `max` keeps the larger value, as MAX() does on one shard. */
+function mergeRow(into: Map<string, Row>, key: string, r: Row, sum: string[], max: string[] = []) {
 	const cur = into.get(key)
 	if (!cur) {
 		const fresh: Row = { ...r }
@@ -803,6 +806,7 @@ function mergeRow(into: Map<string, Row>, key: string, r: Row, sum: string[]) {
 		return
 	}
 	for (const k of sum) cur[k] = num(cur[k]) + num(r[k])
+	for (const k of max) if (r[k] != null && (cur[k] == null || String(r[k]) > String(cur[k]))) cur[k] = r[k]
 	for (const k of Object.keys(r)) if (cur[k] == null && r[k] != null) cur[k] = r[k]
 }
 
@@ -860,7 +864,7 @@ export async function clickMap(targets: Target[], scope: Scope, opts: { limit?: 
 	})
 	for (const [elements, totals, views] of results) {
 		if (elements.length >= BEHAVIOR_CAP) out.truncated = true
-		for (const r of elements) mergeRow(rows, `${r.page}\u0000${r.selector}`, r, sums)
+		for (const r of elements) mergeRow(rows, `${r.page}\u0000${r.selector}`, r, sums, ['label'])
 		out.clicks += num(totals[0]?.clicks)
 		out.rage += num(totals[0]?.rage)
 		out.dead += num(totals[0]?.dead)
@@ -1146,7 +1150,7 @@ export async function mediaReport(targets: Target[], scope: Scope, opts: { limit
 			},
 		]
 	})
-	for (const [rows] of results) for (const r of rows) mergeRow(media, String(r.name), r, ['plays', 'visitors', 'm0', 'm1', 'm2', 'm3'])
+	for (const [rows] of results) for (const r of rows) mergeRow(media, String(r.name), r, ['plays', 'visitors', 'm0', 'm1', 'm2', 'm3'], ['type'])
 	return {
 		media: [...media.values()]
 			.sort((a, b) => num(b.plays) - num(a.plays) || String(a.name).localeCompare(String(b.name)))

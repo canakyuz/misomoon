@@ -106,7 +106,7 @@ async function persist(env: Env, site: Site, id: string, set: ImportedSet, skipp
 			for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100).map((s) => db.prepare(s.sql).bind(...s.params)))
 		}
 	} catch (e) {
-		for (const db of written) await db.prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(site.id, id).run().catch(() => {})
+		for (const db of written) await db.prepare('DELETE FROM imported INDEXED BY imported_import WHERE site_id = ? AND import_id = ?').bind(site.id, id).run().catch(() => {})
 		throw e
 	}
 	const days = set.days
@@ -163,7 +163,7 @@ async function gunzip(f: File): Promise<string> {
 export async function dropRows(env: Env, siteId: string, id: string) {
 	const shards = new Set([...(await getRanges(env, siteId)).map((r) => r.shard), ...(await moveTargets(env, siteId))])
 	for (const shard of shards) {
-		await (await shardDb(env, shard)).prepare('DELETE FROM imported WHERE site_id = ? AND import_id = ?').bind(siteId, id).run()
+		await (await shardDb(env, shard)).prepare('DELETE FROM imported INDEXED BY imported_import WHERE site_id = ? AND import_id = ?').bind(siteId, id).run()
 	}
 }
 

@@ -236,7 +236,7 @@ async function writeDays(env: Env, site: Site, id: string, days: string[], set: 
 	for (const day of days) {
 		const ts = localMidnight(day, site.timezone)
 		const db = await shardDb(env, await writeShard(env, site.id, ts))
-		const stmts = [{ sql: 'DELETE FROM imported WHERE site_id = ? AND import_id = ? AND ts = ?', params: [site.id, id, ts] }, ...importedInsertStmts(site.id, id, rows.get(day) ?? [], site.timezone)]
+		const stmts = [{ sql: 'DELETE FROM imported INDEXED BY imported_import WHERE site_id = ? AND import_id = ? AND ts = ?', params: [site.id, id, ts] }, ...importedInsertStmts(site.id, id, rows.get(day) ?? [], site.timezone)]
 		for (let i = 0; i < stmts.length; i += 100) await db.batch(stmts.slice(i, i + 100).map((s) => db.prepare(s.sql).bind(...s.params)))
 	}
 }

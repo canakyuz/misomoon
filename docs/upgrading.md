@@ -90,6 +90,14 @@ data, and its sites continue on another shard. Add shards before every shard is 
 the limit. To see the size of each database, open **Storage & Databases** > **D1** in
 the Cloudflare dashboard.
 
+When no other shard can take a site, the site keeps writing to the full shard. The
+Worker logs `no active shard to move to` once a minute for that site, and every hour
+`no shard can take new data` with the region and its shards. Search Workers Logs, or
+`wrangler tail`, for those messages. It happens when every shard is draining, or when a
+region has one shard. Add a shard in that region (or one without
+a region) and deploy; the site moves to it on its next event. Past 10 GB, D1 refuses
+the writes.
+
 More shards also spread the writes. One D1 database handles one write at a time, so a
 busy instance with many sites is faster with more shards.
 
@@ -108,6 +116,8 @@ the most free space. To see the plan without changing anything, add `--plan`:
 ```sh
 SHARD_COUNT=4 pnpm --filter @misomoon/api run deploy -- --plan
 ```
+
+`SHARD_COUNT` left unset or blank keeps the shards you have.
 
 To remove shards, deploy with a smaller `SHARD_COUNT`. The extra shards are marked
 `retiring`, and the Worker moves their data to the other shards every 5 minutes. Run

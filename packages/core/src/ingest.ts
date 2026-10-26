@@ -1,5 +1,5 @@
 import { adClick, classify, readUTM, referrerHost } from './channel'
-import { MINUTE } from './time'
+import { DAY, MINUTE } from './time'
 import type { EventDetail, EventRow, TrackerPayload } from './types'
 import { isBotUA, parseUA, screenClass } from './ua'
 import type { Stmt } from './queries'
@@ -84,8 +84,10 @@ export function buildEvent(p: TrackerPayload, edge: EdgeContext, now = Date.now(
 	const r = typeof p.r === 'string' ? p.r : undefined
 	const refHost = referrerHost(r)
 	const acq = classify(refHost, utm, url.hostname.replace(/^www\./, ''), adClick(url))
-	// Beacons can arrive late; anything far from now is a bad client clock.
-	const ts = typeof p.ts === 'number' && Math.abs(p.ts - now) < 5 * MINUTE ? Math.round(p.ts) : now
+	// Beacons can arrive late; anything far from now is a bad client clock. A clock that
+	// runs ahead into the next UTC day takes now: that day may already route to another
+	// shard, which an isolate with a cached routing table doesn't know yet (control.ts).
+	const ts = typeof p.ts === 'number' && Math.abs(p.ts - now) < 5 * MINUTE && Math.floor(p.ts / DAY) <= Math.floor(now / DAY) ? Math.round(p.ts) : now
 
 	let props: string | null = null
 	if (p.p && typeof p.p === 'object') {
