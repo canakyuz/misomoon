@@ -402,8 +402,10 @@ hold is made up from what it does:
   people who got there.
 - A funnel other than Acme's two counts each step's visitors from the page and event
   reports, and never more than the step before.
-- **Live** shows the people and pages that were online when the recording was made, with
-  their times moved to now.
+- **Live** plays the recorded events in a loop that ends now, so a few people are always
+  online and new ones arrive while it is open. Its counts come from those events.
+- **Behavior** opens its Clicks and Scroll reports on the home page rather than the most
+  viewed page, `/shop`, which has no clicks in the recording.
 - Anything that saves, such as a note on the chart, answers that the demo is read-only.
   **Export CSV** still asks the API.
 

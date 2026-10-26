@@ -335,6 +335,13 @@ function interactions(r: () => number, host: string, path: string, added: boolea
 			out.m = [['Down Jacket in the rain', 'video', 1, far > 0.15 ? 1 : 0, far > 0.4 ? 1 : 0, far > 0.6 ? 1 : 0, far > 0.78 ? 1 : 0]]
 		}
 		out.o = keep([r() < 0.6 ? ['You might also like', 1, r() < 0.12 ? 1 : 0] : null])
+	} else if (path === '/shop') {
+		out.c = keep([
+			click('.product-grid>a', 'Product card', 0.55),
+			click('#filters>button', 'Filter', 0.18),
+			click('#sort', 'Sort by', 0.1, 0.1),
+			click('.product-grid>a>img', 'Product photo', 0.06, 0, 0.9),
+		])
 	} else if (path === '/cart') {
 		out.c = keep([click('#checkout', 'Checkout', 0.7), click('#promo>button', 'Apply code', 0.12, 0.3), click('.line-item>button', 'Remove', 0.08)])
 	} else if (path === '/checkout' && r() < 0.9) {
@@ -347,7 +354,11 @@ function interactions(r: () => number, host: string, path: string, added: boolea
 		if (r() < 0.04) out.x = [["TypeError: Cannot read properties of undefined (reading 'postalCode')", `https://${host}/assets/checkout.js:1:8812`, 1]]
 	} else if (path.startsWith('/journal/')) {
 		out.o = keep([r() < 0.7 ? ['Shop the story', 1, r() < 0.18 ? 1 : 0] : null])
-		out.f = r() < 0.08 ? [['newsletter', 1, r() < 0.7 ? 1 : 0]] : undefined
+		if (r() < 0.08) {
+			const sent = r() < 0.7
+			out.f = [['newsletter', 1, sent ? 1 : 0]]
+			out.g = [['newsletter', 'email', 0, 1, sent ? 0 : 1]]
+		}
 	}
 	if (r() < 0.01) out.x = [...(out.x ?? []), ['Script error.', '', 1]]
 	for (const k of ['c', 'o', 'f'] as const) if (!out[k]?.length) delete out[k]

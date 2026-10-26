@@ -27,6 +27,7 @@ export class DemoError extends Error {
 
 const DAY = 86_400_000
 const HOUR = 3_600_000
+const MINUTE = 60_000
 // day-based periods by length, for a custom range
 const SPANS: [string, number][] = [
 	['7d', 7],
@@ -55,8 +56,7 @@ function dayOf(t: number, timezone: string): number {
  * How far to move a recording's dates so it ends now: whole days in the site's time zone,
  * so days and hours still line up, whole hours for the rolling 24 hours, and exactly for Live.
  */
-export function shiftFor(kind: 'day' | 'hour' | 'exact', at: number, now: number, timezone: string): number {
-	if (kind === 'exact') return now - at
+export function shiftFor(kind: 'day' | 'hour', at: number, now: number, timezone: string): number {
 	if (kind === 'hour') return Math.round((now - at) / HOUR) * HOUR
 	return dayOf(now, timezone) - dayOf(at, timezone)
 }
@@ -238,6 +238,54 @@ export function funnel(rec: DemoPeriod, steps: FunnelStep[], mode: string, filte
 	return { mode, entered, completed: prev, steps: out }
 }
 
+type LiveEvent = { ts: number; name: string; pathname: string; country: string | null; city: string | null; browser: string; device: string; source: string }
+
+/**
+ * The Live view: the recorded events played in a loop that ends now, so people are always
+ * online and new ones arrive while it is open. A recording made in a quiet minute would
+ * otherwise show nobody. Counts are read from the events, one visitor per city, browser,
+ * device and source in each round of the loop.
+ */
+export function live(recorded: { feed: LiveEvent[] }, now: number) {
+	const feed = [...recorded.feed].sort((a, b) => a.ts - b.ts)
+	const first = feed[0]?.ts ?? now
+	// the recorded span plus the usual gap between two events, so one round runs into the next
+	const gap = feed.length > 1 ? (feed.at(-1)!.ts - first) / (feed.length - 1) : 5 * MINUTE
+	const round = Math.max((feed.at(-1)?.ts ?? first) - first + gap, MINUTE)
+	const from = now - 30 * MINUTE
+	const events: (LiveEvent & { visitor: string })[] = []
+	for (const e of feed)
+		for (let k = Math.floor((now - e.ts) / round), ts = e.ts + k * round; ts > from; k--, ts -= round)
+			events.push({ ...e, ts, visitor: `${k}|${e.city}|${e.browser}|${e.device}|${e.source}` })
+	events.sort((a, b) => b.ts - a.ts)
+
+	const minutes = new Map<number, { pageviews: number; visitors: Set<string> }>()
+	for (let t = Math.floor(from / MINUTE) * MINUTE; t <= now; t += MINUTE) minutes.set(t, { pageviews: 0, visitors: new Set() })
+	for (const e of events) {
+		const m = minutes.get(Math.floor(e.ts / MINUTE) * MINUTE)!
+		if (e.name === 'pageview') m.pageviews++
+		m.visitors.add(e.visitor)
+	}
+	const recent = events.filter((e) => e.ts > now - 5 * MINUTE)
+	const top = (key: (e: LiveEvent) => string | null) => {
+		const by = new Map<string, Set<string>>()
+		for (const e of recent) {
+			const k = key(e) || '(none)'
+			by.set(k, (by.get(k) ?? new Set()).add(e.visitor))
+		}
+		return [...by].map(([key, v]) => ({ key, visitors: v.size })).sort((a, b) => b.visitors - a.visitors).slice(0, 8)
+	}
+	return {
+		visitors: new Set(recent.map((e) => e.visitor)).size,
+		pageviews: recent.filter((e) => e.name === 'pageview').length,
+		minutes: [...minutes].map(([t, m]) => ({ t, pageviews: m.pageviews, visitors: m.visitors.size })),
+		pages: top((e) => e.pathname),
+		sources: top((e) => e.source),
+		countries: top((e) => e.country),
+		feed: events.slice(0, 40).map(({ visitor, ...e }) => e),
+	}
+}
+
 async function site(): Promise<DemoSite> {
 	return load<DemoSite>('site')
 }
@@ -252,7 +300,7 @@ export async function demoGet(path: string): Promise<unknown> {
 	if (/^sites\/[^/]+\/funnels$/.test(route)) return s.funnels
 	if (/^sites\/[^/]+\/segments$/.test(route)) return s.segments
 	if (/^sites\/[^/]+\/annotations$/.test(route)) return adjust(s.annotations, shiftFor('day', s.at, now, s.timezone))
-	if (route === 'stats/realtime') return adjust(s.realtime, shiftFor('exact', s.at, now, s.timezone))
+	if (route === 'stats/realtime') return live(s.realtime as { feed: LiveEvent[] }, now)
 	if (!route.startsWith('stats/')) throw new DemoError(403, 'The demo is read-only. Sign up to see this for your own site.')
 	if (route === 'stats/aggregate' && q.get('period') === 'all' && q.get('compare') === '0') return s.ever
 

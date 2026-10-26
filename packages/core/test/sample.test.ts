@@ -17,6 +17,20 @@ describe('the sample site', () => {
 		expect(sampleDay('acme', SAMPLE.domain, TODAY - 1)[0].payload.id).not.toBe(a[0].payload.id)
 	})
 
+	it('has clicks on the shop page, which is the most viewed and the one Behavior opens on', () => {
+		const pings = sampleDay('acme', SAMPLE.domain, TODAY).filter((h) => h.payload.n === 'engagement' && new URL(h.payload.u).pathname === '/shop')
+		const clicked = pings.filter((h) => h.payload.c?.length)
+		expect(pings.length).toBeGreaterThan(100)
+		expect(clicked.length / pings.length).toBeGreaterThan(0.3)
+		expect(new Set(clicked.flatMap((h) => (h.payload.c as unknown[][]).map((c) => c[1])))).toContain('Product card')
+	})
+
+	it('gives every form it starts a field, as the tracker does', () => {
+		const pings = sampleDay('acme', SAMPLE.domain, TODAY).filter((h) => h.payload.f?.length)
+		expect(new Set(pings.flatMap((h) => (h.payload.f as unknown[][]).map((f) => f[0])))).toEqual(new Set(['checkout', 'newsletter']))
+		for (const h of pings) for (const [form] of h.payload.f as unknown[][]) expect((h.payload.g as unknown[][] | undefined)?.some((g) => g[0] === form)).toBe(true)
+	})
+
 	it('cuts a window out of the days without changing them', () => {
 		// a visit that starts before midnight carries on into the next day, so start the window on such a day
 		let day = TODAY - 1
